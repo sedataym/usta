@@ -46,7 +46,7 @@ sudo pacman -S tesseract slurp spectacle
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/avos.git
+   git clone https://github.com/sedataym/avos.git
    cd avos
    ```
 
