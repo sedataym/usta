@@ -15,7 +15,39 @@ By "sniping" a specific area of your screen, Avos continuously monitors that reg
 *   **Sniper Mode Overlay:** Modular region selection system (currently uses `slurp`) to target subtitle areas.
 *   **Modular OCR Engine Subsystem:** Dynamic multi-backend support (Tesseract & EasyOCR) for accurate text extraction.
 *   **Dual-Engine Translation Subsystem:** Context-aware translations via Google Translate and DeepL (Note: DeepL is currently untested).
+*   **Unix Socket IPC Broadcasting:** Real-time JSON broadcast of every translation to a local Unix socket, enabling integration with other tools (e.g., custom subtitles, logging, or OBS).
 *   **Global Shortcuts & IPC Integration:** Utilizes a lightweight single-instance architecture to handle background processes and external CLI-driven shortcuts.
+
+## 📡 External Integration (IPC)
+
+Avos features a built-in Unix Domain Socket server that broadcasts every translation in real-time. This allows you to "pipe" translations into other applications, scripts, or overlays effortlessly.
+
+This feature is designed for high extensibility, making it easy to integrate Avos into your existing workflow:
+*   **Live Streaming:** Send translations directly to OBS or other broadcast software as a text source.
+*   **Accessibility:** Integrate with text-to-speech (TTS) engines for real-time audio translation.
+*   **Data Logging:** Pipe the stream to a file to create a searchable history or transcripts of your sessions.
+*   **Custom Overlays:** Build your own UI or specialized subtitles that react to Avos data.
+
+**Socket Path:** `/tmp/avos.sock`
+
+### How to use:
+You can listen to the stream using standard tools like `netcat` (nc):
+```bash
+nc -U /tmp/avos.sock
+```
+
+### JSON Output Format:
+Every translation is sent as a single line in JSON format:
+```json
+{
+  "original": "Hello world",
+  "translated": "Merhaba dünya",
+  "source": "en",
+  "target": "tr",
+  "engine": "Google",
+  "timestamp": 1717181234.56
+}
+```
 
 ## 🗺️ Roadmap & Future Support
 
