@@ -1,11 +1,13 @@
 from src.core.ocr.tesseract_engine import TesseractEngine
 from src.core.ocr.easyocr_engine import EasyOCREngine
+from src.core.ocr.paddleocr_engine import PaddleOCREngine
 
 class OCRManager:
     def __init__(self):
         self.engines = {
             "Tesseract": TesseractEngine(),
-            "EasyOCR": EasyOCREngine()
+            "EasyOCR": EasyOCREngine(),
+            "PaddleOCR": PaddleOCREngine()
         }
         self.current_engine_name = "Tesseract"
 

@@ -1,7 +1,7 @@
 import os
 import tempfile
 
-OCR_ENGINES = ["Tesseract", "EasyOCR"]
+OCR_ENGINES = ["Tesseract", "EasyOCR", "PaddleOCR"]
 TRANSLATION_ENGINES = ["Google", "DeepL"]
 LANGUAGES = {
     "Auto": "auto",
@@ -22,19 +22,19 @@ LANGUAGES = {
 
 # Map UI language codes to Tesseract/EasyOCR language codes
 OCR_LANG_MAPPING = {
-    "en": {"tess": "eng", "easy": "en"},
-    "tr": {"tess": "tur", "easy": "tr"},
-    "ru": {"tess": "rus", "easy": "ru"},
-    "ar": {"tess": "ara", "easy": "ar"},
-    "he": {"tess": "heb", "easy": "he"},
-    "de": {"tess": "deu", "easy": "de"},
-    "fr": {"tess": "fra", "easy": "fr"},
-    "ja": {"tess": "jpn", "easy": "ja"},
-    "ko": {"tess": "kor", "easy": "ko"},
-    "zh": {"tess": "chi_sim", "easy": "ch_sim"},
-    "vi": {"tess": "vie", "easy": "vi"},
-    "th": {"tess": "tha", "easy": "th"},
-    "es": {"tess": "spa", "easy": "es"}
+    "en": {"tess": "eng", "easy": "en", "paddle": "en"},
+    "tr": {"tess": "tur", "easy": "tr", "paddle": "tr"},
+    "ru": {"tess": "rus", "easy": "ru", "paddle": "ru"},
+    "ar": {"tess": "ara", "easy": "ar", "paddle": "ar"},
+    "he": {"tess": "heb", "easy": "he", "paddle": "he"},
+    "de": {"tess": "deu", "easy": "de", "paddle": "de"},
+    "fr": {"tess": "fra", "easy": "fr", "paddle": "fr"},
+    "ja": {"tess": "jpn", "easy": "ja", "paddle": "ja"},
+    "ko": {"tess": "kor", "easy": "ko", "paddle": "ko"},
+    "zh": {"tess": "chi_sim", "easy": "ch_sim", "paddle": "ch"},
+    "vi": {"tess": "vie", "easy": "vi", "paddle": "vi"},
+    "th": {"tess": "tha", "easy": "th", "paddle": "th"},
+    "es": {"tess": "spa", "easy": "es", "paddle": "es"}
 }
 
 SETTINGS_FILE = "settings.pkl"
