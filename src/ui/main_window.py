@@ -14,10 +14,10 @@ class ControlPanel(QWidget):
         super().__init__()
         self.worker = OCRWorker()
         self.overlay = TransparentOverlay()
-        self.setWindowTitle("AVOS General Instant Translator")
+        self.setWindowTitle("UmayOCR General Instant Translator")
         
         # Set window icon
-        icon_path = os.path.join(os.path.dirname(__file__), "assets", "Avos.png")
+        icon_path = os.path.join(os.path.dirname(__file__), "assets", "UmayOCR.png")
         self.setWindowIcon(QIcon(icon_path))
         
         # Disable maximization
@@ -191,10 +191,10 @@ class ControlPanel(QWidget):
         # --- About Tab (last) ---
         tab_about = QWidget()
         tab_about_layout = QVBoxLayout(tab_about)
-        about_title = QLabel("<b>AVOS General Instant Translator</b>")
+        about_title = QLabel("<b>UmayOCR General Instant Translator</b>")
         about_title.setStyleSheet("font-size: 14px;")
         tab_about_layout.addWidget(about_title)
-        tab_about_layout.addWidget(QLabel("Version: 1.0"))
+        tab_about_layout.addWidget(QLabel("Version: 0.1.0"))
         tab_about_layout.addWidget(QLabel(""))
         tab_about_layout.addWidget(QLabel("A real-time OCR-based translation tool."))
         tab_about_layout.addWidget(QLabel("Select a screen region, capture text via OCR,"))

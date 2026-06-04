@@ -37,7 +37,7 @@ OCR_LANG_MAPPING = {
     "es": {"tess": "spa", "easy": "es", "paddle": "es"}
 }
 
-CONFIG_DIR = os.path.expanduser("~/.config/avos")
+CONFIG_DIR = os.path.expanduser("~/.config/umayocr")
 if not os.path.exists(CONFIG_DIR):
     os.makedirs(CONFIG_DIR, exist_ok=True)
 
@@ -46,7 +46,7 @@ PRESETS_FILE = os.path.join(CONFIG_DIR, "presets.pkl")
 
 # Temp Files
 TEMP_DIR = tempfile.gettempdir()
-IMG_PATH = os.path.join(TEMP_DIR, "avos_snapshot.png")
-FULL_SCREEN_TEMP_PATH = os.path.join(TEMP_DIR, "avos_full_snap.png")
-SOCKET_PATH = os.path.join(TEMP_DIR, "avos.sock")
+IMG_PATH = os.path.join(TEMP_DIR, "umayocr_snapshot.png")
+FULL_SCREEN_TEMP_PATH = os.path.join(TEMP_DIR, "umayocr_full_snap.png")
+SOCKET_PATH = os.path.join(TEMP_DIR, "umayocr.sock")
 SLURP_TEMP_PATH = os.path.join(TEMP_DIR, "slurp_final.txt")

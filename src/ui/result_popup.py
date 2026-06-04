@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
 class TransparentOverlay(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("AVOS_TRANSLATION_OVERLAY")
+        self.setWindowTitle("UMAYOCR_TRANSLATION_OVERLAY")
         self.setWindowFlags(Qt.WindowStaysOnTopHint |
                             Qt.FramelessWindowHint |
                             Qt.WindowDoesNotAcceptFocus |
@@ -33,6 +33,10 @@ class TransparentOverlay(QWidget):
         self.update_style()
         self.layout.addWidget(self.label)
         
+        self.hide_timer = QTimer(self)
+        self.hide_timer.setSingleShot(True)
+        self.hide_timer.timeout.connect(lambda: self.label.setText(""))
+
         self.set_mode(False)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.raise_)
@@ -85,10 +89,16 @@ class TransparentOverlay(QWidget):
     def update_text(self, text):
         self.label.setText(text)
         self.raise_()
+        self.hide_timer.start(10000)
 
     def set_mode(self, scan):
         self.setAttribute(Qt.WA_TransparentForMouseEvents, scan)
         self.setCursor(Qt.ArrowCursor if scan else Qt.SizeAllCursor)
+        if scan:
+            self.hide_timer.start(10000)
+        else:
+            self.hide_timer.stop()
+            self.label.setText("Translation will appear here.")
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
