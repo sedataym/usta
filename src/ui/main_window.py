@@ -113,9 +113,7 @@ class ControlPanel(QWidget):
         tab_translation_layout.addWidget(self.api_key_input)
         # Store api keys persistently, keyed by engine name
         self.api_keys = {}
-        # Initially hidden; shown only when the current engine needs an API key
-        self.api_key_label.hide()
-        self.api_key_input.hide()
+        # Always visible to keep window size fixed; state toggled per engine
         
         tab_translation_layout.addStretch()
         self.tabs.addTab(tab_translation, _("Translation"))
@@ -461,7 +459,7 @@ class ControlPanel(QWidget):
 
     # ---------- API Key Helpers ----------
     def _apply_api_key_for_current_engine(self):
-        """Update the API key textbox visibility and value for the current engine."""
+        """Update the API key textbox state and value for the current engine."""
         engine = self.combo_translator.currentText()
         key = self.api_keys.get(engine, "")
         # Block signals to avoid triggering on_api_key_changed during load
@@ -471,18 +469,20 @@ class ControlPanel(QWidget):
         # Push to worker so the engine uses the saved key
         if key:
             self.worker.set_api_key(engine, key)
-        # Show field only for engines that have a key entry (currently DeepL)
-        self._update_api_key_visibility(engine)
+        # Toggle editable state based on engine (always visible, fixed window size)
+        self._update_api_key_state(engine)
 
-    def _update_api_key_visibility(self, engine: str):
-        """Show API key field only for engines that need one."""
+    def _update_api_key_state(self, engine: str):
+        """Enable/disable the API key field based on engine, keep it always visible."""
         engines_needing_key = {"DeepL"}
         if engine in engines_needing_key:
-            self.api_key_label.show()
-            self.api_key_input.show()
+            self.api_key_input.setReadOnly(False)
+            self.api_key_input.setEnabled(True)
+            self.api_key_input.setToolTip("")
         else:
-            self.api_key_label.hide()
-            self.api_key_input.hide()
+            self.api_key_input.setReadOnly(True)
+            self.api_key_input.setEnabled(False)
+            self.api_key_input.setToolTip(_("This engine does not require an API key"))
 
     def on_translator_changed(self, engine: str):
         """Called when the translation engine combo box changes."""
