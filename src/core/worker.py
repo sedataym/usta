@@ -6,7 +6,7 @@ from src.core.ocr.ocr_manager import OCRManager
 from src.core.translation.translator_manager import TranslatorManager
 from src.core.screenshot import ScreenshotFactory, ImageProcessor
 from src.core.socket_publisher import TranslationPublisher
-from src.config import IMG_PATH
+from src.config import IMG_PATH, DPI_SCALE_DEFAULT
 
 class OCRWorker(QThread):
     new_translation = Signal(str)
@@ -17,6 +17,7 @@ class OCRWorker(QThread):
     def __init__(self):
         super().__init__()
         self.capture_rect = QRect(560, 750, 800, 140)
+        self.dpi_scale = DPI_SCALE_DEFAULT
         self.lock = Lock()
         self.running = False
         self.ocr_manager = OCRManager()
@@ -27,11 +28,13 @@ class OCRWorker(QThread):
         self._is_translating = False
         self.publisher = TranslationPublisher()
 
-    def set_rect(self, qrect):
+    def set_rect(self, qrect, dpi_scale=None):
         with self.lock:
             self.capture_rect = QRect(qrect)
+            if dpi_scale is not None:
+                self.dpi_scale = dpi_scale
             self.last_text = ""
-            print(f"OCRWorker: New region: {qrect.x()},{qrect.y()} {qrect.width()}x{qrect.height()}")
+            print(f"OCRWorker: New region: {qrect.x()},{qrect.y()} {qrect.width()}x{qrect.height()} DPI: {self.dpi_scale}")
 
     def set_engine(self, engine_name):
         with self.lock:
@@ -105,7 +108,7 @@ class OCRWorker(QThread):
                     time.sleep(0.5); continue
 
                 # 1. Capture
-                if not self.screenshot_engine.capture(rect, IMG_PATH):
+                if not self.screenshot_engine.capture(rect, IMG_PATH, self.dpi_scale):
                     time.sleep(0.5); continue
 
                 # 2. Prep (Special processing for Tesseract only)

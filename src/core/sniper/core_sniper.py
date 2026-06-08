@@ -88,6 +88,10 @@ class OverlayWindow(QWidget):
             self.manager.selectionFinished.emit(QRect())
 
 class CoreSniper(BaseSniper):
+    def __init__(self):
+        super().__init__()
+        self.detected_dpi = 1.0
+
     def get_region(self) -> QRect | None:
         """Selects a region on the screen using a native multi-monitor overlay."""
 
@@ -114,5 +118,14 @@ class CoreSniper(BaseSniper):
         
         for win in windows:
             win.close()
+
+        rect = result_rect[0]
+        if rect is not None:
+            # Detect which screen contains the center of the selection and get its DPI
+            center = rect.center()
+            for screen in QApplication.screens():
+                if screen.geometry().contains(center):
+                    self.detected_dpi = screen.devicePixelRatio()
+                    break
             
-        return result_rect[0]
+        return rect

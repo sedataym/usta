@@ -37,6 +37,8 @@ OCR_LANG_MAPPING = {
     "es": {"tess": "spa", "easy": "es", "paddle": "es"}
 }
 
+DPI_SCALE_DEFAULT = 1.0  # Auto-detected from QScreen.devicePixelRatio, user can override
+
 CONFIG_DIR = os.path.expanduser("~/.config/umayocr")
 if not os.path.exists(CONFIG_DIR):
     os.makedirs(CONFIG_DIR, exist_ok=True)

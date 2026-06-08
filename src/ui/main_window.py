@@ -3,11 +3,11 @@ import pickle
 import os
 from PySide6.QtCore import Qt, QRect, QPoint, QTimer
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox, QPushButton, QApplication, QFontComboBox, QSpinBox, QHBoxLayout, QColorDialog, QProgressBar, QTabWidget, QListWidget, QLineEdit, QMessageBox
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox, QPushButton, QApplication, QFontComboBox, QSpinBox, QDoubleSpinBox, QHBoxLayout, QColorDialog, QProgressBar, QTabWidget, QListWidget, QLineEdit, QMessageBox
 from src.core.worker import OCRWorker
 from src.ui.result_popup import TransparentOverlay
 from src.core.sniper import SniperFactory
-from src.config import OCR_ENGINES, TRANSLATION_ENGINES, LANGUAGES, SETTINGS_FILE, PRESETS_FILE
+from src.config import OCR_ENGINES, TRANSLATION_ENGINES, LANGUAGES, SETTINGS_FILE, PRESETS_FILE, DPI_SCALE_DEFAULT
 from src.i18n import _
 
 class ControlPanel(QWidget):
@@ -69,6 +69,29 @@ class ControlPanel(QWidget):
         self.combo_ocr.currentTextChanged.connect(self.worker.set_engine)
         self.combo_ocr.currentTextChanged.connect(self.save_settings)
         tab_ocr_layout.addWidget(self.combo_ocr)
+
+        # DPI Scale control
+        self.dpi_locked = False
+        h_dpi = QHBoxLayout()
+        h_dpi.addWidget(QLabel(_("DPI Scale:")))
+        self.dpi_lock_label = QLabel("🔓")
+        self.dpi_lock_label.setToolTip(_("DPI unlocked (click to lock)"))
+        self.dpi_lock_label.setCursor(Qt.PointingHandCursor)
+        self.dpi_lock_label.mousePressEvent = self._toggle_dpi_lock
+        self.dpi_lock_label.setStyleSheet("font-size: 16px; padding: 0px;")
+        self.dpi_lock_label.setFixedWidth(24)
+        h_dpi.addWidget(self.dpi_lock_label)
+        self.dpi_scale_spin = QDoubleSpinBox()
+        self.dpi_scale_spin.setRange(50, 300)
+        self.dpi_scale_spin.setSingleStep(25)
+        self.dpi_scale_spin.setDecimals(0)
+        self.dpi_scale_spin.setSuffix(" %")
+        self.dpi_scale_spin.setValue(DPI_SCALE_DEFAULT * 100)
+        self.dpi_scale_spin.setToolTip(_("Scale factor for high-DPI monitors.\nAuto-detected when selecting a region."))
+        self.dpi_scale_spin.valueChanged.connect(self.on_dpi_scale_changed)
+        h_dpi.addWidget(self.dpi_scale_spin)
+        tab_ocr_layout.addLayout(h_dpi)
+
         tab_ocr_layout.addStretch()
         self.tabs.addTab(tab_ocr, _("OCR"))
         
@@ -287,6 +310,23 @@ class ControlPanel(QWidget):
         self.overlay.set_font_size(size)
         self.save_settings()
 
+    def on_dpi_scale_changed(self, percent_value):
+        self.worker.dpi_scale = percent_value / 100.0
+        self.dpi_locked = True
+        self.dpi_lock_label.setText("🔒")
+        self.dpi_lock_label.setToolTip(_("DPI locked (click to unlock)"))
+        self.save_settings()
+
+    def _toggle_dpi_lock(self, event):
+        self.dpi_locked = not self.dpi_locked
+        if self.dpi_locked:
+            self.dpi_lock_label.setText("🔒")
+            self.dpi_lock_label.setToolTip(_("DPI locked (click to unlock)"))
+        else:
+            self.dpi_lock_label.setText("🔓")
+            self.dpi_lock_label.setToolTip(_("DPI unlocked (click to lock)"))
+        return True
+
     def on_bg_opacity_changed(self, opacity):
         self.overlay.set_bg_opacity(opacity)
         self.save_settings()
@@ -304,7 +344,8 @@ class ControlPanel(QWidget):
             "bg_opacity": self.overlay.bg_opacity,
             "translator_api_keys": self.api_keys,
             "capture_rect": (self.worker.capture_rect.x(), self.worker.capture_rect.y(), 
-                            self.worker.capture_rect.width(), self.worker.capture_rect.height())
+                            self.worker.capture_rect.width(), self.worker.capture_rect.height()),
+            "dpi_scale": self.worker.dpi_scale
         }
         try:
             with open(SETTINGS_FILE, "wb") as f:
@@ -345,6 +386,13 @@ class ControlPanel(QWidget):
                 self.bg_opacity_spin.setValue(bg_opacity)
                 self.overlay.set_bg_opacity(bg_opacity)
                 
+                # Load DPI scale
+                dpi_scale = s.get("dpi_scale", DPI_SCALE_DEFAULT)
+                self.dpi_scale_spin.blockSignals(True)
+                self.dpi_scale_spin.setValue(dpi_scale * 100)
+                self.dpi_scale_spin.blockSignals(False)
+                self.worker.dpi_scale = dpi_scale
+
                 rect = s.get("capture_rect")
                 if rect:
                     self.worker.set_rect(QRect(rect[0], rect[1], rect[2], rect[3]))
@@ -438,6 +486,12 @@ class ControlPanel(QWidget):
         sniper = SniperFactory.get_engine()
         rect = sniper.get_region()
         if rect:
+            # Auto-detect DPI scale from the selected screen (only if not manually locked)
+            if not self.dpi_locked and hasattr(sniper, 'detected_dpi'):
+                self.dpi_scale_spin.blockSignals(True)
+                self.dpi_scale_spin.setValue(sniper.detected_dpi * 100)
+                self.dpi_scale_spin.blockSignals(False)
+                self.worker.dpi_scale = sniper.detected_dpi
 
             self.worker.set_rect(rect)
             self.overlay.label.setText(f"Region: {rect.x()},{rect.y()} {rect.width()}x{rect.height()}")

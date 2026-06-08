@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: UmayOCR 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-06-05 15:41+0300\n"
-"PO-Revision-Date: 2026-06-05 15:42+0300\n"
+"PO-Revision-Date: 2026-06-08 21:52+0300\n"
 "Last-Translator: Sedat Ayma\n"
 "Language: tr\n"
 "Language-Team: Turkish\n"
@@ -38,6 +38,22 @@ msgstr "OCR"
 msgid "Translation Engine:"
 msgstr "Çeviri Motoru:"
 
+#: src/ui/main_window.py:80
+msgid "DPI Scale:"
+msgstr "DPI Ölçeği:"
+
+#: src/ui/main_window.py:82
+msgid "DPI unlocked (click to lock)"
+msgstr "DPI kilidi açık (kilitlemek için tıkla)"
+
+#: src/ui/main_window.py:84
+msgid ""
+"Scale factor for high-DPI monitors.\n"
+"Auto-detected when selecting a region."
+msgstr ""
+"Yüksek DPI monitörler için ölçek faktörü.\n"
+"Bölge seçildiğinde otomatik algılanır."
+
 #: src/ui/main_window.py:87
 msgid "Source Language:"
 msgstr "Kaynak Dil:"
@@ -49,6 +65,14 @@ msgstr "Hedef Dil:"
 #: src/ui/main_window.py:105
 msgid "Translation"
 msgstr "Çeviri"
+
+#: src/ui/main_window.py:107
+msgid "API Key"
+msgstr "API Anahtarı"
+
+#: src/ui/main_window.py:109
+msgid "Enter API key..."
+msgstr "API anahtarını girin..."
 
 #: src/ui/main_window.py:113
 msgid "Font Family:"
@@ -69,6 +93,10 @@ msgstr "🎨 Arkaplan"
 #: src/ui/main_window.py:150
 msgid "Background Opacity:"
 msgstr "Arkaplan Saydamlığı:"
+
+#: src/ui/main_window.py:161
+msgid "Appearance"
+msgstr "Görünüm"
 
 #: src/ui/main_window.py:165
 msgid "Preset Name:"
@@ -118,10 +146,6 @@ msgstr "Ekran bölgesi seçin, OCR ile metni yakalayın,"
 msgid "and translate instantly with Google or DeepL."
 msgstr "ve Google veya DeepL ile anında çevirin."
 
-#: src/ui/main_window.py:161
-msgid "Appearance"
-msgstr "Görünüm"
-
 #: src/ui/main_window.py:204
 msgid "About"
 msgstr "Hakkında"
@@ -150,6 +174,14 @@ msgstr "■ Durdur"
 #, python-brace-format
 msgid "Region: X:{x} Y:{y}  {w}×{h}"
 msgstr "Bölge: X:{x} Y:{y}  {w}×{h}"
+
+#: src/ui/main_window.py:420
+msgid "This engine does not require an API key"
+msgstr "Bu motor API anahtarı gerektirmez"
+
+#: src/ui/main_window.py:436
+msgid "DPI locked (click to unlock)"
+msgstr "DPI kilitli (kilidi açmak için tıkla)"
 
 #: src/ui/main_window.py:501
 msgid "No Selection"
