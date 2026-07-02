@@ -9,6 +9,7 @@ from PIL import Image
 from PySide6.QtCore import QRect
 
 from src.config import FULL_SCREEN_TEMP_PATH
+from src.core.exceptions import PortalCanceledError
 from src.core.screenshot.base_screenshot import BaseScreenshot
 
 try:
@@ -88,6 +89,10 @@ class PortalScreenshot(BaseScreenshot):
                     self._started = True
 
                 return self._capture_current_frame(rect, output_path, dpi_scale)
+            except PortalCanceledError:
+                print("Portal selection was canceled by user.")
+                self.close()
+                raise
             except Exception as exc:
                 self._last_error = exc
                 print(f"Portal Capture Error ({type(exc).__name__}): {exc!r}")
@@ -203,6 +208,8 @@ class PortalScreenshot(BaseScreenshot):
             self._bus.remove_message_handler(response_handler)
 
         if response_code != 0:
+            if response_code == 1:
+                raise PortalCanceledError(f"Portal request was canceled or rejected: {member}, response={response_code}")
             raise RuntimeError(f"Portal request was canceled or rejected: {member}, response={response_code}")
 
         return results

@@ -4,6 +4,7 @@ from threading import Lock
 from PySide6.QtCore import QThread, Signal, QRect
 from src.core.ocr.ocr_manager import OCRManager
 from src.core.translation.translator_manager import TranslatorManager
+from src.core.exceptions import PortalCanceledError
 from src.core.screenshot import ScreenshotFactory, ImageProcessor
 from src.core.socket_publisher import TranslationPublisher
 from src.config import IMG_PATH, DPI_SCALE_DEFAULT
@@ -140,6 +141,13 @@ class OCRWorker(QThread):
                 # Emit performance data
                 self.performance_update.emit(time.perf_counter() - start_total)
 
+            except PortalCanceledError:
+                print("OCRWorker: Portal selection canceled, stopping.")
+                self.running = False
+                if hasattr(self.screenshot_engine, "close"):
+                    self.screenshot_engine.close()
+                self.publisher.stop()
+                self.running_status.emit(False)
             except Exception as e:
                 print(f"Loop Error: {e}")
             time.sleep(self.LOOP_SLEEP_SECONDS)

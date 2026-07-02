@@ -461,6 +461,9 @@ class ControlPanel(QWidget):
                 "background-color: #C62828; border-radius: 8px;"
             )
             self.system_status_label.setText("Stopped")
+            self.overlay.set_mode(False)
+            self.perf_bar.setValue(0)
+            self.perf_bar.setStyleSheet("")
 
     def update_rect_label(self):
         r = self.worker.capture_rect
