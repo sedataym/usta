@@ -27,6 +27,20 @@ _DESKTOP_COMPOSITORS = {
     "plasma": "kwin",
 }
 
+_DESKTOP_ENVIRONMENTS = {
+    "gnome": "gnome",
+    "kde": "kde",
+    "plasma": "kde",
+    "xfce": "xfce",
+    "lxqt": "lxqt",
+    "lxde": "lxde",
+    "mate": "mate",
+    "cinnamon": "cinnamon",
+    "budgie": "budgie",
+    "deepin": "deepin",
+    "pantheon": "pantheon",
+}
+
 
 def _normalize(value: Optional[str]) -> Optional[str]:
     if value is None:
@@ -34,6 +48,28 @@ def _normalize(value: Optional[str]) -> Optional[str]:
 
     value = value.strip()
     return value or None
+
+
+def _normalize_desktop_environment(value: Optional[str]) -> Optional[str]:
+    value = _normalize(value)
+    if value is None:
+        return None
+
+    normalized_value = value.lower()
+    desktop_names = [
+        _normalize(name) for part in normalized_value.split(":") for name in part.split(";")
+    ]
+    desktop_names = [name for name in desktop_names if name is not None]
+
+    for desktop_name, normalized_name in _DESKTOP_ENVIRONMENTS.items():
+        if desktop_name in desktop_names:
+            return normalized_name
+
+    for desktop_name, normalized_name in _DESKTOP_ENVIRONMENTS.items():
+        if desktop_name in normalized_value:
+            return normalized_name
+
+    return normalized_value
 
 
 def _get_first_env(*names: str) -> Optional[str]:
@@ -86,10 +122,12 @@ class SystemInfo:
 
     @staticmethod
     def get_desktop_environment() -> Optional[str]:
-        return _get_first_env(
-            "XDG_CURRENT_DESKTOP",
-            "DESKTOP_SESSION",
-            "GDMSESSION",
+        return _normalize_desktop_environment(
+            _get_first_env(
+                "XDG_CURRENT_DESKTOP",
+                "DESKTOP_SESSION",
+                "GDMSESSION",
+            )
         )
 
     @staticmethod
