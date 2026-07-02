@@ -1,6 +1,16 @@
 import os
 import tempfile
 
+from src.core.extension.system_info import (
+    get_compositor,
+    get_desktop_environment,
+    get_os,
+)
+
+OS = get_os()
+DESKTOP_ENVIRONMENT = get_desktop_environment()
+COMPOSITOR = get_compositor()
+
 OCR_ENGINES = ["Tesseract", "EasyOCR"]  # "PaddleOCR" (uncomment when paddlepaddle is available)
 TRANSLATION_ENGINES = ["Google", "DeepL"]
 SCREENSHOT_ENGINES = ["Portal", "Spectacle"]
