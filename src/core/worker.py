@@ -65,7 +65,10 @@ class OCRWorker(QThread):
 
     def stop(self):
         self.running = False
-        self.wait()
+        if self.isRunning():
+            self.wait()
+        if hasattr(self.screenshot_engine, "close"):
+            self.screenshot_engine.close()
         self.publisher.stop()
         self.running_status.emit(False)
 

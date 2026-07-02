@@ -536,6 +536,11 @@ class ControlPanel(QWidget):
         self.perf_bar.setValue(0)
         self.perf_bar.setStyleSheet("")
 
+    def closeEvent(self, event):
+        self.worker.stop()
+        self.overlay.close()
+        super().closeEvent(event)
+ 
     # ---------- API Key Helpers ----------
     def _apply_api_key_for_current_engine(self):
         """Update the API key textbox state and value for the current engine."""
