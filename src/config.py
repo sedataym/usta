@@ -1,6 +1,8 @@
 import os
 import tempfile
 
+APP_VERSION = "0.1.3"
+
 from src.core.platform.capability_resolver import (
     CONFIG_DIR,
     LANGUAGES,
@@ -31,7 +33,7 @@ PRESETS_FILE = os.path.join(CONFIG_DIR, "presets.pkl")
 # Temp Files
 TEMP_DIR = tempfile.gettempdir()
 DEV_SHM ="/dev/shm"
-IMG_PATH = os.path.join(DEV_SHM, "umayocr_snapshot.jpeg")
-FULL_SCREEN_TEMP_PATH = os.path.join(DEV_SHM, "umayocr_full_snap.jpeg")
-SOCKET_PATH = os.path.join(TEMP_DIR, "umayocr.sock")
+IMG_PATH = os.path.join(DEV_SHM, "usta_snapshot.jpeg")
+FULL_SCREEN_TEMP_PATH = os.path.join(DEV_SHM, "usta_full_snap.jpeg")
+SOCKET_PATH = os.path.join(TEMP_DIR, "usta.sock")
 SLURP_TEMP_PATH = os.path.join(TEMP_DIR, "slurp_final.txt")

@@ -1,10 +1,9 @@
-# UmayOCR (Instant OCR Translator HUD)
+# USTA (Universal Screen Translator Application)
+Real-time OCR translation for games, videos and desktop.
 
-UmayOCR is a high-performance, PySide6-based instant translation tool designed for Linux. It acts as a transparent HUD (Heads-Up Display) that provides **real-time subtitle translation** for games, videos, movies, and any non-selectable text on your screen.
+![USTA Screenshot](docs/Screenshot_20260531_215750.png)
 
-![UmayOCR Screenshot](docs/Screenshot_20260531_215750.png)
-
-By "sniping" a specific area of your screen, UmayOCR continuously monitors that region, extracts text using OCR (Optical Character Recognition), and overlays the translated text instantly, making it perfect for playing untranslated games or watching foreign media.
+By "sniping" a specific area of your screen, USTA continuously monitors that region, extracts text using OCR (Optical Character Recognition), and overlays the translated text instantly, making it perfect for playing untranslated games or watching foreign media.
 
 > **Note:** Current version is optimized for **KDE Plasma (Wayland)** using **xcb** mode. Future versions will expand compatibility.
 
@@ -20,20 +19,20 @@ By "sniping" a specific area of your screen, UmayOCR continuously monitors that 
 
 ## 📡 External Integration (IPC)
 
-UmayOCR features a built-in Unix Domain Socket server that broadcasts every translation in real-time. This allows you to "pipe" translations into other applications, scripts, or overlays effortlessly.
+USTA features a built-in Unix Domain Socket server that broadcasts every translation in real-time. This allows you to "pipe" translations into other applications, scripts, or overlays effortlessly.
 
-This feature is designed for high extensibility, making it easy to integrate UmayOCR into your existing workflow:
+This feature is designed for high extensibility, making it easy to integrate USTA into your existing workflow:
 *   **Live Streaming:** Send translations directly to OBS or other broadcast software as a text source.
 *   **Accessibility:** Integrate with text-to-speech (TTS) engines for real-time audio translation.
 *   **Data Logging:** Pipe the stream to a file to create a searchable history or transcripts of your sessions.
-*   **Custom Overlays:** Build your own UI or specialized subtitles that react to UmayOCR data.
+*   **Custom Overlays:** Build your own UI or specialized subtitles that react to USTA data.
 
-**Socket Path:** `/tmp/umayocr.sock`
+**Socket Path:** `/tmp/usta.sock`
 
 ### How to use:
 You can listen to the stream using standard tools like `netcat` (nc):
 ```bash
-nc -U /tmp/umayocr.sock
+nc -U /tmp/usta.sock
 ```
 
 ### JSON Output Format:
@@ -227,8 +226,8 @@ sudo apt install -y \
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/sedataym/umayocr.git
-   cd umayocr
+   git clone https://github.com/sedataym/usta.git
+   cd usta
    ```
 
 2. **Create and activate a virtual environment:**

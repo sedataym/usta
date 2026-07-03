@@ -1,1 +1,1 @@
-"""UmayOCR kullanıcı arayüzü bileşenleri."""
+"""USTA kullanıcı arayüzü bileşenleri."""

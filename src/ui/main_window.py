@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox, QPushButt
 from src.core.worker import OCRWorker
 from src.ui.result_popup import TransparentOverlay
 from src.core.sniper import SniperFactory
-from src.config import OCR_ENGINES, TRANSLATION_ENGINES, LANGUAGES, SETTINGS_FILE, PRESETS_FILE, DPI_SCALE_DEFAULT, SCREENSHOT_ENGINES
+from src.config import APP_VERSION, OCR_ENGINES, TRANSLATION_ENGINES, LANGUAGES, SETTINGS_FILE, PRESETS_FILE, DPI_SCALE_DEFAULT, SCREENSHOT_ENGINES
 from src.i18n import _
 
 class ControlPanel(QWidget):
@@ -15,10 +15,10 @@ class ControlPanel(QWidget):
         super().__init__()
         self.worker = OCRWorker()
         self.overlay = TransparentOverlay()
-        self.setWindowTitle("UmayOCR General Instant Translator")
+        self.setWindowTitle("USTA")
         
         # Set window icon
-        icon_path = os.path.join(os.path.dirname(__file__), "assets", "UmayOCR.png")
+        icon_path = os.path.join(os.path.dirname(__file__), "assets", "usta.png")
         self.setWindowIcon(QIcon(icon_path))
         
         # Disable maximization
@@ -238,10 +238,10 @@ class ControlPanel(QWidget):
         # --- About Tab (last) ---
         tab_about = QWidget()
         tab_about_layout = QVBoxLayout(tab_about)
-        about_title = QLabel(_("<b>UmayOCR General Instant Translator</b>"))
+        about_title = QLabel(_("<b>Universal Screen Translator Application</b>"))
         about_title.setStyleSheet("font-size: 14px;")
         tab_about_layout.addWidget(about_title)
-        tab_about_layout.addWidget(QLabel(_("Version: 0.1.0")))
+        tab_about_layout.addWidget(QLabel(_("Version: {version}").format(version=APP_VERSION)))
         tab_about_layout.addWidget(QLabel(""))
         tab_about_layout.addWidget(QLabel(_("A real-time OCR-based translation tool.")))
         tab_about_layout.addWidget(QLabel(_("Select a screen region, capture text via OCR,")))

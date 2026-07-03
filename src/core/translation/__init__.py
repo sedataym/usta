@@ -1,1 +1,1 @@
-"""Translation subsystem for UmayOCR."""
+"""Translation subsystem for USTA."""

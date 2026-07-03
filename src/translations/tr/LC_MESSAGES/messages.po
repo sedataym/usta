@@ -1,11 +1,11 @@
-# Turkish translations for UmayOCR.
+# Turkish translations for USTA.
 # Copyright (C) 2026 Sedat Ayma
-# This file is distributed under the same license as the UmayOCR project.
+# This file is distributed under the same license as the USTA project.
 # Sedat Ayma <sedataym@example.com>, 2026.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: UmayOCR 0.1.0\n"
+"Project-Id-Version: USTA 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-06-05 15:41+0300\n"
 "PO-Revision-Date: 2026-06-08 21:52+0300\n"
@@ -131,8 +131,8 @@ msgid "Save"
 msgstr "Kaydet"
 
 #: src/ui/main_window.py:195
-msgid "<b>UmayOCR General Instant Translator</b>"
-msgstr "<b>UmayOCR Genel Anlık Çevirmen</b>"
+msgid "<b>Universal Screen Translator Application</b>"
+msgstr "<b>Universal Screen Translator Application</b>"
 
 #: src/ui/main_window.py:198
 msgid "Version: 0.1.0"

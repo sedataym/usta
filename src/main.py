@@ -20,7 +20,7 @@ def main():
     app = QApplication(sys.argv)
     
     # Set application icon
-    icon_path = os.path.join(os.path.dirname(__file__), "ui", "assets", "UmayOCR.png")
+    icon_path = os.path.join(os.path.dirname(__file__), "ui", "assets", "usta.png")
     app.setWindowIcon(QIcon(icon_path))
     
     panel = ControlPanel()
