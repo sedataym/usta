@@ -40,4 +40,4 @@ OCR_LANG_MAPPING = {
 }
 
 PORTAL_ORIENTATION = -1
-CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config", "umayocr")
+CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config", "usta")

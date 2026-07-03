@@ -11,5 +11,5 @@ CONFIG_DIR = os.path.join(
         "APPDATA",
         os.path.join(os.path.expanduser("~"), "AppData", "Roaming"),
     ),
-    "UmayOCR",
+    "usta",
 )

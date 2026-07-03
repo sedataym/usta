@@ -1,1 +1,1 @@
-"""Pluggable OCR subsystem for UmayOCR."""
+"""Pluggable OCR subsystem for USTA."""
