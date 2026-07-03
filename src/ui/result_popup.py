@@ -7,7 +7,7 @@ class TransparentOverlay(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("UMAYOCR_TRANSLATION_OVERLAY")
+        self.setWindowTitle("USTA_TRANSLATION_OVERLAY")
         self.setWindowFlags(Qt.WindowStaysOnTopHint |
                             Qt.FramelessWindowHint |
                             Qt.WindowDoesNotAcceptFocus |
