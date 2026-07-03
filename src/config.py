@@ -1,46 +1,27 @@
 import os
 import tempfile
 
-OCR_ENGINES = ["Tesseract", "EasyOCR"]  # "PaddleOCR" (uncomment when paddlepaddle is available)
-TRANSLATION_ENGINES = ["Google", "DeepL"]
-SCREENSHOT_ENGINES = ["Portal", "Spectacle"]
-LANGUAGES = {
-    "Auto": "auto",
-    "English": "en",
-    "Turkish": "tr",
-    "German": "de",
-    "French": "fr",
-    "Japanese": "ja",
-    "Korean": "ko",
-    "Chinese": "zh",
-    "Russian": "ru",
-    "Arabic": "ar",
-    "Hebrew": "he",
-    "Vietnamese": "vi",
-    "Thai": "th",
-    "Spanish": "es"
-}
+from src.core.platform.capability_resolver import (
+    CONFIG_DIR,
+    LANGUAGES,
+    OCR_ENGINES,
+    OCR_LANG_MAPPING,
+    PORTAL_ORIENTATION,
+    SCREENSHOT_ENGINES,
+    TRANSLATION_ENGINES,
+)
+from src.core.platform.system_info import (
+    get_compositor,
+    get_desktop_environment,
+    get_os,
+)
 
-# Map UI language codes to Tesseract/EasyOCR language codes
-OCR_LANG_MAPPING = {
-    "en": {"tess": "eng", "easy": "en", "paddle": "en"},
-    "tr": {"tess": "tur", "easy": "tr", "paddle": "tr"},
-    "ru": {"tess": "rus", "easy": "ru", "paddle": "ru"},
-    "ar": {"tess": "ara", "easy": "ar", "paddle": "ar"},
-    "he": {"tess": "heb", "easy": "he", "paddle": "he"},
-    "de": {"tess": "deu", "easy": "de", "paddle": "de"},
-    "fr": {"tess": "fra", "easy": "fr", "paddle": "fr"},
-    "ja": {"tess": "jpn", "easy": "ja", "paddle": "ja"},
-    "ko": {"tess": "kor", "easy": "ko", "paddle": "ko"},
-    "zh": {"tess": "chi_sim", "easy": "ch_sim", "paddle": "ch"},
-    "vi": {"tess": "vie", "easy": "vi", "paddle": "vi"},
-    "th": {"tess": "tha", "easy": "th", "paddle": "th"},
-    "es": {"tess": "spa", "easy": "es", "paddle": "es"}
-}
+OS = get_os()
+DESKTOP_ENVIRONMENT = get_desktop_environment()
+COMPOSITOR = get_compositor()
 
 DPI_SCALE_DEFAULT = 1.0  # Auto-detected from QScreen.devicePixelRatio, user can override
 
-CONFIG_DIR = os.path.expanduser("~/.config/umayocr")
 if not os.path.exists(CONFIG_DIR):
     os.makedirs(CONFIG_DIR, exist_ok=True)
 
