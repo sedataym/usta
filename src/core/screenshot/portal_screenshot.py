@@ -8,7 +8,7 @@ from typing import Any
 from PIL import Image
 from PySide6.QtCore import QRect
 
-from src.config import FULL_SCREEN_TEMP_PATH
+from src.config import FULL_SCREEN_TEMP_PATH, PORTAL_ORIENTATION
 from src.core.exceptions import PortalCanceledError
 from src.core.screenshot.base_screenshot import BaseScreenshot
 
@@ -360,7 +360,7 @@ class PortalScreenshot(BaseScreenshot):
         video_format = structure.get_value("format")
         video_info = GstVideo.VideoInfo.new_from_caps(caps) if GstVideo is not None else None
         stride = abs(video_info.stride[0]) if video_info is not None else width * 3
-        orientation = 1 if video_info is not None and video_info.stride[0] < 0 else -1
+        orientation = PORTAL_ORIENTATION
 
         success, map_info = buffer.map(Gst.MapFlags.READ)
         if not success:
