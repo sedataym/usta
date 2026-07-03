@@ -1,13 +1,14 @@
 import os
 import tempfile
 
-from src.core.platform.capabilities import (
+from src.core.platform.capability_resolver import (
+    CONFIG_DIR,
     LANGUAGES,
     OCR_ENGINES,
     OCR_LANG_MAPPING,
+    PORTAL_ORIENTATION,
     SCREENSHOT_ENGINES,
     TRANSLATION_ENGINES,
-    PORTAL_ORIENTATION
 )
 from src.core.platform.system_info import (
     get_compositor,
@@ -21,7 +22,6 @@ COMPOSITOR = get_compositor()
 
 DPI_SCALE_DEFAULT = 1.0  # Auto-detected from QScreen.devicePixelRatio, user can override
 
-CONFIG_DIR = os.path.expanduser("~/.config/umayocr")
 if not os.path.exists(CONFIG_DIR):
     os.makedirs(CONFIG_DIR, exist_ok=True)
 

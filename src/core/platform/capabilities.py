@@ -1,3 +1,6 @@
+import os
+
+
 OCR_ENGINES = ["Tesseract", "EasyOCR"]  # "PaddleOCR" (uncomment when paddlepaddle is available)
 TRANSLATION_ENGINES = ["Google", "DeepL"]
 SCREENSHOT_ENGINES = ["Portal", "Spectacle"]
@@ -36,4 +39,5 @@ OCR_LANG_MAPPING = {
     "es": {"tess": "spa", "easy": "es", "paddle": "es"},
 }
 
-PORTAL_ORIENTATION = 1
+PORTAL_ORIENTATION = -1
+CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config", "umayocr")
