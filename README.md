@@ -1,9 +1,7 @@
 # USTA (Universal Screen Translator Application)
 Real-time OCR translation for games, videos and desktop.
 
-<video src="https://raw.githubusercontent.com/sedataym/usta/main/docs/usta.webm" autoplay muted loop playsinline controls width="100%">
-  Your browser does not support the video tag. You can view the demo video at [docs/usta.webm](docs/usta.webm).
-</video>
+[![USTA demo cover](src/ui/assets/usta_cover.png)](https://www.youtube.com/watch?v=jGHMmDznum8)
 
 By "sniping" a specific area of your screen, USTA continuously monitors that region, extracts text using OCR (Optical Character Recognition), and overlays the translated text instantly, making it perfect for playing untranslated games or watching foreign media.
 
