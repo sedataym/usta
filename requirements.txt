@@ -1,9 +1,9 @@
 PySide6>=6.5.0
 pytesseract>=0.3.10
-easyocr>=1.7.0
 rapidocr-onnxruntime>=1.2.0,<1.3.0
 onnxruntime>=1.17.0
-paddleocr>=3.6.0
+easyocr>=1.7.0
+#paddleocr>=3.6.0
 # paddlepaddle  (PaddleOCR's native inference backend — uncomment when available for your Python version)
 #   pip install paddlepaddle  (requires Python ≤ 3.12 as of June 2026)
 deepl>=1.0.0

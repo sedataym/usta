@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=USTA
+GenericName=Screen Translator
+Comment=Real-time OCR translation HUD for games, videos, and desktop
+Exec=usta
+Icon=usta
+Terminal=false
+Categories=Utility;OCR;Translation;
+StartupNotify=true

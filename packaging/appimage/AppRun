@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+APPDIR="$(dirname "$(readlink -f "${0}")")"
+
+export PATH="${APPDIR}/usr/bin:${PATH}"
+export LD_LIBRARY_PATH="${APPDIR}/usr/lib:${APPDIR}/usr/lib64:${LD_LIBRARY_PATH:-}"
+export PYTHONPATH="${APPDIR}/usr/app:${APPDIR}/usr/app/site-packages:${PYTHONPATH:-}"
+
+# USTA currently forces xcb in src/main.py. Keep the wrapper compatible with that
+# behavior while still allowing users to override it explicitly if needed.
+export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-xcb}"
+
+PYTHON_BIN="${APPDIR}/usr/bin/python3"
+
+if [[ ! -x "${PYTHON_BIN}" ]]; then
+  echo "USTA AppImage error: bundled Python was not found at ${PYTHON_BIN}" >&2
+  exit 127
+fi
+
+exec "${PYTHON_BIN}" -m src.main "$@"

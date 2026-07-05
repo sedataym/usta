@@ -169,6 +169,7 @@ For GNOME:
 ```bash
 sudo apt update
 sudo apt install -y \
+  libfuse2 \
   python3-gi \
   python3-gi-cairo \
   gir1.2-gstreamer-1.0 \
@@ -197,6 +198,7 @@ For KDE Plasma:
 ```bash
 sudo apt update
 sudo apt install -y \
+  libfuse2 \
   python3-gi \
   python3-gi-cairo \
   gir1.2-gstreamer-1.0 \
@@ -219,6 +221,32 @@ sudo apt install -y \
   tesseract-ocr-chi-sim \
   tesseract-ocr-chi-tra
 ```
+
+> **AppImage note:** Ubuntu GNOME requires the FUSE 2 compatibility package for
+> AppImage files. Install `libfuse2` to fix `dlopen(): error loading libfuse.so.2`.
+> On some newer Ubuntu/Debian releases this package may be named `libfuse2t64`.
+
+---
+
+## 📦 AppImage Usage
+
+After downloading or building the AppImage, make it executable and run it (replace `{version}` with the current USTA version in the downloaded filename):
+
+```bash
+chmod +x USTA-{version}-x86_64.AppImage
+./USTA-{version}-x86_64.AppImage
+```
+
+On Ubuntu/Debian, AppImage files require FUSE 2 support. If running the AppImage
+prints `dlopen(): error loading libfuse.so.2`, install the compatibility package:
+
+```bash
+sudo apt update
+sudo apt install -y libfuse2
+```
+
+If your distribution only provides the renamed package, install `libfuse2t64`
+instead.
 
 ---
 
