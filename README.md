@@ -1,11 +1,13 @@
 # USTA (Universal Screen Translator Application)
 Real-time OCR translation for games, videos and desktop.
 
-![USTA Screenshot](docs/Screenshot_20260531_215750.png)
+<video src="docs/usta.webm" autoplay muted loop playsinline controls width="100%">
+  Your browser does not support the video tag. You can view the demo video at [docs/usta.webm](docs/usta.webm).
+</video>
 
 By "sniping" a specific area of your screen, USTA continuously monitors that region, extracts text using OCR (Optical Character Recognition), and overlays the translated text instantly, making it perfect for playing untranslated games or watching foreign media.
 
-> **Note:** Current version is optimized for **KDE Plasma (Wayland)** using **xcb** mode. Future versions will expand compatibility.
+> **Note:** Current version is optimized for **KDE Plasma and GNOME (Wayland)** using **xcb** mode. Future versions will expand compatibility.
 
 ## 🚀 Key Features
 
@@ -290,3 +292,17 @@ instead.
 * **OCR:** pytesseract, easyocr
 * **Translation:** deep-translator
 * **Desktop Environments:** KDE Plasma (optimized) / GNOME
+
+---
+
+## ⚠️ Legal Disclaimer and User Responsibility
+
+USTA is provided as-is, without any express or implied warranties, guarantees, or assurances of fitness for a particular purpose. By installing, running, modifying, or distributing this application, you acknowledge that you do so entirely at your own risk.
+
+The user is solely responsible for any and all consequences, damages, losses, liabilities, or legal issues that may arise from the use or misuse of USTA. This includes, but is not limited to, damage to the computer or operating system on which the application is run, loss or corruption of data, performance degradation, privacy or security incidents, unintended screen capture, incorrect OCR output, inaccurate translations, interruption of other applications, or conflicts with system components, drivers, desktop environments, capture portals, OCR engines, translation services, and third-party dependencies.
+
+USTA may process visible screen content, interact with local desktop capture mechanisms, use OCR engines, communicate with translation providers, and expose translation data through local IPC features. Users are responsible for ensuring that their use of the application complies with all applicable laws, regulations, software licenses, platform terms of service, privacy obligations, copyright rules, workplace policies, game or media service terms, and any restrictions related to capturing, processing, translating, storing, broadcasting, or sharing on-screen content.
+
+The developers, maintainers, contributors, and distributors of USTA shall not be held liable for any direct, indirect, incidental, consequential, special, exemplary, or punitive damages resulting from the application, including damages caused by user configuration, third-party services, external integrations, dependency behavior, system incompatibilities, or any other circumstance connected to the use of the software.
+
+If you do not accept full responsibility for the risks described above, you should not install, run, or use USTA.
