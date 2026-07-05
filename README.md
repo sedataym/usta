@@ -1,7 +1,7 @@
 # USTA (Universal Screen Translator Application)
 Real-time OCR translation for games, videos and desktop.
 
-<video src="docs/usta.webm" autoplay muted loop playsinline controls width="100%">
+<video src="https://raw.githubusercontent.com/sedataym/usta/main/docs/usta.webm" autoplay muted loop playsinline controls width="100%">
   Your browser does not support the video tag. You can view the demo video at [docs/usta.webm](docs/usta.webm).
 </video>
 
