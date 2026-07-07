@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from src.config import SETTINGS_TOPMOST_HOTKEY
 from src.core.shortcut import GlobalHotkey
 from src.i18n import _
@@ -47,27 +47,6 @@ class TransparentOverlay(QWidget):
         )
         self.settings_topmost_hotkey_pressed.connect(self._handle_settings_topmost_hotkey_pressed)
         self._settings_topmost_hotkey.start()
-
-        self.settings_button = QPushButton("⚙", self)
-        self.settings_button.setFixedSize(28, 28)
-        self.settings_button.setToolTip(_("Show settings on top"))
-        self.settings_button.setCursor(Qt.PointingHandCursor)
-        self.settings_button.setStyleSheet(
-            "QPushButton {"
-            "background: rgba(32, 32, 32, 120);"
-            "color: white;"
-            "border: none;"
-            "border-radius: 14px;"
-            "font-size: 16px;"
-            "font-weight: bold;"
-            "padding: 0px;"
-            "}"
-            "QPushButton:hover {"
-            "background: rgba(64, 64, 64, 170);"
-            "}"
-        )
-        self.settings_button.clicked.connect(self._toggle_main_window_topmost)
-        self.settings_button.hide()
         
         self.hide_timer = QTimer(self)
         self.hide_timer.setSingleShot(True)
@@ -92,7 +71,7 @@ class TransparentOverlay(QWidget):
             return
 
         self._settings_topmost_hotkey_armed = False
-        self.settings_button.click()
+        self._toggle_main_window_topmost()
         QTimer.singleShot(200, self._rearm_settings_topmost_hotkey)
 
     def _rearm_settings_topmost_hotkey(self):
@@ -144,22 +123,7 @@ class TransparentOverlay(QWidget):
 
     def _toggle_main_window_topmost(self):
         self._main_window_topmost_requested = not self._main_window_topmost_requested
-        self.settings_button.setToolTip(
-            _("Disable settings always on top")
-            if self._main_window_topmost_requested
-            else _("Show settings on top")
-        )
         self.main_window_topmost_requested.emit(self._main_window_topmost_requested)
-
-    def enterEvent(self, event):
-        self.settings_button.move(8, 8)
-        self.settings_button.show()
-        self.settings_button.raise_()
-        super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        self.settings_button.hide()
-        super().leaveEvent(event)
 
     def closeEvent(self, event):
         self._settings_topmost_hotkey.stop()
