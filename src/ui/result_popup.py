@@ -1,9 +1,12 @@
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
+from src.config import SETTINGS_TOPMOST_HOTKEY
+from src.core.shortcut import GlobalHotkey
 from src.i18n import _
 
 class TransparentOverlay(QWidget):
     main_window_topmost_requested = Signal(bool)
+    settings_topmost_hotkey_pressed = Signal()
 
     def __init__(self):
         super().__init__()
@@ -37,6 +40,14 @@ class TransparentOverlay(QWidget):
         self.layout.addWidget(self.label)
 
         self._main_window_topmost_requested = False
+        self._settings_topmost_hotkey_armed = True
+        self._settings_topmost_hotkey = GlobalHotkey(
+            SETTINGS_TOPMOST_HOTKEY,
+            self._emit_settings_topmost_hotkey_pressed,
+        )
+        self.settings_topmost_hotkey_pressed.connect(self._handle_settings_topmost_hotkey_pressed)
+        self._settings_topmost_hotkey.start()
+
         self.settings_button = QPushButton("⚙", self)
         self.settings_button.setFixedSize(28, 28)
         self.settings_button.setToolTip(_("Show settings on top"))
@@ -71,6 +82,21 @@ class TransparentOverlay(QWidget):
         self._drag_mode = None  # "move" or "resize"
         self._drag_start_pos = None
         self._drag_start_geometry = None
+
+    def _emit_settings_topmost_hotkey_pressed(self):
+        self.settings_topmost_hotkey_pressed.emit()
+
+    @Slot()
+    def _handle_settings_topmost_hotkey_pressed(self):
+        if not self._settings_topmost_hotkey_armed:
+            return
+
+        self._settings_topmost_hotkey_armed = False
+        self.settings_button.click()
+        QTimer.singleShot(200, self._rearm_settings_topmost_hotkey)
+
+    def _rearm_settings_topmost_hotkey(self):
+        self._settings_topmost_hotkey_armed = True
 
     def update_style(self):
         r = int(self.bg_color[1:3], 16)
@@ -134,6 +160,10 @@ class TransparentOverlay(QWidget):
     def leaveEvent(self, event):
         self.settings_button.hide()
         super().leaveEvent(event)
+
+    def closeEvent(self, event):
+        self._settings_topmost_hotkey.stop()
+        super().closeEvent(event)
 
     def set_mode(self, scan):
         self.setAttribute(Qt.WA_TransparentForMouseEvents, False)

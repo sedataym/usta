@@ -5,6 +5,7 @@ from src.core.platform.capability_resolver import (
     OCR_LANG_MAPPING,
     PORTAL_ORIENTATION,
     SCREENSHOT_ENGINES,
+    SETTINGS_TOPMOST_HOTKEY,
     TRANSLATION_ENGINES,
     resolve_capabilities,
 )
@@ -22,6 +23,7 @@ __all__ = [
     "OCR_LANG_MAPPING",
     "PORTAL_ORIENTATION",
     "SCREENSHOT_ENGINES",
+    "SETTINGS_TOPMOST_HOTKEY",
     "SystemInfo",
     "TRANSLATION_ENGINES",
     "get_compositor",
