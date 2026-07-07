@@ -1,8 +1,78 @@
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from src.config import SETTINGS_TOPMOST_HOTKEY
 from src.core.shortcut import GlobalHotkey
 from src.i18n import _
+
+class CornerLabel(QLabel):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.corner_line_length = 24
+        self.corner_line_thickness = 2
+        self._show_corner_lines = False
+
+    def set_corner_lines_visible(self, visible):
+        if self._show_corner_lines == visible:
+            return
+        self._show_corner_lines = visible
+        self.update()
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if not self._show_corner_lines:
+            return
+
+        parent = self.parent()
+        color = QColor(parent.font_color if parent is not None else "white")
+        if not color.isValid():
+            color = QColor("white")
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setPen(QPen(color, self.corner_line_thickness, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+
+        offset = self.corner_line_thickness / 2
+        left = offset
+        top = offset
+        right = self.width() - 1 - offset
+        bottom = self.height() - 1 - offset
+        length = self.corner_line_length
+        radius = min(8, length / 3)
+
+        paths = []
+
+        top_left = QPainterPath()
+        top_left.moveTo(left + length, top)
+        top_left.lineTo(left + radius, top)
+        top_left.quadTo(left, top, left, top + radius)
+        top_left.lineTo(left, top + length)
+        paths.append(top_left)
+
+        top_right = QPainterPath()
+        top_right.moveTo(right - length, top)
+        top_right.lineTo(right - radius, top)
+        top_right.quadTo(right, top, right, top + radius)
+        top_right.lineTo(right, top + length)
+        paths.append(top_right)
+
+        bottom_left = QPainterPath()
+        bottom_left.moveTo(left, bottom - length)
+        bottom_left.lineTo(left, bottom - radius)
+        bottom_left.quadTo(left, bottom, left + radius, bottom)
+        bottom_left.lineTo(left + length, bottom)
+        paths.append(bottom_left)
+
+        bottom_right = QPainterPath()
+        bottom_right.moveTo(right - length, bottom)
+        bottom_right.lineTo(right - radius, bottom)
+        bottom_right.quadTo(right, bottom, right, bottom - radius)
+        bottom_right.lineTo(right, bottom - length)
+        paths.append(bottom_right)
+
+        for path in paths:
+            painter.drawPath(path)
+
 
 class TransparentOverlay(QWidget):
     main_window_topmost_requested = Signal(bool)
@@ -31,8 +101,10 @@ class TransparentOverlay(QWidget):
         self.font_color = "white"
         self.bg_color = "#000000"
         self.bg_opacity = 180
+        self._show_corner_lines = False
         
-        self.label = QLabel("Translation will appear here.")
+        self.label = CornerLabel(self)
+        self.label.setText("Translation will appear here.")
         self.label.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignCenter)
@@ -89,6 +161,17 @@ class TransparentOverlay(QWidget):
             f"background: rgba({r},{g},{b},{self.bg_opacity}); border-radius: 6px; padding: 10px;"
         )
         self.label.setStyleSheet(style)
+        self.label.update()
+
+    def enterEvent(self, event):
+        self._show_corner_lines = True
+        self.label.set_corner_lines_visible(True)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self._show_corner_lines = False
+        self.label.set_corner_lines_visible(False)
+        super().leaveEvent(event)
 
     @Slot(str)
     def set_font_family(self, family):

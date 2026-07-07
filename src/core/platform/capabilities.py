@@ -40,5 +40,5 @@ OCR_LANG_MAPPING = {
 }
 
 PORTAL_ORIENTATION = -1
-SETTINGS_TOPMOST_HOTKEY = "<shift>+<alt>+s"
+SETTINGS_TOPMOST_HOTKEY = "<shift>+<alt>+m"
 CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config", "usta")
