@@ -1,9 +1,82 @@
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from src.config import SETTINGS_TOPMOST_HOTKEY
+from src.core.shortcut import GlobalHotkey
 from src.i18n import _
+
+class CornerLabel(QLabel):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.corner_line_length = 24
+        self.corner_line_thickness = 2
+        self._show_corner_lines = False
+
+    def set_corner_lines_visible(self, visible):
+        if self._show_corner_lines == visible:
+            return
+        self._show_corner_lines = visible
+        self.update()
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if not self._show_corner_lines:
+            return
+
+        parent = self.parent()
+        color = QColor(parent.font_color if parent is not None else "white")
+        if not color.isValid():
+            color = QColor("white")
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setPen(QPen(color, self.corner_line_thickness, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+
+        offset = self.corner_line_thickness / 2
+        left = offset
+        top = offset
+        right = self.width() - 1 - offset
+        bottom = self.height() - 1 - offset
+        length = self.corner_line_length
+        radius = min(8, length / 3)
+
+        paths = []
+
+        top_left = QPainterPath()
+        top_left.moveTo(left + length, top)
+        top_left.lineTo(left + radius, top)
+        top_left.quadTo(left, top, left, top + radius)
+        top_left.lineTo(left, top + length)
+        paths.append(top_left)
+
+        top_right = QPainterPath()
+        top_right.moveTo(right - length, top)
+        top_right.lineTo(right - radius, top)
+        top_right.quadTo(right, top, right, top + radius)
+        top_right.lineTo(right, top + length)
+        paths.append(top_right)
+
+        bottom_left = QPainterPath()
+        bottom_left.moveTo(left, bottom - length)
+        bottom_left.lineTo(left, bottom - radius)
+        bottom_left.quadTo(left, bottom, left + radius, bottom)
+        bottom_left.lineTo(left + length, bottom)
+        paths.append(bottom_left)
+
+        bottom_right = QPainterPath()
+        bottom_right.moveTo(right - length, bottom)
+        bottom_right.lineTo(right - radius, bottom)
+        bottom_right.quadTo(right, bottom, right, bottom - radius)
+        bottom_right.lineTo(right, bottom - length)
+        paths.append(bottom_right)
+
+        for path in paths:
+            painter.drawPath(path)
+
 
 class TransparentOverlay(QWidget):
     main_window_topmost_requested = Signal(bool)
+    settings_topmost_hotkey_pressed = Signal()
 
     def __init__(self):
         super().__init__()
@@ -28,8 +101,10 @@ class TransparentOverlay(QWidget):
         self.font_color = "white"
         self.bg_color = "#000000"
         self.bg_opacity = 180
+        self._show_corner_lines = False
         
-        self.label = QLabel("Translation will appear here.")
+        self.label = CornerLabel(self)
+        self.label.setText("Translation will appear here.")
         self.label.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignCenter)
@@ -37,26 +112,13 @@ class TransparentOverlay(QWidget):
         self.layout.addWidget(self.label)
 
         self._main_window_topmost_requested = False
-        self.settings_button = QPushButton("⚙", self)
-        self.settings_button.setFixedSize(28, 28)
-        self.settings_button.setToolTip(_("Show settings on top"))
-        self.settings_button.setCursor(Qt.PointingHandCursor)
-        self.settings_button.setStyleSheet(
-            "QPushButton {"
-            "background: rgba(32, 32, 32, 120);"
-            "color: white;"
-            "border: none;"
-            "border-radius: 14px;"
-            "font-size: 16px;"
-            "font-weight: bold;"
-            "padding: 0px;"
-            "}"
-            "QPushButton:hover {"
-            "background: rgba(64, 64, 64, 170);"
-            "}"
+        self._settings_topmost_hotkey_armed = True
+        self._settings_topmost_hotkey = GlobalHotkey(
+            SETTINGS_TOPMOST_HOTKEY,
+            self._emit_settings_topmost_hotkey_pressed,
         )
-        self.settings_button.clicked.connect(self._toggle_main_window_topmost)
-        self.settings_button.hide()
+        self.settings_topmost_hotkey_pressed.connect(self._handle_settings_topmost_hotkey_pressed)
+        self._settings_topmost_hotkey.start()
         
         self.hide_timer = QTimer(self)
         self.hide_timer.setSingleShot(True)
@@ -72,6 +134,21 @@ class TransparentOverlay(QWidget):
         self._drag_start_pos = None
         self._drag_start_geometry = None
 
+    def _emit_settings_topmost_hotkey_pressed(self):
+        self.settings_topmost_hotkey_pressed.emit()
+
+    @Slot()
+    def _handle_settings_topmost_hotkey_pressed(self):
+        if not self._settings_topmost_hotkey_armed:
+            return
+
+        self._settings_topmost_hotkey_armed = False
+        self._toggle_main_window_topmost()
+        QTimer.singleShot(200, self._rearm_settings_topmost_hotkey)
+
+    def _rearm_settings_topmost_hotkey(self):
+        self._settings_topmost_hotkey_armed = True
+
     def update_style(self):
         r = int(self.bg_color[1:3], 16)
         g = int(self.bg_color[3:5], 16)
@@ -84,6 +161,17 @@ class TransparentOverlay(QWidget):
             f"background: rgba({r},{g},{b},{self.bg_opacity}); border-radius: 6px; padding: 10px;"
         )
         self.label.setStyleSheet(style)
+        self.label.update()
+
+    def enterEvent(self, event):
+        self._show_corner_lines = True
+        self.label.set_corner_lines_visible(True)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self._show_corner_lines = False
+        self.label.set_corner_lines_visible(False)
+        super().leaveEvent(event)
 
     @Slot(str)
     def set_font_family(self, family):
@@ -118,22 +206,11 @@ class TransparentOverlay(QWidget):
 
     def _toggle_main_window_topmost(self):
         self._main_window_topmost_requested = not self._main_window_topmost_requested
-        self.settings_button.setToolTip(
-            _("Disable settings always on top")
-            if self._main_window_topmost_requested
-            else _("Show settings on top")
-        )
         self.main_window_topmost_requested.emit(self._main_window_topmost_requested)
 
-    def enterEvent(self, event):
-        self.settings_button.move(8, 8)
-        self.settings_button.show()
-        self.settings_button.raise_()
-        super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        self.settings_button.hide()
-        super().leaveEvent(event)
+    def closeEvent(self, event):
+        self._settings_topmost_hotkey.stop()
+        super().closeEvent(event)
 
     def set_mode(self, scan):
         self.setAttribute(Qt.WA_TransparentForMouseEvents, False)
@@ -173,7 +250,7 @@ class TransparentOverlay(QWidget):
                       self._drag_start_geometry.y() + delta.y())
         elif self._drag_mode == "resize":
             new_w = max(200, self._drag_start_geometry.width() + delta.x())
-            new_h = max(100, self._drag_start_geometry.height() + delta.y())
+            new_h = max(60, self._drag_start_geometry.height() + delta.y())
             self.resize(new_w, new_h)
         event.accept()
 
