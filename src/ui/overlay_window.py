@@ -250,7 +250,7 @@ class TransparentOverlay(QWidget):
                       self._drag_start_geometry.y() + delta.y())
         elif self._drag_mode == "resize":
             new_w = max(200, self._drag_start_geometry.width() + delta.x())
-            new_h = max(100, self._drag_start_geometry.height() + delta.y())
+            new_h = max(60, self._drag_start_geometry.height() + delta.y())
             self.resize(new_w, new_h)
         event.accept()
 

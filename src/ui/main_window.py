@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt, QRect, QPoint, QTimer, Signal, Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox, QPushButton, QApplication, QFontComboBox, QSpinBox, QDoubleSpinBox, QHBoxLayout, QColorDialog, QProgressBar, QTabWidget, QListWidget, QLineEdit, QMessageBox
 from src.core.worker import OCRWorker
-from src.ui.result_popup import TransparentOverlay
+from src.ui.overlay_window import TransparentOverlay
 from src.core.sniper import SniperFactory
 from src.config import APP_VERSION, OCR_ENGINES, TRANSLATION_ENGINES, LANGUAGES, SETTINGS_FILE, PRESETS_FILE, DPI_SCALE_DEFAULT, SCREENSHOT_ENGINES, TEMPORARY_REGION_HOTKEY
 from src.core.shortcut import GlobalHotkey
