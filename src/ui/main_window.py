@@ -1,20 +1,37 @@
 import time
 import pickle
 import os
-from PySide6.QtCore import Qt, QRect, QPoint, QTimer, Slot
+from PySide6.QtCore import Qt, QRect, QPoint, QTimer, Signal, Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox, QPushButton, QApplication, QFontComboBox, QSpinBox, QDoubleSpinBox, QHBoxLayout, QColorDialog, QProgressBar, QTabWidget, QListWidget, QLineEdit, QMessageBox
 from src.core.worker import OCRWorker
 from src.ui.result_popup import TransparentOverlay
 from src.core.sniper import SniperFactory
-from src.config import APP_VERSION, OCR_ENGINES, TRANSLATION_ENGINES, LANGUAGES, SETTINGS_FILE, PRESETS_FILE, DPI_SCALE_DEFAULT, SCREENSHOT_ENGINES
+from src.config import APP_VERSION, OCR_ENGINES, TRANSLATION_ENGINES, LANGUAGES, SETTINGS_FILE, PRESETS_FILE, DPI_SCALE_DEFAULT, SCREENSHOT_ENGINES, TEMPORARY_REGION_HOTKEY
+from src.core.shortcut import GlobalHotkey
 from src.i18n import _
 
 class ControlPanel(QWidget):
+    temporary_region_hotkey_pressed = Signal()
+
     def __init__(self):
         super().__init__()
         self.worker = OCRWorker()
         self.overlay = TransparentOverlay()
+        self._main_capture_rect = QRect(self.worker.capture_rect)
+        self._main_dpi_scale = self.worker.dpi_scale
+        self._temporary_region_active = False
+        self._temporary_region_selecting = False
+        self._temporary_region_restore_timer = QTimer(self)
+        self._temporary_region_restore_timer.setSingleShot(True)
+        self._temporary_region_restore_timer.timeout.connect(self._restore_main_region)
+        self._temporary_region_hotkey_armed = True
+        self._temporary_region_hotkey = GlobalHotkey(
+            TEMPORARY_REGION_HOTKEY,
+            self._emit_temporary_region_hotkey_pressed,
+        )
+        self.temporary_region_hotkey_pressed.connect(self._handle_temporary_region_hotkey_pressed)
+        self._temporary_region_hotkey.start()
         self.setWindowTitle("USTA")
         
         # Set window icon
@@ -426,10 +443,12 @@ class ControlPanel(QWidget):
                 self.dpi_scale_spin.setValue(dpi_scale * 100)
                 self.dpi_scale_spin.blockSignals(False)
                 self.worker.dpi_scale = dpi_scale
+                self._main_dpi_scale = self.worker.dpi_scale
 
                 rect = s.get("capture_rect")
                 if rect:
                     self.worker.set_rect(QRect(rect[0], rect[1], rect[2], rect[3]))
+                    self._main_capture_rect = QRect(self.worker.capture_rect)
                     self.update_rect_label()
                 
                 # Load screenshot engine
@@ -522,27 +541,90 @@ class ControlPanel(QWidget):
             self.bg_color_sample.setStyleSheet(f"background-color: {color_name}; border: 1px solid gray; border-radius: 4px;")
             self.save_settings()
 
-    def select_region(self):
-        #self.hide()
+    def _emit_temporary_region_hotkey_pressed(self):
+        self.temporary_region_hotkey_pressed.emit()
+
+    @Slot()
+    def _handle_temporary_region_hotkey_pressed(self):
+        if not self.worker.isRunning() or self._temporary_region_selecting or not self._temporary_region_hotkey_armed:
+            return
+
+        self._temporary_region_hotkey_armed = False
+        QTimer.singleShot(200, self._rearm_temporary_region_hotkey)
+        self.select_temporary_region()
+
+    def _rearm_temporary_region_hotkey(self):
+        self._temporary_region_hotkey_armed = True
+
+    def _get_selected_region_and_dpi(self):
         QApplication.processEvents()
         time.sleep(0.2)
 
         sniper = SniperFactory.get_engine()
         rect = sniper.get_region()
-        if rect:
-            # Auto-detect DPI scale from the selected screen (only if not manually locked)
-            if not self.dpi_locked and hasattr(sniper, 'detected_dpi'):
-                self.dpi_scale_spin.blockSignals(True)
-                self.dpi_scale_spin.setValue(sniper.detected_dpi * 100)
-                self.dpi_scale_spin.blockSignals(False)
-                self.worker.dpi_scale = sniper.detected_dpi
+        if not rect:
+            return None, None
 
-            self.worker.set_rect(rect)
-            self.overlay.label.setText(f"Region: {rect.x()},{rect.y()} {rect.width()}x{rect.height()}")
-            self.update_rect_label()
-            self.save_settings()
-        
-        #self.show()
+        detected_dpi = getattr(sniper, "detected_dpi", None)
+        return rect, detected_dpi
+
+    def _apply_main_region(self, rect, dpi_scale=None):
+        if not self.dpi_locked and dpi_scale is not None:
+            self.dpi_scale_spin.blockSignals(True)
+            self.dpi_scale_spin.setValue(dpi_scale * 100)
+            self.dpi_scale_spin.blockSignals(False)
+            self.worker.dpi_scale = dpi_scale
+
+        self.worker.set_rect(rect)
+        self._main_capture_rect = QRect(self.worker.capture_rect)
+        self._main_dpi_scale = self.worker.dpi_scale
+        self.overlay.label.setText(f"Region: {rect.x()},{rect.y()} {rect.width()}x{rect.height()}")
+        self.update_rect_label()
+        self.save_settings()
+
+    def _apply_temporary_region(self, rect, dpi_scale=None):
+        if not self._temporary_region_active:
+            self._main_capture_rect = QRect(self.worker.capture_rect)
+            self._main_dpi_scale = self.worker.dpi_scale
+
+        if not self.dpi_locked and dpi_scale is not None:
+            self.worker.dpi_scale = dpi_scale
+
+        self.worker.set_rect(rect)
+        self._temporary_region_active = True
+        self._temporary_region_restore_timer.start(10_000)
+        self.overlay.label.setText(f"Temporary Region: {rect.x()},{rect.y()} {rect.width()}x{rect.height()} (10s)")
+        self.update_rect_label()
+
+    def _restore_main_region(self):
+        if not self._temporary_region_active:
+            return
+
+        self.worker.dpi_scale = self._main_dpi_scale
+        self.worker.set_rect(self._main_capture_rect)
+        self._temporary_region_active = False
+        self.overlay.label.setText(
+            f"Region: {self._main_capture_rect.x()},{self._main_capture_rect.y()} "
+            f"{self._main_capture_rect.width()}x{self._main_capture_rect.height()}"
+        )
+        self.update_rect_label()
+
+    def select_temporary_region(self):
+        self._temporary_region_selecting = True
+        try:
+            rect, detected_dpi = self._get_selected_region_and_dpi()
+        finally:
+            self._temporary_region_selecting = False
+
+        if rect:
+            self._apply_temporary_region(rect, detected_dpi)
+
+    def select_region(self):
+        rect, detected_dpi = self._get_selected_region_and_dpi()
+        if rect:
+            self._temporary_region_restore_timer.stop()
+            self._temporary_region_active = False
+            self._apply_main_region(rect, detected_dpi)
 
     def start(self): 
         self.overlay.set_mode(True)
@@ -556,6 +638,8 @@ class ControlPanel(QWidget):
         self.perf_bar.setStyleSheet("")
 
     def closeEvent(self, event):
+        self._temporary_region_restore_timer.stop()
+        self._temporary_region_hotkey.stop()
         self.worker.stop()
         self.overlay.close()
         super().closeEvent(event)

@@ -6,6 +6,7 @@ from src.core.platform.capability_resolver import (
     PORTAL_ORIENTATION,
     SCREENSHOT_ENGINES,
     SETTINGS_TOPMOST_HOTKEY,
+    TEMPORARY_REGION_HOTKEY,
     TRANSLATION_ENGINES,
     resolve_capabilities,
 )
@@ -24,6 +25,7 @@ __all__ = [
     "PORTAL_ORIENTATION",
     "SCREENSHOT_ENGINES",
     "SETTINGS_TOPMOST_HOTKEY",
+    "TEMPORARY_REGION_HOTKEY",
     "SystemInfo",
     "TRANSLATION_ENGINES",
     "get_compositor",
