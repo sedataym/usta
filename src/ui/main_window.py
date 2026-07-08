@@ -3,13 +3,21 @@ import pickle
 import os
 from PySide6.QtCore import Qt, QRect, QPoint, QTimer, Signal, Slot
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox, QPushButton, QApplication, QFontComboBox, QSpinBox, QDoubleSpinBox, QHBoxLayout, QColorDialog, QProgressBar, QTabWidget, QListWidget, QLineEdit, QMessageBox
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QApplication, QColorDialog, QProgressBar, QTabWidget, QMessageBox
 from src.core.worker import OCRWorker
 from src.ui.overlay_window import TransparentOverlay
 from src.core.sniper import SniperFactory
-from src.config import APP_VERSION, OCR_ENGINES, TRANSLATION_ENGINES, LANGUAGES, SETTINGS_FILE, PRESETS_FILE, DPI_SCALE_DEFAULT, SCREENSHOT_ENGINES, TEMPORARY_REGION_HOTKEY
+from src.config import LANGUAGES, SETTINGS_FILE, PRESETS_FILE, DPI_SCALE_DEFAULT, TEMPORARY_REGION_HOTKEY
 from src.core.shortcut import GlobalHotkey
 from src.i18n import _
+from src.ui.tabs import (
+    build_about_tab,
+    build_appearance_tab,
+    build_ocr_tab,
+    build_save_tab,
+    build_status_tab,
+    build_translation_tab,
+)
 
 class ControlPanel(QWidget):
     temporary_region_hotkey_pressed = Signal()
@@ -48,223 +56,12 @@ class ControlPanel(QWidget):
         
         # --- Tabs for Settings ---
         self.tabs = QTabWidget()
-        
-        # --- Status Tab (first) ---
-        tab_status = QWidget()
-        tab_status_layout = QVBoxLayout(tab_status)
-        tab_status_layout.setSpacing(6)
-        tab_status_layout.setContentsMargins(8, 8, 8, 8)
-        
-        # -- System Status --
-        h_system = QHBoxLayout()
-        h_system.setSpacing(6)
-        self.system_indicator = QLabel()
-        self.system_indicator.setFixedSize(16, 16)
-        self.system_indicator.setStyleSheet(
-            "background-color: #C62828; border-radius: 8px;"
-        )
-        h_system.addWidget(self.system_indicator)
-        self.system_status_label = QLabel("Stopped")
-        h_system.addWidget(self.system_status_label)
-        h_system.addStretch()
-        tab_status_layout.addLayout(h_system)
-        
-        tab_status_layout.addStretch()
-        
-        # -- Region (bottom of status tab) --
-        self.rect_label_status = QLabel(_("Region: —"))
-        self.rect_label_status.setStyleSheet("font-family: monospace;")
-        tab_status_layout.addWidget(self.rect_label_status)
-        
-        self.tabs.addTab(tab_status, _("Status"))
-        
-        # --- OCR Tab ---
-        tab_ocr = QWidget()
-        tab_ocr_layout = QVBoxLayout(tab_ocr)
-        tab_ocr_layout.addWidget(QLabel(_("OCR Engine:")))
-        self.combo_ocr = QComboBox()
-        self.combo_ocr.addItems(OCR_ENGINES)
-        self.combo_ocr.currentTextChanged.connect(self.worker.set_engine)
-        self.combo_ocr.currentTextChanged.connect(self.save_settings)
-        tab_ocr_layout.addWidget(self.combo_ocr)
-
-        tab_ocr_layout.addWidget(QLabel(_("Screen Engine:")))
-        self.combo_screenshot = QComboBox()
-        self.combo_screenshot.addItems(SCREENSHOT_ENGINES)
-        self.combo_screenshot.setCurrentText("Portal")
-        self.combo_screenshot.currentTextChanged.connect(self.worker.set_screenshot_engine)
-        self.combo_screenshot.currentTextChanged.connect(self.save_settings)
-        tab_ocr_layout.addWidget(self.combo_screenshot)
-
-        # DPI Scale control
-        self.dpi_locked = False
-        h_dpi = QHBoxLayout()
-        h_dpi.addWidget(QLabel(_("DPI Scale:")))
-        self.dpi_lock_label = QLabel("🔓")
-        self.dpi_lock_label.setToolTip(_("DPI unlocked (click to lock)"))
-        self.dpi_lock_label.setCursor(Qt.PointingHandCursor)
-        self.dpi_lock_label.mousePressEvent = self._toggle_dpi_lock
-        self.dpi_lock_label.setStyleSheet("font-size: 16px; padding: 0px;")
-        self.dpi_lock_label.setFixedWidth(24)
-        h_dpi.addWidget(self.dpi_lock_label)
-        self.dpi_scale_spin = QDoubleSpinBox()
-        self.dpi_scale_spin.setRange(50, 300)
-        self.dpi_scale_spin.setSingleStep(25)
-        self.dpi_scale_spin.setDecimals(0)
-        self.dpi_scale_spin.setSuffix(" %")
-        self.dpi_scale_spin.setValue(DPI_SCALE_DEFAULT * 100)
-        self.dpi_scale_spin.setToolTip(_("Scale factor for high-DPI monitors.\nAuto-detected when selecting a region."))
-        self.dpi_scale_spin.valueChanged.connect(self.on_dpi_scale_changed)
-        h_dpi.addWidget(self.dpi_scale_spin)
-        tab_ocr_layout.addLayout(h_dpi)
-
-        tab_ocr_layout.addStretch()
-        self.tabs.addTab(tab_ocr, _("OCR"))
-        
-        # --- Translation Tab ---
-        tab_translation = QWidget()
-        tab_translation_layout = QVBoxLayout(tab_translation)
-        tab_translation_layout.addWidget(QLabel(_("Translation Engine:")))
-        self.combo_translator = QComboBox()
-        self.combo_translator.addItems(TRANSLATION_ENGINES)
-        self.combo_translator.currentTextChanged.connect(self.worker.set_translator)
-        self.combo_translator.currentTextChanged.connect(self.save_settings)
-        self.combo_translator.currentTextChanged.connect(self.on_translator_changed)
-        tab_translation_layout.addWidget(self.combo_translator)
-        
-        h_lang = QHBoxLayout()
-        v_source = QVBoxLayout()
-        v_source.addWidget(QLabel(_("Source Language:")))
-        self.combo_source = QComboBox()
-        self.combo_source.addItems(list(LANGUAGES.keys()))
-        self.combo_source.setCurrentText("English")
-        self.combo_source.currentTextChanged.connect(self.update_languages)
-        v_source.addWidget(self.combo_source)
-        h_lang.addLayout(v_source)
-
-        v_target = QVBoxLayout()
-        v_target.addWidget(QLabel(_("Target Language:")))
-        self.combo_target = QComboBox()
-        self.combo_target.addItems(list(LANGUAGES.keys()))
-        self.combo_target.setCurrentText("Turkish")
-        self.combo_target.currentTextChanged.connect(self.update_languages)
-        v_target.addWidget(self.combo_target)
-        h_lang.addLayout(v_target)
-        tab_translation_layout.addLayout(h_lang)
-        
-        # --- API Key field (shown for engines that need one, e.g. DeepL) ---
-        self.api_key_label = QLabel(_("API Key"))
-        tab_translation_layout.addWidget(self.api_key_label)
-        self.api_key_input = QLineEdit()
-        self.api_key_input.setEchoMode(QLineEdit.Password)
-        self.api_key_input.setPlaceholderText(_("Enter API key..."))
-        self.api_key_input.textChanged.connect(self.on_api_key_changed)
-        tab_translation_layout.addWidget(self.api_key_input)
-        # Store api keys persistently, keyed by engine name
-        self.api_keys = {}
-        # Always visible to keep window size fixed; state toggled per engine
-        
-        tab_translation_layout.addStretch()
-        self.tabs.addTab(tab_translation, _("Translation"))
-        
-        # --- Appearance Tab ---
-        tab_appearance = QWidget()
-        tab_appearance_layout = QVBoxLayout(tab_appearance)
-        
-        h_font = QHBoxLayout()
-        v_font_family = QVBoxLayout()
-        v_font_family.addWidget(QLabel(_("Font Family:")))
-        self.font_picker = QFontComboBox()
-        self.font_picker.currentFontChanged.connect(self.on_font_changed)
-        v_font_family.addWidget(self.font_picker)
-        h_font.addLayout(v_font_family)
-
-        v_font_size = QVBoxLayout()
-        v_font_size.addWidget(QLabel(_("Size:")))
-        self.font_size_spin = QSpinBox()
-        self.font_size_spin.setRange(8, 72)
-        self.font_size_spin.setValue(self.overlay.font_size)
-        self.font_size_spin.valueChanged.connect(self.on_font_size_changed)
-        v_font_size.addWidget(self.font_size_spin)
-        h_font.addLayout(v_font_size)
-        tab_appearance_layout.addLayout(h_font)
-
-        h_colors = QHBoxLayout()
-        self.btn_color = QPushButton(_("🎨 Text Color"))
-        self.btn_color.clicked.connect(self.choose_color)
-        h_colors.addWidget(self.btn_color)
-
-        self.color_sample = QLabel()
-        self.color_sample.setFixedSize(24, 24)
-        self.color_sample.setStyleSheet(f"background-color: {self.overlay.font_color}; border: 1px solid gray; border-radius: 4px;")
-        h_colors.addWidget(self.color_sample)
-
-        self.btn_bg_color = QPushButton(_("🎨 Background"))
-        self.btn_bg_color.clicked.connect(self.choose_bg_color)
-        h_colors.addWidget(self.btn_bg_color)
-
-        self.bg_color_sample = QLabel()
-        self.bg_color_sample.setFixedSize(24, 24)
-        self.bg_color_sample.setStyleSheet(f"background-color: {self.overlay.bg_color}; border: 1px solid gray; border-radius: 4px;")
-        h_colors.addWidget(self.bg_color_sample)
-        tab_appearance_layout.addLayout(h_colors)
-
-        h_bg_opacity = QHBoxLayout()
-        h_bg_opacity.addWidget(QLabel(_("Background Opacity:")))
-        self.bg_opacity_spin = QSpinBox()
-        self.bg_opacity_spin.setRange(0, 255)
-        self.bg_opacity_spin.setValue(self.overlay.bg_opacity)
-        self.bg_opacity_spin.valueChanged.connect(self.on_bg_opacity_changed)
-        h_bg_opacity.addWidget(self.bg_opacity_spin)
-        tab_appearance_layout.addLayout(h_bg_opacity)
-        tab_appearance_layout.addStretch()
-        self.tabs.addTab(tab_appearance, _("Appearance"))
-        
-        # --- Save Tab (Presets) ---
-        tab_save = QWidget()
-        tab_save_layout = QVBoxLayout(tab_save)
-        
-        h_name = QHBoxLayout()
-        h_name.addWidget(QLabel(_("Preset Name:")))
-        self.preset_name_input = QLineEdit()
-        self.preset_name_input.setPlaceholderText(_("Enter preset name..."))
-        h_name.addWidget(self.preset_name_input)
-        tab_save_layout.addLayout(h_name)
-        
-        h_buttons = QHBoxLayout()
-        self.btn_save_preset = QPushButton(_("💾 Save"))
-        self.btn_save_preset.clicked.connect(self.save_preset)
-        h_buttons.addWidget(self.btn_save_preset)
-        
-        self.btn_load_preset = QPushButton(_("📂 Load"))
-        self.btn_load_preset.clicked.connect(self.load_preset)
-        h_buttons.addWidget(self.btn_load_preset)
-        
-        self.btn_delete_preset = QPushButton(_("🗑 Delete"))
-        self.btn_delete_preset.clicked.connect(self.delete_preset)
-        h_buttons.addWidget(self.btn_delete_preset)
-        tab_save_layout.addLayout(h_buttons)
-        
-        tab_save_layout.addWidget(QLabel(_("Saved Presets:")))
-        self.preset_combo = QComboBox()
-        tab_save_layout.addWidget(self.preset_combo)
-        tab_save_layout.addStretch()
-        
-        self.tabs.addTab(tab_save, _("Save"))
-        
-        # --- About Tab (last) ---
-        tab_about = QWidget()
-        tab_about_layout = QVBoxLayout(tab_about)
-        about_title = QLabel(_("<b>Universal Screen Translator Application</b>"))
-        about_title.setStyleSheet("font-size: 14px;")
-        tab_about_layout.addWidget(about_title)
-        tab_about_layout.addWidget(QLabel(_("Version: {version}").format(version=APP_VERSION)))
-        tab_about_layout.addWidget(QLabel(""))
-        tab_about_layout.addWidget(QLabel(_("A real-time OCR-based translation tool.")))
-        tab_about_layout.addWidget(QLabel(_("Select a screen region, capture text via OCR,")))
-        tab_about_layout.addWidget(QLabel(_("and translate instantly with Google or DeepL.")))
-        tab_about_layout.addStretch()
-        self.tabs.addTab(tab_about, _("About"))
+        self.tabs.addTab(build_status_tab(self), _("Status"))
+        self.tabs.addTab(build_ocr_tab(self), _("OCR"))
+        self.tabs.addTab(build_translation_tab(self), _("Translation"))
+        self.tabs.addTab(build_appearance_tab(self), _("Appearance"))
+        self.tabs.addTab(build_save_tab(self), _("Save"))
+        self.tabs.addTab(build_about_tab(self), _("About"))
 
         
         layout.addWidget(self.tabs)
