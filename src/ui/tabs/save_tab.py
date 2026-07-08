@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
 from src.i18n import _
@@ -30,6 +31,7 @@ def build_save_tab(panel):
 
     tab_save_layout.addWidget(QLabel(_("Saved Presets:")))
     panel.preset_combo = QComboBox()
+    panel.preset_combo.setFocusPolicy(Qt.NoFocus)
     tab_save_layout.addWidget(panel.preset_combo)
     tab_save_layout.addStretch()
     return tab_save

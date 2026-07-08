@@ -10,6 +10,7 @@ def build_ocr_tab(panel):
     tab_ocr_layout = QVBoxLayout(tab_ocr)
     tab_ocr_layout.addWidget(QLabel(_("OCR Engine:")))
     panel.combo_ocr = QComboBox()
+    panel.combo_ocr.setFocusPolicy(Qt.NoFocus)
     panel.combo_ocr.addItems(OCR_ENGINES)
     panel.combo_ocr.currentTextChanged.connect(panel.worker.set_engine)
     panel.combo_ocr.currentTextChanged.connect(panel.save_settings)
@@ -17,6 +18,7 @@ def build_ocr_tab(panel):
 
     tab_ocr_layout.addWidget(QLabel(_("Screen Engine:")))
     panel.combo_screenshot = QComboBox()
+    panel.combo_screenshot.setFocusPolicy(Qt.NoFocus)
     panel.combo_screenshot.addItems(SCREENSHOT_ENGINES)
     panel.combo_screenshot.setCurrentText("Portal")
     panel.combo_screenshot.currentTextChanged.connect(panel.worker.set_screenshot_engine)

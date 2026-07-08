@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QLineEdit, QVBoxLayout, QWidget
 
 from src.config import LANGUAGES, TRANSLATION_ENGINES
@@ -9,6 +10,7 @@ def build_translation_tab(panel):
     tab_translation_layout = QVBoxLayout(tab_translation)
     tab_translation_layout.addWidget(QLabel(_("Translation Engine:")))
     panel.combo_translator = QComboBox()
+    panel.combo_translator.setFocusPolicy(Qt.NoFocus)
     panel.combo_translator.addItems(TRANSLATION_ENGINES)
     panel.combo_translator.currentTextChanged.connect(panel.worker.set_translator)
     panel.combo_translator.currentTextChanged.connect(panel.save_settings)
@@ -19,6 +21,7 @@ def build_translation_tab(panel):
     v_source = QVBoxLayout()
     v_source.addWidget(QLabel(_("Source Language:")))
     panel.combo_source = QComboBox()
+    panel.combo_source.setFocusPolicy(Qt.NoFocus)
     panel.combo_source.addItems(list(LANGUAGES.keys()))
     panel.combo_source.setCurrentText("English")
     panel.combo_source.currentTextChanged.connect(panel.update_languages)
@@ -28,6 +31,7 @@ def build_translation_tab(panel):
     v_target = QVBoxLayout()
     v_target.addWidget(QLabel(_("Target Language:")))
     panel.combo_target = QComboBox()
+    panel.combo_target.setFocusPolicy(Qt.NoFocus)
     panel.combo_target.addItems(list(LANGUAGES.keys()))
     panel.combo_target.setCurrentText("Turkish")
     panel.combo_target.currentTextChanged.connect(panel.update_languages)

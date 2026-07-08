@@ -1,7 +1,7 @@
 import os
 import tempfile
 
-APP_VERSION = "0.1.3"
+APP_VERSION = "0.1.4"
 
 from src.core.platform.capability_resolver import (
     CONFIG_DIR,
