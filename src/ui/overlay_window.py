@@ -113,8 +113,9 @@ class TransparentOverlay(QWidget):
 
         self._main_window_topmost_requested = False
         self._settings_topmost_hotkey_armed = True
+        self.settings_topmost_hotkey = SETTINGS_TOPMOST_HOTKEY
         self._settings_topmost_hotkey = GlobalHotkey(
-            SETTINGS_TOPMOST_HOTKEY,
+            self.settings_topmost_hotkey,
             self._emit_settings_topmost_hotkey_pressed,
         )
         self.settings_topmost_hotkey_pressed.connect(self._handle_settings_topmost_hotkey_pressed)
@@ -207,6 +208,19 @@ class TransparentOverlay(QWidget):
     def _toggle_main_window_topmost(self):
         self._main_window_topmost_requested = not self._main_window_topmost_requested
         self.main_window_topmost_requested.emit(self._main_window_topmost_requested)
+
+    def set_settings_topmost_hotkey(self, hotkey):
+        if hotkey == self.settings_topmost_hotkey:
+            return True
+
+        candidate = GlobalHotkey(hotkey, self._emit_settings_topmost_hotkey_pressed)
+        if not candidate.start():
+            return False
+
+        self._settings_topmost_hotkey.stop()
+        self._settings_topmost_hotkey = candidate
+        self.settings_topmost_hotkey = hotkey
+        return True
 
     def closeEvent(self, event):
         self._settings_topmost_hotkey.stop()
