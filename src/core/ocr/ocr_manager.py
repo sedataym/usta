@@ -11,7 +11,7 @@ class OCRManager:
             "PaddleOCR": PaddleOCREngine(),
             "RapidOCR": RapidOCREngine()
         }
-        self.current_engine_name = "Tesseract"
+        self.current_engine_name = "RapidOCR"
 
     def set_engine(self, name: str):
         if name in self.engines:

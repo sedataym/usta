@@ -154,6 +154,42 @@ msgstr "ve Google veya DeepL ile anında çevirin."
 msgid "About"
 msgstr "Hakkında"
 
+msgid "Settings"
+msgstr "Ayarlar"
+
+msgid "<b>Hotkeys</b>"
+msgstr "<b>Kısayol Tuşları</b>"
+
+msgid "Settings topmost hotkey:"
+msgstr "Ayarları üstte tutma kısayolu:"
+
+msgid "Temporary region hotkey:"
+msgstr "Geçici bölge kısayolu:"
+
+msgid "Use this shortcut to bring the main window to the front while playing a game or watching a video."
+msgstr "Oyun oynarken veya video izlerken ana pencereyi ön plana getirmek için bu kısayolu kullanın."
+
+msgid "Use this shortcut when you want to select an area outside your current selection. The temporary area you select will be active for 10 seconds."
+msgstr "Mevcut seçiminizin dışında başka bir alan seçmek istediğinizde bu kısayolu kullanın. Seçtiğiniz geçici alan 10 saniye boyunca aktif olacaktır."
+
+msgid "Reset to default"
+msgstr "Varsayılana dön"
+
+msgid "Press shortcut..."
+msgstr "Kısayola basın..."
+
+msgid "Click to set shortcut"
+msgstr "Kısayol atamak için tıkla"
+
+msgid "Click a shortcut field, then press the key combination you want to use."
+msgstr "Bir kısayol alanına tıklayın, ardından kullanmak istediğiniz tuş kombinasyonuna basın."
+
+msgid "Invalid shortcut"
+msgstr "Geçersiz kısayol"
+
+msgid "Could not register this shortcut. The previous shortcut is still active."
+msgstr "Bu kısayol kaydedilemedi. Önceki kısayol hâlâ etkin."
+
 #: src/ui/main_window.py:210
 msgid "<br><b>Performance</b>"
 msgstr "<br><b>Performans</b>"

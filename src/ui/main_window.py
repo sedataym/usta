@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QApplic
 from src.core.worker import OCRWorker
 from src.ui.overlay_window import TransparentOverlay
 from src.core.sniper import SniperFactory
-from src.config import LANGUAGES, SETTINGS_FILE, PRESETS_FILE, DPI_SCALE_DEFAULT, TEMPORARY_REGION_HOTKEY
+from src.config import LANGUAGES, SETTINGS_FILE, PRESETS_FILE, DPI_SCALE_DEFAULT, SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY
 from src.core.shortcut import GlobalHotkey
 from src.i18n import _
 from src.ui.tabs import (
@@ -15,6 +15,7 @@ from src.ui.tabs import (
     build_appearance_tab,
     build_ocr_tab,
     build_save_tab,
+    build_settings_tab,
     build_status_tab,
     build_translation_tab,
 )
@@ -34,8 +35,10 @@ class ControlPanel(QWidget):
         self._temporary_region_restore_timer.setSingleShot(True)
         self._temporary_region_restore_timer.timeout.connect(self._restore_main_region)
         self._temporary_region_hotkey_armed = True
+        self.settings_topmost_hotkey = SETTINGS_TOPMOST_HOTKEY
+        self.temporary_region_hotkey = TEMPORARY_REGION_HOTKEY
         self._temporary_region_hotkey = GlobalHotkey(
-            TEMPORARY_REGION_HOTKEY,
+            self.temporary_region_hotkey,
             self._emit_temporary_region_hotkey_pressed,
         )
         self.temporary_region_hotkey_pressed.connect(self._handle_temporary_region_hotkey_pressed)
@@ -61,6 +64,7 @@ class ControlPanel(QWidget):
         self.tabs.addTab(build_translation_tab(self), _("Translation"))
         self.tabs.addTab(build_appearance_tab(self), _("Appearance"))
         self.tabs.addTab(build_save_tab(self), _("Save"))
+        self.tabs.addTab(build_settings_tab(self), _("Settings"))
         self.tabs.addTab(build_about_tab(self), _("About"))
 
         
@@ -193,7 +197,9 @@ class ControlPanel(QWidget):
             "capture_rect": (self.worker.capture_rect.x(), self.worker.capture_rect.y(), 
                             self.worker.capture_rect.width(), self.worker.capture_rect.height()),
             "dpi_scale": self.worker.dpi_scale,
-            "screenshot_engine": self.combo_screenshot.currentText()
+            "screenshot_engine": self.combo_screenshot.currentText(),
+            "settings_topmost_hotkey": self.settings_topmost_hotkey,
+            "temporary_region_hotkey": self.temporary_region_hotkey,
         }
         try:
             with open(SETTINGS_FILE, "wb") as f:
@@ -257,6 +263,11 @@ class ControlPanel(QWidget):
                 self.api_keys = s.get("translator_api_keys", {})
                 self._apply_api_key_for_current_engine()
 
+                self._apply_saved_hotkeys(
+                    s.get("settings_topmost_hotkey", SETTINGS_TOPMOST_HOTKEY),
+                    s.get("temporary_region_hotkey", TEMPORARY_REGION_HOTKEY),
+                )
+
                 self.update_languages()
                 print("Settings loaded.")
                 return
@@ -264,7 +275,64 @@ class ControlPanel(QWidget):
                 print(f"Settings load error: {e}")
         
         # If file not exists or error occurs, set defaults
+        self._apply_saved_hotkeys(SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY)
         self.update_languages()
+
+    def _apply_saved_hotkeys(self, settings_topmost_hotkey, temporary_region_hotkey):
+        self._set_settings_topmost_hotkey(settings_topmost_hotkey, save=False, show_error=False)
+        self._set_temporary_region_hotkey(temporary_region_hotkey, save=False, show_error=False)
+        self._sync_hotkey_buttons()
+
+    def _sync_hotkey_buttons(self):
+        if hasattr(self, "settings_topmost_hotkey_button"):
+            self.settings_topmost_hotkey_button.set_hotkey(self.settings_topmost_hotkey)
+        if hasattr(self, "temporary_region_hotkey_button"):
+            self.temporary_region_hotkey_button.set_hotkey(self.temporary_region_hotkey)
+
+    def _set_settings_topmost_hotkey(self, hotkey, save=True, show_error=True):
+        if self.overlay.set_settings_topmost_hotkey(hotkey):
+            self.settings_topmost_hotkey = hotkey
+            self._sync_hotkey_buttons()
+            if save:
+                self.save_settings()
+            return True
+
+        if show_error:
+            QMessageBox.warning(self, _("Invalid shortcut"), _("Could not register this shortcut. The previous shortcut is still active."))
+        self._sync_hotkey_buttons()
+        return False
+
+    def _set_temporary_region_hotkey(self, hotkey, save=True, show_error=True):
+        if hotkey == self.temporary_region_hotkey:
+            self._sync_hotkey_buttons()
+            return True
+
+        candidate = GlobalHotkey(hotkey, self._emit_temporary_region_hotkey_pressed)
+        if candidate.start():
+            self._temporary_region_hotkey.stop()
+            self._temporary_region_hotkey = candidate
+            self.temporary_region_hotkey = hotkey
+            self._sync_hotkey_buttons()
+            if save:
+                self.save_settings()
+            return True
+
+        if show_error:
+            QMessageBox.warning(self, _("Invalid shortcut"), _("Could not register this shortcut. The previous shortcut is still active."))
+        self._sync_hotkey_buttons()
+        return False
+
+    def on_settings_topmost_hotkey_changed(self, hotkey):
+        self._set_settings_topmost_hotkey(hotkey)
+
+    def on_temporary_region_hotkey_changed(self, hotkey):
+        self._set_temporary_region_hotkey(hotkey)
+
+    def reset_settings_topmost_hotkey(self):
+        self._set_settings_topmost_hotkey(SETTINGS_TOPMOST_HOTKEY)
+
+    def reset_temporary_region_hotkey(self):
+        self._set_temporary_region_hotkey(TEMPORARY_REGION_HOTKEY)
 
     def update_system_status(self, is_running):
         if is_running:

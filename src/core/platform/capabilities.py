@@ -1,7 +1,7 @@
 import os
 
 
-OCR_ENGINES = ["Tesseract", "EasyOCR", "RapidOCR"]  # "PaddleOCR" (uncomment when paddlepaddle is available)
+OCR_ENGINES = ["RapidOCR","Tesseract", "EasyOCR"]  # "PaddleOCR" (uncomment when paddlepaddle is available)
 TRANSLATION_ENGINES = ["Google", "DeepL"]
 SCREENSHOT_ENGINES = ["Portal", "Spectacle"]
 
