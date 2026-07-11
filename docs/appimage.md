@@ -6,29 +6,40 @@ application source code.
 ## Strategy
 
 USTA is a Python/PySide6 application with the runtime entry point declared in
-`pyproject.toml` as `usta = "src.main:main"`. The AppImage build creates an
+pyproject.toml as `usta = "src.main:main"`. The AppImage build creates an
 AppDir containing:
 
+- the Python executable used for the build,
+- the matching libpython*.so* shared library files,
+- the matching Python standard library under `usr/lib/pythonX.Y`, including
+  native runtime modules such as `lib-dynload`,
 - the installed USTA Python package,
-- Python wheel dependencies from `requirements.txt`,
-- the application icon from `src/ui/assets/usta.png`,
-- a desktop entry from `packaging/appimage/usta.desktop`,
-- an `AppRun` wrapper from `packaging/appimage/AppRun`.
+- Python wheel dependencies from requirements.txt,
+- the application icon from src/ui/assets/usta.png,
+- a desktop entry from packaging/appimage/usta.desktop,
+- an `AppRun` wrapper from packaging/appimage/AppRun.
 
-The wrapper starts the app with `python3 -m src.main` and sets `QT_QPA_PLATFORM=xcb`
+The wrapper starts the app with python3 -m src.main, points PYTHONHOME at the
+bundled usr runtime, limits PYTHONPATH to bundled application paths, disables
+user site-packages with PYTHONNOUSERSITE=1, and sets QT_QPA_PLATFORM=xcb
 unless the user already provided a different value.
+
+This makes the AppImage independent of the host Python installation for normal
+Python startup. For example, an AppImage built with Python 3.14 bundles the
+Python 3.14 executable, libpython3.14.so*, standard library, and Python native
+extension modules so it can start on a system that only has Python 3.12 installed.
 
 ## Why some dependencies remain system dependencies
 
 USTA integrates with desktop services and external tools that are intentionally not
 fully bundled by default:
 
-- `xdg-desktop-portal`, portal backend, session DBus, PipeWire, and GStreamer are
+- xdg-desktop-portal, portal backend, session DBus, PipeWire, and GStreamer are
   host desktop services used by portal screen capture.
-- `tesseract` and Tesseract language data are host OCR binaries/data used by the
+- tesseract and Tesseract language data are host OCR binaries/data used by the
   Tesseract OCR engine.
-- `spectacle` is used by the KDE screenshot engine.
-- `slurp` is used by the Wayland region selection backend.
+- spectacle is used by the KDE screenshot engine.
+- slurp is used by the Wayland region selection backend.
 
 Bundling these components inside the AppImage is possible in some cases, but it is
 fragile because portal, DBus, compositor, PipeWire, and GStreamer behavior depends on
@@ -45,7 +56,7 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 ```
 
-The build script uses the project virtual environment at `.venv` by default and does
+The build script uses the project virtual environment at .venv by default and does
 not install packages with the system Python. Override the interpreter only with a
 virtualenv Python if needed:
 
@@ -53,16 +64,30 @@ virtualenv Python if needed:
 PYTHON_BIN=/path/to/venv/bin/python ./scripts/build-appimage.sh
 ```
 
-The build script automatically downloads `appimagetool` to `build/appimage` when it
+The build script automatically downloads appimagetool to `build/appimage` when it
 is not available in `PATH`.
 
-If you want to provide your own `appimagetool`, pass it explicitly:
+The virtual environment Python determines the bundled runtime version. If the
+release should run as a Python 3.14 AppImage, create the virtual environment with
+Python 3.14 before installing dependencies:
+
+```bash
+python3.14 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip setuptools wheel
+.venv/bin/python -m pip install -r requirements.txt
+```
+
+The build fails early if it cannot locate the matching Python standard library or
+libpython*.so*, because otherwise the AppImage would still depend on the same
+Python runtime being installed on the target machine.
+
+If you want to provide your own appimagetool, pass it explicitly:
 
 ```bash
 APPIMAGETOOL=/path/to/appimagetool-x86_64.AppImage ./scripts/build-appimage.sh
 ```
 
-To disable automatic download and fail when `appimagetool` is missing:
+To disable automatic download and fail when appimagetool is missing:
 
 ```bash
 DOWNLOAD_APPIMAGETOOL=0 ./scripts/build-appimage.sh
@@ -81,21 +106,52 @@ The output is written to `dist/USTA-<version>-<arch>.AppImage`.
 Useful environment variables:
 
 - `APP_VERSION`: override the version embedded in the output filename.
-- `VENV_DIR`: choose the virtual environment directory; defaults to `.venv`.
+- `VENV_DIR`: choose the virtual environment directory; defaults to .venv.
 - `PYTHON_BIN`: choose the virtualenv Python used for packaging; defaults to
   `.venv/bin/python`.
-- `APPIMAGETOOL`: path to the `appimagetool` executable or AppImage.
-- `DOWNLOAD_APPIMAGETOOL`: set to `0` to disable automatic `appimagetool` download.
+- `APPIMAGETOOL`: path to the appimagetool executable or AppImage.
+- `DOWNLOAD_APPIMAGETOOL`: set to `0` to disable automatic appimagetool download.
 - `BUILD_DIR`, `APPDIR`, `DIST_DIR`: override build and output locations.
-- `ARCH`: override the AppImage architecture passed to `appimagetool`.
+- `ARCH`: override the AppImage architecture passed to appimagetool.
+
+## Bundled Python runtime
+
+The AppImage build copies the runtime pieces required for Python startup:
+
+- usr/bin/python3: the real Python executable from the selected virtual
+  environment.
+- `usr/lib/libpython*.so*`: the shared Python library detected from ldd and
+  Python sysconfig metadata, with expected soname symlinks created when needed.
+- `usr/lib/pythonX.Y`: the matching standard library and platform native runtime
+  modules when they are separate from the base standard library.
+- usr/lib/pythonX.Y/lib-dynload: native Python extension modules required by
+  standard-library modules such as ssl, ctypes, and compression modules.
+- `usr/app/site-packages`: application and wheel dependencies installed by `pip`.
+- selected native shared libraries required by bundled Python modules and wheel
+  extensions, such as compression libraries used by EasyOCR/PyTorch stacks.
+
+During the build, the script validates the bundled interpreter by importing
+encodings, ctypes, ssl, and the USTA entry module. This catches missing
+stdlib or `libpython` issues before the AppImage is produced.
 
 ## Runtime dependencies by feature
+
+The bundled Python runtime removes the requirement for the target system to have
+the same Python version installed. It does not remove native desktop integration
+requirements or compatibility constraints from the Linux base system.
+
+The following remain host/runtime environment dependencies:
+
+- a compatible glibc and core Linux userspace for the binaries used during build,
+- graphics/session libraries used by Qt, X11, Wayland, and desktop integration,
+- portal, PipeWire, GStreamer, OCR tools, and region-selection utilities listed
+  below.
 
 ### Common desktop capture stack
 
 Install these on systems where portal capture is used:
 
-- `xdg-desktop-portal`
+- xdg-desktop-portal
 - one matching portal backend such as `xdg-desktop-portal-kde` or
   `xdg-desktop-portal-gnome`
 - `pipewire`
@@ -105,16 +161,16 @@ Install these on systems where portal capture is used:
 ### OCR
 
 - RapidOCR/ONNXRuntime is installed as a Python dependency.
-- Tesseract mode requires the host `tesseract` executable and language data packages.
-- EasyOCR is listed in `requirements.txt` and can make the AppImage significantly
+- Tesseract mode requires the host tesseract executable and language data packages.
+- EasyOCR is listed in requirements.txt and can make the AppImage significantly
   larger because it may pull heavy ML dependencies.
 - PaddleOCR is optional in the codebase and is not enabled by default in
-  `requirements.txt`.
+  requirements.txt.
 
 ### Screenshot and region selection tools
 
-- KDE screenshot mode requires `spectacle`.
-- Slurp region selection requires `slurp`.
+- KDE screenshot mode requires spectacle.
+- Slurp region selection requires slurp.
 
 ## Validation checklist
 
@@ -125,14 +181,19 @@ chmod +x dist/USTA-*.AppImage
 ./dist/USTA-*.AppImage
 ```
 
+To specifically validate Python runtime independence, run the AppImage on a
+system or container where Python 3.14 is not installed, for example a Python 3.12
+desktop environment. Confirm that the process no longer fails with a missing
+libpython3.14.so or missing encodings/stdlib error before the UI appears.
+
 Validate the following:
 
 - The USTA control panel opens and displays the application icon.
 - Settings are persisted under the platform configuration directory.
 - RapidOCR can be selected and initialized.
-- Tesseract mode works when `tesseract` and language packs are installed; otherwise
+- Tesseract mode works when tesseract and language packs are installed; otherwise
   the failure is visible and understandable.
-- KDE screenshot mode works when `spectacle` is installed.
+- KDE screenshot mode works when spectacle is installed.
 - Portal screenshot mode works with the matching desktop portal backend, PipeWire,
   and GStreamer plugins installed.
 - Region selection works when the chosen sniper backend dependencies are installed.

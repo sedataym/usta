@@ -4,8 +4,14 @@ set -euo pipefail
 APPDIR="$(dirname "$(readlink -f "${0}")")"
 
 export PATH="${APPDIR}/usr/bin:${PATH}"
-export LD_LIBRARY_PATH="${APPDIR}/usr/lib:${APPDIR}/usr/lib64:${LD_LIBRARY_PATH:-}"
-export PYTHONPATH="${APPDIR}/usr/app:${APPDIR}/usr/app/site-packages:${PYTHONPATH:-}"
+if [[ -n "${LD_LIBRARY_PATH:-}" ]]; then
+  export LD_LIBRARY_PATH="${APPDIR}/usr/lib:${APPDIR}/usr/lib64:${LD_LIBRARY_PATH}"
+else
+  export LD_LIBRARY_PATH="${APPDIR}/usr/lib:${APPDIR}/usr/lib64"
+fi
+export PYTHONHOME="${APPDIR}/usr"
+export PYTHONPATH="${APPDIR}/usr/app:${APPDIR}/usr/app/site-packages"
+export PYTHONNOUSERSITE=1
 
 # USTA currently forces xcb in src/main.py. Keep the wrapper compatible with that
 # behavior while still allowing users to override it explicitly if needed.
