@@ -15,7 +15,7 @@ from src.ui.tabs import (
     build_appearance_tab,
     build_ocr_tab,
     build_save_tab,
-    build_settings_tab,
+    build_hotkey_tab,
     build_status_tab,
     build_translation_tab,
 )
@@ -57,14 +57,14 @@ class ControlPanel(QWidget):
         layout = QVBoxLayout(self)
         layout.setSizeConstraint(QVBoxLayout.SetFixedSize) # Fixed size according to content
         
-        # --- Tabs for Settings ---
+        # --- Tabs ---
         self.tabs = QTabWidget()
         self.tabs.addTab(build_status_tab(self), _("Status"))
         self.tabs.addTab(build_ocr_tab(self), _("OCR"))
         self.tabs.addTab(build_translation_tab(self), _("Translation"))
         self.tabs.addTab(build_appearance_tab(self), _("Appearance"))
         self.tabs.addTab(build_save_tab(self), _("Save"))
-        self.tabs.addTab(build_settings_tab(self), _("Settings"))
+        self.tabs.addTab(build_hotkey_tab(self), _("Hotkeys"))
         self.tabs.addTab(build_about_tab(self), _("About"))
 
         

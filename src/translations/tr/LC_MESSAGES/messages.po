@@ -154,17 +154,17 @@ msgstr "ve Google veya DeepL ile anında çevirin."
 msgid "About"
 msgstr "Hakkında"
 
-msgid "Settings"
-msgstr "Ayarlar"
+msgid "Hotkeys"
+msgstr "Kısayollar"
 
 msgid "<b>Hotkeys</b>"
 msgstr "<b>Kısayol Tuşları</b>"
 
-msgid "Settings topmost hotkey:"
-msgstr "Ayarları üstte tutma kısayolu:"
+msgid "Settings topmost key:"
+msgstr "Ayarları üstte tutma tuşu:"
 
-msgid "Temporary region hotkey:"
-msgstr "Geçici bölge kısayolu:"
+msgid "Temporary region key:"
+msgstr "Geçici bölge tuşu:"
 
 msgid "Use this shortcut to bring the main window to the front while playing a game or watching a video."
 msgstr "Oyun oynarken veya video izlerken ana pencereyi ön plana getirmek için bu kısayolu kullanın."
@@ -172,8 +172,8 @@ msgstr "Oyun oynarken veya video izlerken ana pencereyi ön plana getirmek için
 msgid "Use this shortcut when you want to select an area outside your current selection. The temporary area you select will be active for 10 seconds."
 msgstr "Mevcut seçiminizin dışında başka bir alan seçmek istediğinizde bu kısayolu kullanın. Seçtiğiniz geçici alan 10 saniye boyunca aktif olacaktır."
 
-msgid "Reset to default"
-msgstr "Varsayılana dön"
+msgid "Reset"
+msgstr "Sıfırla"
 
 msgid "Press shortcut..."
 msgstr "Kısayola basın..."

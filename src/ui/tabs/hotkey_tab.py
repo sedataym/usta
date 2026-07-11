@@ -5,6 +5,10 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWi
 from src.i18n import _
 
 
+HOTKEY_BUTTON_WIDTH = 120
+RESET_BUTTON_WIDTH = 60
+
+
 class HotkeyCaptureButton(QPushButton):
     hotkeyChanged = Signal(str)
 
@@ -48,6 +52,7 @@ class HotkeyCaptureButton(QPushButton):
         super().__init__(parent)
         self._hotkey = hotkey
         self._capturing = False
+        self.setFixedWidth(HOTKEY_BUTTON_WIDTH)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.clicked.connect(self.start_capture)
@@ -132,14 +137,15 @@ def _add_hotkey_row(layout, label_text, button, reset_callback, tooltip):
     button.setToolTip(tooltip)
     row.addWidget(label)
     row.addWidget(button)
-    reset_button = QPushButton(_("Reset to default"))
+    reset_button = QPushButton(_("Reset"))
+    reset_button.setFixedWidth(RESET_BUTTON_WIDTH)
     reset_button.setToolTip(tooltip)
     reset_button.clicked.connect(reset_callback)
     row.addWidget(reset_button)
     layout.addLayout(row)
 
 
-def build_settings_tab(panel):
+def build_hotkey_tab(panel):
     tab_settings = QWidget()
     tab_settings_layout = QVBoxLayout(tab_settings)
     tab_settings_layout.addWidget(QLabel(_("<b>Hotkeys</b>")))
@@ -156,7 +162,7 @@ def build_settings_tab(panel):
     panel.settings_topmost_hotkey_button.hotkeyChanged.connect(panel.on_settings_topmost_hotkey_changed)
     _add_hotkey_row(
         tab_settings_layout,
-        _("Settings topmost hotkey:"),
+        _("Settings topmost key:"),
         panel.settings_topmost_hotkey_button,
         panel.reset_settings_topmost_hotkey,
         settings_topmost_tooltip,
@@ -166,7 +172,7 @@ def build_settings_tab(panel):
     panel.temporary_region_hotkey_button.hotkeyChanged.connect(panel.on_temporary_region_hotkey_changed)
     _add_hotkey_row(
         tab_settings_layout,
-        _("Temporary region hotkey:"),
+        _("Temporary region key:"),
         panel.temporary_region_hotkey_button,
         panel.reset_temporary_region_hotkey,
         temporary_region_tooltip,
