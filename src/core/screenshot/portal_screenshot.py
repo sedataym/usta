@@ -32,7 +32,7 @@ try:
     from gi.repository import Gst
     gi.require_version("GstVideo", "1.0")
     from gi.repository import GstVideo
-except ImportError as exc:
+except (ImportError, ValueError, RuntimeError) as exc:
     Gst = None
     GstVideo = None
     _GST_IMPORT_ERROR = exc
@@ -70,6 +70,16 @@ class PortalScreenshot(BaseScreenshot):
     @staticmethod
     def is_available() -> bool:
         return _DBUS_IMPORT_ERROR is None and _GST_IMPORT_ERROR is None and Gst is not None
+
+    @staticmethod
+    def availability_error() -> str | None:
+        if _DBUS_IMPORT_ERROR is not None:
+            return f"dbus-next is unavailable: {_DBUS_IMPORT_ERROR}"
+        if _GST_IMPORT_ERROR is not None:
+            return f"GStreamer/PyGObject GI namespace is unavailable: {_GST_IMPORT_ERROR}"
+        if Gst is None:
+            return "GStreamer/PyGObject GI namespace is unavailable: Gst is None"
+        return None
 
     @property
     def last_error(self):
@@ -139,8 +149,10 @@ class PortalScreenshot(BaseScreenshot):
             raise RuntimeError("dbus-next module was not found. Install it with `pip install dbus-next`.") from _DBUS_IMPORT_ERROR
         if _GST_IMPORT_ERROR is not None or Gst is None:
             raise RuntimeError(
-                "PyGObject/GStreamer Python module was not found. Install PyGObject, GStreamer, "
-                "gst-plugins-base, and PipeWire plugins as system packages."
+                "PyGObject/GStreamer GI namespace was not found. Install PyGObject, GStreamer, "
+                "gst-plugins-base, gst-plugins-good, GLib/GObject/GStreamer typelibs, and PipeWire plugins. "
+                "For AppImage builds, ensure GI_TYPELIB_PATH and GST_PLUGIN_PATH point to the bundled "
+                "girepository-1.0 and gstreamer-1.0 directories."
             ) from _GST_IMPORT_ERROR
 
     async def _add_signal_match(self, sender, path, interface, member):

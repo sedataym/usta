@@ -81,6 +81,92 @@ bundle_native_dependencies() {
   done
 }
 
+copy_first_matching_file() {
+  local dest_dir="$1"
+  shift
+
+  local pattern candidate
+  for pattern in "$@"; do
+    while IFS= read -r candidate; do
+      [[ -f "${candidate}" ]] || continue
+      mkdir -p "${dest_dir}"
+      cp -a "${candidate}" "${dest_dir}/"
+      return 0
+    done < <(compgen -G "${pattern}" | sort -V || true)
+  done
+
+  return 1
+}
+
+copy_matching_files() {
+  local dest_dir="$1"
+  shift
+
+  local copied=1 pattern candidate
+  for pattern in "$@"; do
+    while IFS= read -r candidate; do
+      [[ -f "${candidate}" ]] || continue
+      mkdir -p "${dest_dir}"
+      cp -a "${candidate}" "${dest_dir}/"
+      copied=0
+    done < <(compgen -G "${pattern}" | sort -V || true)
+  done
+
+  return "${copied}"
+}
+
+bundle_gstreamer_portal_runtime() {
+  local appdir="$1"
+  local typelib_dest="${appdir}/usr/lib/girepository-1.0"
+  local gst_plugin_dest="${appdir}/usr/lib/gstreamer-1.0"
+  local missing=0
+
+  echo "Bundling optional GStreamer/PyGObject runtime files for portal capture"
+
+  local typelib
+  for typelib in \
+    GLib-2.0.typelib \
+    GObject-2.0.typelib \
+    GModule-2.0.typelib \
+    Gio-2.0.typelib \
+    GIRepository-2.0.typelib \
+    Gst-1.0.typelib \
+    GstBase-1.0.typelib \
+    GstVideo-1.0.typelib; do
+    if ! copy_first_matching_file "${typelib_dest}" \
+      "/usr/lib/girepository-1.0/${typelib}" \
+      "/usr/lib64/girepository-1.0/${typelib}" \
+      "/usr/lib"/*"/girepository-1.0/${typelib}"; then
+      echo "Warning: ${typelib} was not found; AppImage portal capture may be unavailable." >&2
+      missing=1
+    fi
+  done
+
+  copy_matching_files "${gst_plugin_dest}" \
+    "/usr/lib/gstreamer-1.0/libgstapp.so" \
+    "/usr/lib64/gstreamer-1.0/libgstapp.so" \
+    "/usr/lib"/*"/gstreamer-1.0/libgstapp.so" \
+    "/usr/lib/gstreamer-1.0/libgstpipewire.so" \
+    "/usr/lib64/gstreamer-1.0/libgstpipewire.so" \
+    "/usr/lib"/*"/gstreamer-1.0/libgstpipewire.so" \
+    "/usr/lib/gstreamer-1.0/libgstvideoconvert.so" \
+    "/usr/lib64/gstreamer-1.0/libgstvideoconvert.so" \
+    "/usr/lib"/*"/gstreamer-1.0/libgstvideoconvert.so" \
+    "/usr/lib/gstreamer-1.0/libgstvideoconvertscale.so" \
+    "/usr/lib64/gstreamer-1.0/libgstvideoconvertscale.so" \
+    "/usr/lib"/*"/gstreamer-1.0/libgstvideoconvertscale.so" || true
+
+  if ! compgen -G "${gst_plugin_dest}/libgstpipewire.so" >/dev/null; then
+    echo "Warning: libgstpipewire.so was not found; portal PipeWire capture may fail inside the AppImage." >&2
+    missing=1
+  fi
+
+  bundle_native_dependencies "${typelib_dest}" "${appdir}/usr/lib"
+  bundle_native_dependencies "${gst_plugin_dest}" "${appdir}/usr/lib"
+
+  return "${missing}"
+}
+
 copy_python_library_candidate() {
   local source_path="$1"
   local dest_dir="$2"
@@ -313,6 +399,7 @@ done
 
 echo "Bundling native dependencies required by Python runtime and wheel extensions"
 bundle_native_dependencies "${APPDIR}/usr" "${APPDIR}/usr/lib"
+bundle_gstreamer_portal_runtime "${APPDIR}" || true
 if compgen -G "${APPDIR}/usr/lib/libbz2.so*" >/dev/null; then
   :
 elif compgen -G "/usr/lib/libbz2.so*" >/dev/null; then
@@ -339,6 +426,9 @@ cp "${ROOT_DIR}/src/ui/assets/usta.png" "${APPDIR}/usr/share/icons/hicolor/256x2
 echo "Validating bundled Python runtime"
 APPDIR="${APPDIR}" \
 LD_LIBRARY_PATH="${APPDIR}/usr/lib:${APPDIR}/usr/lib64:${LD_LIBRARY_PATH:-}" \
+GI_TYPELIB_PATH="${APPDIR}/usr/lib/girepository-1.0:${APPDIR}/usr/lib64/girepository-1.0:${GI_TYPELIB_PATH:-}" \
+GST_PLUGIN_PATH="${APPDIR}/usr/lib/gstreamer-1.0:${APPDIR}/usr/lib64/gstreamer-1.0:${GST_PLUGIN_PATH:-}" \
+GST_PLUGIN_SYSTEM_PATH="${APPDIR}/usr/lib/gstreamer-1.0:${APPDIR}/usr/lib64/gstreamer-1.0:${GST_PLUGIN_SYSTEM_PATH:-}" \
 PYTHONHOME="${APPDIR}/usr" \
 PYTHONPATH="${APPDIR}/usr/app:${APPDIR}/usr/app/site-packages" \
 PYTHONNOUSERSITE=1 \
@@ -351,6 +441,15 @@ import sys
 
 importlib.import_module("src.main")
 print(f"Bundled Python runtime OK: {sys.version.split()[0]}")
+
+try:
+    import gi
+    gi.require_version("Gst", "1.0")
+    from gi.repository import Gst
+except Exception as exc:
+    print(f"Bundled GStreamer GI runtime unavailable; Portal will fall back if selected: {exc}")
+else:
+    print(f"Bundled GStreamer GI runtime OK: Gst {Gst.version_string()}")
 PY
 
 if command -v ldd >/dev/null 2>&1; then
@@ -375,9 +474,10 @@ cat <<EOF
 Built: ${OUTPUT}
 
 Runtime system dependencies are still required for desktop integration and OCR backends:
-  xdg-desktop-portal, an xdg-desktop-portal backend, PipeWire, GStreamer PipeWire plugins,
+  xdg-desktop-portal, an xdg-desktop-portal backend, host PipeWire session services,
   tesseract plus language packs, and optionally spectacle/slurp depending on selected engines.
 Python executable, libpython, standard library, native Python extension modules, and Python
-wheel dependencies are bundled in the AppImage.
+wheel dependencies are bundled in the AppImage. The build also copies available GStreamer
+typelibs/plugins needed by portal capture, but falls back cleanly if they are unavailable.
 See docs/appimage.md for details.
 EOF

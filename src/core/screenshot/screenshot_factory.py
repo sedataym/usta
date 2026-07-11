@@ -11,15 +11,22 @@ else:
  
 class ScreenshotFactory:
     @staticmethod
+    def portal_unavailable_reason() -> str | None:
+        if _PORTAL_IMPORT_ERROR is not None:
+            return str(_PORTAL_IMPORT_ERROR)
+        if PortalScreenshot is not None and hasattr(PortalScreenshot, "availability_error"):
+            return PortalScreenshot.availability_error()
+        return "Portal screenshot engine is unavailable."
+
+    @staticmethod
     def get_engine(engine_name: str = "Portal") -> BaseScreenshot:
         if engine_name == "Portal":
             if PortalScreenshot is not None and PortalScreenshot.is_available():
                 return PortalScreenshot()
 
-            if _PORTAL_IMPORT_ERROR is not None:
-                print(f"Portal screenshot engine unavailable: {_PORTAL_IMPORT_ERROR}")
-            print("Falling back to Spectacle screenshot engine.")
-            return SpectacleScreenshot()
+            portal_error = ScreenshotFactory.portal_unavailable_reason()
+            print(f"Portal screenshot engine unavailable: {portal_error}")
+            raise RuntimeError(portal_error)
 
         # Spectacle
         return SpectacleScreenshot()

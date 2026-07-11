@@ -17,12 +17,16 @@ AppDir containing:
 - Python wheel dependencies from requirements.txt,
 - the application icon from src/ui/assets/usta.png,
 - a desktop entry from packaging/appimage/usta.desktop,
-- an `AppRun` wrapper from packaging/appimage/AppRun.
+- an `AppRun` wrapper from packaging/appimage/AppRun,
+- available GLib/GObject/GStreamer GI typelibs and plugins needed by portal
+  screenshot capture.
 
 The wrapper starts the app with python3 -m src.main, points PYTHONHOME at the
 bundled usr runtime, limits PYTHONPATH to bundled application paths, disables
 user site-packages with PYTHONNOUSERSITE=1, and sets QT_QPA_PLATFORM=xcb
-unless the user already provided a different value.
+unless the user already provided a different value. It also points GI_TYPELIB_PATH,
+GST_PLUGIN_PATH, GST_PLUGIN_SYSTEM_PATH, and GIO_MODULE_DIR at bundled runtime
+directories when they exist.
 
 This makes the AppImage independent of the host Python installation for normal
 Python startup. For example, an AppImage built with Python 3.14 bundles the
@@ -144,8 +148,8 @@ The following remain host/runtime environment dependencies:
 
 - a compatible glibc and core Linux userspace for the binaries used during build,
 - graphics/session libraries used by Qt, X11, Wayland, and desktop integration,
-- portal, PipeWire, GStreamer, OCR tools, and region-selection utilities listed
-  below.
+- portal, host PipeWire session services, OCR tools, and region-selection utilities
+  listed below.
 
 ### Common desktop capture stack
 
@@ -155,8 +159,18 @@ Install these on systems where portal capture is used:
 - one matching portal backend such as `xdg-desktop-portal-kde` or
   `xdg-desktop-portal-gnome`
 - `pipewire`
-- GStreamer base/good plugins and PipeWire plugin
-- PyGObject/GI bindings if portal capture is selected by the installed runtime path
+- GStreamer base/good plugins, PipeWire plugin, and GLib/GObject GI typelibs on
+  the build machine, so the AppImage can copy the required typelibs and plugins
+  into the bundle
+
+The AppImage build copies available GLib, GObject, GModule, Gio, GIRepository,
+Gst, GstBase, and GstVideo typelibs plus the app, PipeWire, and video conversion
+plugins into the AppDir. Portal capture still depends on the running desktop's
+xdg-desktop-portal backend and PipeWire session.
+If the bundled GI/GStreamer runtime cannot be loaded, the application logs the
+portal unavailability reason and shows an alert. It does not switch to the KDE
+Spectacle screenshot engine automatically; the user can choose Spectacle from the
+alert or from the screenshot engine selector.
 
 ### OCR
 
@@ -195,8 +209,19 @@ Validate the following:
   the failure is visible and understandable.
 - KDE screenshot mode works when spectacle is installed.
 - Portal screenshot mode works with the matching desktop portal backend, PipeWire,
-  and GStreamer plugins installed.
+  and bundled or host-compatible GStreamer plugins available.
 - Region selection works when the chosen sniper backend dependencies are installed.
+
+To validate the GStreamer GI namespace from the AppImage runtime without opening
+the UI, extract or mount the AppImage and run its AppRun environment with:
+
+```bash
+./dist/USTA-*.AppImage --appimage-extract
+APPDIR="$PWD/squashfs-root" "$PWD/squashfs-root/AppRun" --help
+```
+
+During build, the script also attempts to import Gst from the bundled Python
+runtime and prints whether the bundled GStreamer GI runtime is available.
 
 ## Notes
 

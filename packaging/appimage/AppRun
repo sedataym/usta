@@ -3,6 +3,18 @@ set -euo pipefail
 
 APPDIR="$(dirname "$(readlink -f "${0}")")"
 
+prepend_env_path() {
+  local var_name="$1"
+  local path_value="$2"
+
+  [[ -d "${path_value}" ]] || return 0
+  if [[ -n "${!var_name:-}" ]]; then
+    export "${var_name}=${path_value}:${!var_name}"
+  else
+    export "${var_name}=${path_value}"
+  fi
+}
+
 export PATH="${APPDIR}/usr/bin:${PATH}"
 if [[ -n "${LD_LIBRARY_PATH:-}" ]]; then
   export LD_LIBRARY_PATH="${APPDIR}/usr/lib:${APPDIR}/usr/lib64:${LD_LIBRARY_PATH}"
@@ -12,6 +24,26 @@ fi
 export PYTHONHOME="${APPDIR}/usr"
 export PYTHONPATH="${APPDIR}/usr/app:${APPDIR}/usr/app/site-packages"
 export PYTHONNOUSERSITE=1
+
+for typelib_dir in \
+  "${APPDIR}/usr/lib/girepository-1.0" \
+  "${APPDIR}/usr/lib64/girepository-1.0" \
+  "${APPDIR}/usr/lib/x86_64-linux-gnu/girepository-1.0" \
+  "${APPDIR}/usr/lib/aarch64-linux-gnu/girepository-1.0"; do
+  prepend_env_path GI_TYPELIB_PATH "${typelib_dir}"
+done
+
+for gst_plugin_dir in \
+  "${APPDIR}/usr/lib/gstreamer-1.0" \
+  "${APPDIR}/usr/lib64/gstreamer-1.0" \
+  "${APPDIR}/usr/lib/x86_64-linux-gnu/gstreamer-1.0" \
+  "${APPDIR}/usr/lib/aarch64-linux-gnu/gstreamer-1.0"; do
+  prepend_env_path GST_PLUGIN_PATH "${gst_plugin_dir}"
+  prepend_env_path GST_PLUGIN_SYSTEM_PATH "${gst_plugin_dir}"
+done
+
+prepend_env_path GIO_MODULE_DIR "${APPDIR}/usr/lib/gio/modules"
+prepend_env_path GIO_MODULE_DIR "${APPDIR}/usr/lib64/gio/modules"
 
 # USTA currently forces xcb in src/main.py. Keep the wrapper compatible with that
 # behavior while still allowing users to override it explicitly if needed.

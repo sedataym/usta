@@ -99,6 +99,7 @@ class ControlPanel(QWidget):
         self.worker.new_translation.connect(self.overlay.update_text)
         self.worker.performance_update.connect(self.update_performance_bar)
         self.worker.running_status.connect(self.update_system_status)
+        self.worker.screenshot_engine_error.connect(self._handle_screenshot_engine_error)
         self.overlay.main_window_topmost_requested.connect(self.set_settings_always_on_top)
         self._settings_always_on_top = False
         
@@ -277,6 +278,32 @@ class ControlPanel(QWidget):
         # If file not exists or error occurs, set defaults
         self._apply_saved_hotkeys(SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY)
         self.update_languages()
+
+    @Slot(str, str)
+    def _handle_screenshot_engine_error(self, engine_name, message):
+        if engine_name != "Portal":
+            QMessageBox.warning(
+                self,
+                _("Screenshot engine unavailable"),
+                _("{engine} screenshot engine is unavailable:\n\n{message}").format(
+                    engine=engine_name,
+                    message=message,
+                ),
+            )
+            return
+
+        switch_to_spectacle = QMessageBox.question(
+            self,
+            _("Portal screenshot unavailable"),
+            _("Portal screenshot engine is unavailable:\n\n{message}\n\nSwitch to Spectacle screenshot engine?").format(message=message),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+
+        if switch_to_spectacle == QMessageBox.Yes:
+            self.combo_screenshot.setCurrentText("Spectacle")
+        else:
+            self.combo_screenshot.setCurrentText(engine_name)
 
     def _apply_saved_hotkeys(self, settings_topmost_hotkey, temporary_region_hotkey):
         self._set_settings_topmost_hotkey(settings_topmost_hotkey, save=False, show_error=False)

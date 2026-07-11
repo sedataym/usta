@@ -16,6 +16,7 @@ class OCRWorker(QThread):
     performance_update = Signal(float) # Loop duration in seconds
     translation_status = Signal(bool)  # True: translating (API call active), False: idle
     running_status = Signal(bool)      # True: system started, False: system stopped
+    screenshot_engine_error = Signal(str, str)
 
     def __init__(self):
         super().__init__()
@@ -25,7 +26,9 @@ class OCRWorker(QThread):
         self.running = False
         self.ocr_manager = OCRManager()
         self.translator_manager = TranslatorManager()
-        self.screenshot_engine = ScreenshotFactory.get_engine()
+        self.screenshot_engine = None
+        self.screenshot_engine_name = "Portal"
+        self.set_screenshot_engine(self.screenshot_engine_name)
         self.last_text = ""
         self._translation_lock = Lock()
         self._is_translating = False
@@ -61,9 +64,19 @@ class OCRWorker(QThread):
         with self.lock:
             if hasattr(self.screenshot_engine, "close"):
                 self.screenshot_engine.close()
-            self.screenshot_engine = ScreenshotFactory.get_engine(engine_name)
+            try:
+                self.screenshot_engine = ScreenshotFactory.get_engine(engine_name)
+            except Exception as exc:
+                self.screenshot_engine = None
+                self.screenshot_engine_name = engine_name
+                message = str(exc) or f"{engine_name} screenshot engine is unavailable."
+                print(f"OCRWorker: Screenshot engine error for {engine_name}: {message}")
+                self.screenshot_engine_error.emit(engine_name, message)
+                return False
+            self.screenshot_engine_name = engine_name
             self.last_text = ""
             print(f"OCRWorker: Screenshot engine: {engine_name}")
+            return True
 
     def set_languages(self, source, target):
         with self.lock:
@@ -114,6 +127,11 @@ class OCRWorker(QThread):
                 with self.lock:
                     rect = QRect(self.capture_rect)
                     current_engine = self.ocr_manager.current_engine_name
+                    screenshot_engine = self.screenshot_engine
+
+                if screenshot_engine is None:
+                    time.sleep(self.LOOP_SLEEP_SECONDS)
+                    continue
                 
                 with self._translation_lock:
                     translating = self._is_translating
@@ -122,7 +140,7 @@ class OCRWorker(QThread):
                     time.sleep(self.LOOP_SLEEP_SECONDS); continue
 
                 # 1. Capture
-                if not self.screenshot_engine.capture(rect, IMG_PATH, self.dpi_scale):
+                if not screenshot_engine.capture(rect, IMG_PATH, self.dpi_scale):
                     time.sleep(self.LOOP_SLEEP_SECONDS); continue
 
                 # 2. Prep (Special processing for Tesseract only)
