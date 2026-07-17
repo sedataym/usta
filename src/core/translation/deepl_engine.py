@@ -2,6 +2,11 @@ import os
 import deepl
 from src.core.translation.base_translator import BaseTranslator
 
+# DeepL requires region-specific target language codes for some languages
+DEEPL_TARGET_LANG_MAP = {
+    "en": "en-US",
+}
+
 
 class DeepLTranslatorEngine(BaseTranslator):
     def __init__(self, api_key=None, source='en', target='tr'):
@@ -36,10 +41,11 @@ class DeepLTranslatorEngine(BaseTranslator):
 
         try:
             if self.translator:
+                target_lang = DEEPL_TARGET_LANG_MAP.get(self.target, self.target)
                 result = self.translator.translate_text(
                     text,
                     source_lang=self.source,
-                    target_lang=self.target,
+                    target_lang=target_lang,
                 )
                 return result.text
             return "Error: DeepL could not be initialized."
