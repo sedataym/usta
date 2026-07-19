@@ -1,7 +1,14 @@
+import glob
 import os
 
 from src.core.ocr.base_ocr import BaseOCREngine
 from src.config import OCR_LANG_MAPPING
+
+_MODELS_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "ocr_models",
+    "rapidocr",
+)
 
 
 class RapidOCREngine(BaseOCREngine):
@@ -19,6 +26,20 @@ class RapidOCREngine(BaseOCREngine):
         self.current_lang = "en"
         self._unavailable_reason = None
         self.cpu_threads = max(1, int(cpu_threads))
+
+    @staticmethod
+    def _get_model_path(lang_code: str) -> str:
+        if not lang_code or lang_code == "en":
+            return ""
+
+        pattern = os.path.join(_MODELS_DIR, f"{lang_code}_PP-OCR*.onnx")
+        matches = sorted(glob.glob(pattern))
+        if matches:
+            print(f"RapidOCREngine: Found recognition model for lang={lang_code}: {os.path.basename(matches[0])}")
+            return matches[0]
+
+        print(f"RapidOCREngine: No recognition model found for lang={lang_code}, using default")
+        return ""
 
     def set_language(self, lang_code: str):
         mapping = OCR_LANG_MAPPING.get(lang_code, OCR_LANG_MAPPING["en"])
@@ -80,10 +101,12 @@ class RapidOCREngine(BaseOCREngine):
             )
 
         if getattr(OrtInferSession.__init__, "_usta_cpu_limited", False):
+            print("RapidOCREngine: OrtInferSession already patched, skipping")
             return
 
         limited_init._usta_cpu_limited = True
         OrtInferSession.__init__ = limited_init
+        print("RapidOCREngine: OrtInferSession monkey-patched for CPU thread limiting")
 
     def _initialize(self) -> bool:
         if self.ocr is not None:
@@ -104,12 +127,14 @@ class RapidOCREngine(BaseOCREngine):
                 f"with lang={self.current_lang}, cpu_threads={self.cpu_threads}, "
                 "use_text_det=True, use_angle_cls=False"
             )
+            rec_model_path = self._get_model_path(self.current_lang)
+
             self.ocr = RapidOCR(
                 use_text_det=True,
                 use_angle_cls=False,
                 det_model_path="",
                 det_limit_side_len=320,
-                rec_model_path="",
+                rec_model_path=rec_model_path,
                 rec_batch_num=1,
             )
             return True
