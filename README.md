@@ -103,8 +103,8 @@ sudo dnf install -y git \
   tesseract-langpack-tha \
   tesseract-langpack-spa \
   tesseract-langpack-jpn \
-  tesseract-langpack-chs \
-  tesseract-langpack-cht
+  tesseract-langpack-chi_sim \
+  tesseract-langpack-chi_tra
 ```
 
 ### Ubuntu / Debian packages

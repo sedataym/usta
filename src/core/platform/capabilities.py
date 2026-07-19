@@ -25,18 +25,18 @@ LANGUAGES = {
 # Map UI language codes to OCR engine language codes
 OCR_LANG_MAPPING = {
     "en": {"tess": "eng", "easy": "en", "paddle": "en", "rapid": "en"},
-    "tr": {"tess": "tur", "easy": "tr", "paddle": "tr", "rapid": "tr"},
-    "ru": {"tess": "rus", "easy": "ru", "paddle": "ru", "rapid": "ru"},
-    "ar": {"tess": "ara", "easy": "ar", "paddle": "ar", "rapid": "ar"},
-    "he": {"tess": "heb", "easy": "he", "paddle": "he", "rapid": "he"},
-    "de": {"tess": "deu", "easy": "de", "paddle": "de", "rapid": "de"},
-    "fr": {"tess": "fra", "easy": "fr", "paddle": "fr", "rapid": "fr"},
+    "tr": {"tess": "tur", "easy": "tr", "paddle": "tr", "rapid": "latin"},
+    "ru": {"tess": "rus", "easy": "ru", "paddle": "ru", "rapid": "cyrillic"},
+    "ar": {"tess": "ara", "easy": "ar", "paddle": "ar", "rapid": "arabic"},
+    "he": {"tess": "heb", "easy": "he", "paddle": "he", "rapid": "en"},
+    "de": {"tess": "deu", "easy": "de", "paddle": "de", "rapid": "latin"},
+    "fr": {"tess": "fra", "easy": "fr", "paddle": "fr", "rapid": "latin"},
     "ja": {"tess": "jpn", "easy": "ja", "paddle": "ja", "rapid": "japan"},
     "ko": {"tess": "kor", "easy": "ko", "paddle": "ko", "rapid": "korean"},
     "zh": {"tess": "chi_sim", "easy": "ch_sim", "paddle": "ch", "rapid": "ch"},
-    "vi": {"tess": "vie", "easy": "vi", "paddle": "vi", "rapid": "vi"},
+    "vi": {"tess": "vie", "easy": "vi", "paddle": "vi", "rapid": "latin"},
     "th": {"tess": "tha", "easy": "th", "paddle": "th", "rapid": "th"},
-    "es": {"tess": "spa", "easy": "es", "paddle": "es", "rapid": "es"},
+    "es": {"tess": "spa", "easy": "es", "paddle": "es", "rapid": "latin"},
 }
 
 PORTAL_ORIENTATION = -1
