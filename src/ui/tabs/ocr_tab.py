@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from src.config import DPI_SCALE_DEFAULT, OCR_ENGINES, SCREENSHOT_ENGINES
 from src.i18n import _
@@ -9,12 +9,19 @@ def build_ocr_tab(panel):
     tab_ocr = QWidget()
     tab_ocr_layout = QVBoxLayout(tab_ocr)
     tab_ocr_layout.addWidget(QLabel(_("OCR Engine:")))
+    h_ocr = QHBoxLayout()
     panel.combo_ocr = QComboBox()
     panel.combo_ocr.setFocusPolicy(Qt.NoFocus)
     panel.combo_ocr.addItems(OCR_ENGINES)
+    h_ocr.addWidget(panel.combo_ocr)
+    panel.btn_add_custom_ocr = QPushButton("+")
+    panel.btn_add_custom_ocr.setFixedWidth(30)
+    panel.btn_add_custom_ocr.setToolTip(_("Add custom OCR API"))
+    panel.btn_add_custom_ocr.clicked.connect(panel.open_custom_ocr_api_dialog)
+    h_ocr.addWidget(panel.btn_add_custom_ocr)
     panel.combo_ocr.currentTextChanged.connect(panel.worker.set_engine)
     panel.combo_ocr.currentTextChanged.connect(panel.save_settings)
-    tab_ocr_layout.addWidget(panel.combo_ocr)
+    tab_ocr_layout.addLayout(h_ocr)
 
     tab_ocr_layout.addWidget(QLabel(_("Screen Engine:")))
     panel.combo_screenshot = QComboBox()

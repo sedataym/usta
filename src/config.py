@@ -50,6 +50,7 @@ if not os.path.exists(CONFIG_DIR):
 
 SETTINGS_FILE = os.path.join(CONFIG_DIR, "settings.pkl")
 PRESETS_FILE = os.path.join(CONFIG_DIR, "presets.pkl")
+CUSTOM_OCR_APIS_FILE = os.path.join(CONFIG_DIR, "custom_ocr_apis.pkl")
 
 # Temp Files
 TEMP_DIR = tempfile.gettempdir()

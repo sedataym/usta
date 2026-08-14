@@ -8,6 +8,7 @@ easyocr>=1.7.0
 #   pip install paddlepaddle  (requires Python ≤ 3.12 as of June 2026)
 deepl>=1.0.0
 deep-translator>=1.11.0
+httpx>=0.27.0
 python-dotenv>=1.0.0
 Pillow>=10.0.0
 dbus-next>=0.2.3
