@@ -30,6 +30,7 @@ dependencies = [
     "Pillow>=10.0.0",
     "dbus-next>=0.2.3",
     "Babel>=2.12.0",
+    "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
 ]
 
 [project.urls]

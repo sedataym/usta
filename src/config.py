@@ -53,8 +53,9 @@ PRESETS_FILE = os.path.join(CONFIG_DIR, "presets.pkl")
 
 # Temp Files
 TEMP_DIR = tempfile.gettempdir()
-DEV_SHM ="/dev/shm"
-IMG_PATH = os.path.join(DEV_SHM, "usta_snapshot.jpeg")
-FULL_SCREEN_TEMP_PATH = os.path.join(DEV_SHM, "usta_full_snap.jpeg")
+DEV_SHM = "/dev/shm"
+SCREENSHOT_TEMP_DIR = DEV_SHM if os.path.isdir(DEV_SHM) else TEMP_DIR
+IMG_PATH = os.path.join(SCREENSHOT_TEMP_DIR, "usta_snapshot.jpeg")
+FULL_SCREEN_TEMP_PATH = os.path.join(SCREENSHOT_TEMP_DIR, "usta_full_snap.jpeg")
 SOCKET_PATH = os.path.join(TEMP_DIR, "usta.sock")
 SLURP_TEMP_PATH = os.path.join(TEMP_DIR, "slurp_final.txt")

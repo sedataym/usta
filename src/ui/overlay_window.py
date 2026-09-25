@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
-from src.config import SETTINGS_TOPMOST_HOTKEY
+from src.config import OS, SETTINGS_TOPMOST_HOTKEY
 from src.core.shortcut import GlobalHotkey
 from src.i18n import _
 
@@ -81,11 +81,13 @@ class TransparentOverlay(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("USTA_TRANSLATION_OVERLAY")
-        self.setWindowFlags(Qt.WindowStaysOnTopHint |
-                            Qt.FramelessWindowHint |
-                            Qt.WindowDoesNotAcceptFocus |
-                            Qt.Tool |
-                            Qt.X11BypassWindowManagerHint)
+        window_flags = (Qt.WindowStaysOnTopHint |
+                        Qt.FramelessWindowHint |
+                        Qt.WindowDoesNotAcceptFocus |
+                        Qt.Tool)
+        if OS == "Linux":
+            window_flags |= Qt.X11BypassWindowManagerHint
+        self.setWindowFlags(window_flags)
 
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WA_ShowWithoutActivating)
@@ -126,14 +128,47 @@ class TransparentOverlay(QWidget):
         self.hide_timer.timeout.connect(lambda: self.label.setText(""))
 
         self.set_mode(False)
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.raise_)
-        self.timer.start(2000)
 
         # Manual drag state (X11BypassWindowManagerHint bypasses WM)
         self._drag_mode = None  # "move" or "resize"
         self._drag_start_pos = None
         self._drag_start_geometry = None
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if OS == "Darwin":
+            QTimer.singleShot(0, self._apply_macos_window_rules)
+
+    def _apply_macos_window_rules(self):
+        if OS != "Darwin":
+            return
+
+        try:
+            import AppKit
+        except ImportError as ex:
+            print(f"macOS pencere kuralları uygulanamadı: Cocoa bağımlılığı bulunamadı ({ex})")
+            return
+
+        try:
+            self.winId()
+            window = next(
+                (candidate for candidate in AppKit.NSApp.windows()
+                 if str(candidate.title()) == "USTA_TRANSLATION_OVERLAY"),
+                None,
+            )
+            if window is None:
+                print("macOS pencere kuralları uygulanamadı: overlay penceresi bulunamadı")
+                return
+
+            behavior = (AppKit.NSWindowCollectionBehaviorCanJoinAllSpaces |
+                        AppKit.NSWindowCollectionBehaviorFullScreenAuxiliary |
+                        AppKit.NSWindowCollectionBehaviorStationary)
+            window.setLevel_(AppKit.NSStatusWindowLevel)
+            window.setCollectionBehavior_(behavior)
+            window.setHidesOnDeactivate_(False)
+            window.setReleasedWhenClosed_(False)
+        except Exception as ex:
+            print(f"macOS pencere kuralları uygulanamadı: {ex}")
 
     def _emit_settings_topmost_hotkey_pressed(self):
         self.settings_topmost_hotkey_pressed.emit()

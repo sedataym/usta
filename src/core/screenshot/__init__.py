@@ -4,12 +4,18 @@ from src.core.screenshot.image_processor import ImageProcessor
 from src.core.screenshot.screenshot_factory import ScreenshotFactory
 
 try:
+    from src.core.screenshot.macos_screenshot import MacOSScreenshot
+except Exception:
+    MacOSScreenshot = None
+
+try:
     from src.core.screenshot.portal_screenshot import PortalScreenshot
 except Exception:
     PortalScreenshot = None
  
 __all__ = [
     "BaseScreenshot",
+    "MacOSScreenshot",
     "PortalScreenshot",
     "SpectacleScreenshot",
     "ImageProcessor",

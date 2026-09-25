@@ -20,7 +20,8 @@ def build_ocr_tab(panel):
     panel.combo_screenshot = QComboBox()
     panel.combo_screenshot.setFocusPolicy(Qt.NoFocus)
     panel.combo_screenshot.addItems(SCREENSHOT_ENGINES)
-    panel.combo_screenshot.setCurrentText("Portal")
+    if SCREENSHOT_ENGINES:
+        panel.combo_screenshot.setCurrentText(SCREENSHOT_ENGINES[0])
     panel.combo_screenshot.currentTextChanged.connect(panel.worker.set_screenshot_engine)
     panel.combo_screenshot.currentTextChanged.connect(panel.save_settings)
     tab_ocr_layout.addWidget(panel.combo_screenshot)
