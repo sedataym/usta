@@ -210,7 +210,7 @@ instead.
 ## 🛠️ Tech Stack
 * **GUI:** PySide6
 * **OCR:** pytesseract, easyocr
-* **Translation:** deep-translator
+* **Translation:** googletrans, DeepL API
 * **Desktop Environments:** KDE Plasma (optimized) / GNOME
 
 ---
