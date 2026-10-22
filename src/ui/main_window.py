@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QApplic
 from src.core.worker import OCRWorker
 from src.ui.overlay_window import TransparentOverlay
 from src.core.sniper import SniperFactory
-from src.config import LANGUAGES, SETTINGS_FILE, PRESETS_FILE, CUSTOM_OCR_APIS_FILE, DPI_SCALE_DEFAULT, SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY, OCR_ENGINES, get_language_code
+from src.config import LANGUAGES, SETTINGS_FILE, PRESETS_FILE, CUSTOM_OCR_APIS_FILE, CUSTOM_TRANSLATION_APIS_FILE, DPI_SCALE_DEFAULT, SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY, OCR_ENGINES, TRANSLATION_ENGINES, get_language_code
 from src.core.shortcut import GlobalHotkey
 from src.i18n import _
 from src.ui.tabs import (
@@ -217,7 +217,7 @@ class ControlPanel(QWidget):
                 
                 # Update UI elements
                 self._refresh_ocr_combo(selected=s.get("ocr_engine", self._default_ocr_engine()))
-                self.combo_translator.setCurrentText(s.get("translator_engine", "Google"))
+                self._refresh_translator_combo(selected=s.get("translator_engine", "Google"))
                 self.combo_source.setCurrentText(s.get("source_lang", "English"))
                 self.combo_target.setCurrentText(s.get("target_lang", "Turkish"))
                 
@@ -277,6 +277,7 @@ class ControlPanel(QWidget):
         
         # If file not exists or error occurs, set defaults
         self._refresh_ocr_combo(selected=self._default_ocr_engine())
+        self._refresh_translator_combo(selected="Google")
         self._apply_saved_hotkeys(SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY)
         self.update_languages()
 
@@ -578,6 +579,197 @@ class ControlPanel(QWidget):
         self.worker.ocr_manager.reload_custom_engines()
         if chosen:
             self.worker.set_engine(chosen)
+
+    # ---------- Custom Translation API Helpers ----------
+    def _load_custom_translation_apis(self):
+        if not os.path.exists(CUSTOM_TRANSLATION_APIS_FILE):
+            return {}
+        try:
+            with open(CUSTOM_TRANSLATION_APIS_FILE, "rb") as f:
+                payload = pickle.load(f)
+        except Exception as e:
+            print(f"Custom translation APIs load error: {e}")
+            return {}
+
+        if not isinstance(payload, dict):
+            return {}
+
+        apis = {}
+        for raw_name, config in payload.items():
+            name = str(raw_name).strip() if raw_name is not None else ""
+            if not name or not isinstance(config, dict):
+                continue
+            endpoint = config.get("endpoint")
+            if not isinstance(endpoint, str) or not endpoint.strip():
+                continue
+            headers = config.get("headers", {})
+            if headers is None:
+                headers = {}
+            if not isinstance(headers, dict):
+                continue
+            apis[name] = {"endpoint": endpoint.strip(), "headers": dict(headers)}
+        return apis
+
+    def _save_custom_translation_apis(self, apis):
+        try:
+            with open(CUSTOM_TRANSLATION_APIS_FILE, "wb") as f:
+                pickle.dump(apis, f)
+        except Exception as e:
+            print(f"Custom translation APIs save error: {e}")
+
+    def _default_translator_engine(self) -> str:
+        return "Google" if "Google" in TRANSLATION_ENGINES else (TRANSLATION_ENGINES[0] if TRANSLATION_ENGINES else "")
+
+    def _refresh_translator_combo(self, selected=None):
+        if not hasattr(self, "combo_translator"):
+            return
+
+        previous = self.combo_translator.currentText()
+        apis = self._load_custom_translation_apis()
+
+        self.combo_translator.blockSignals(True)
+        self.combo_translator.clear()
+        self.combo_translator.addItems(TRANSLATION_ENGINES)
+        for name in sorted(apis.keys()):
+            if name not in TRANSLATION_ENGINES:
+                self.combo_translator.addItem(name)
+
+        candidates = [selected, previous, self._default_translator_engine()]
+        chosen = ""
+        for candidate in candidates:
+            if candidate and self.combo_translator.findText(candidate) >= 0:
+                chosen = candidate
+                break
+        if chosen:
+            self.combo_translator.setCurrentText(chosen)
+        self.combo_translator.blockSignals(False)
+
+        self.worker.translator_manager.reload_custom_engines()
+        if chosen:
+            self.worker.set_translator(chosen)
+
+    def open_custom_translation_api_dialog(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle(_("Custom Translation APIs"))
+        layout = QVBoxLayout(dialog)
+
+        form = QFormLayout()
+        name_input = QLineEdit()
+        endpoint_input = QLineEdit()
+        headers_input = QPlainTextEdit()
+        headers_input.setPlaceholderText('{ "Authorization": "Bearer ..." }')
+        headers_input.setFixedHeight(90)
+        form.addRow(_("Translation API Name"), name_input)
+        form.addRow(_("API Endpoint"), endpoint_input)
+        form.addRow(_("API Header"), headers_input)
+        layout.addLayout(form)
+
+        layout.addWidget(QLabel(_("Saved APIs")))
+        api_list = QListWidget()
+        layout.addWidget(api_list)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Close)
+        save_button = buttons.addButton(_("Save"), QDialogButtonBox.AcceptRole)
+        delete_button = buttons.addButton(_("Delete"), QDialogButtonBox.DestructiveRole)
+        layout.addWidget(buttons)
+
+        def refresh_list(selected_name=None):
+            api_list.clear()
+            apis = self._load_custom_translation_apis()
+            for api_name in sorted(apis.keys()):
+                api_list.addItem(api_name)
+            if selected_name:
+                matches = api_list.findItems(selected_name, Qt.MatchExactly)
+                if matches:
+                    api_list.setCurrentItem(matches[0])
+
+        def populate_form():
+            item = api_list.currentItem()
+            if not item:
+                return
+            apis = self._load_custom_translation_apis()
+            config = apis.get(item.text(), {})
+            name_input.setText(item.text())
+            endpoint_input.setText(config.get("endpoint", ""))
+            headers = config.get("headers", {})
+            headers_input.setPlainText(json.dumps(headers, indent=2) if headers else "")
+
+        def builtin_names():
+            names = set(TRANSLATION_ENGINES)
+            names.update(getattr(self.worker.translator_manager, "builtin_translators", {}).keys())
+            return names
+
+        def save_api():
+            name = name_input.text().strip()
+            endpoint = endpoint_input.text().strip()
+            raw_headers = headers_input.toPlainText().strip()
+
+            if not name:
+                QMessageBox.warning(dialog, _("Invalid Translation API"), _("Translation API Name is required."))
+                return
+            if not endpoint:
+                QMessageBox.warning(dialog, _("Invalid Translation API"), _("API Endpoint is required."))
+                return
+            if not endpoint.startswith(("http://", "https://")):
+                QMessageBox.warning(dialog, _("Invalid Translation API"), _("API Endpoint must start with http:// or https://."))
+                return
+            if name in builtin_names():
+                QMessageBox.warning(dialog, _("Invalid Translation API"), _("Custom translation API name cannot match a built-in translation engine."))
+                return
+
+            headers = {}
+            if raw_headers:
+                try:
+                    headers = json.loads(raw_headers)
+                except Exception as e:
+                    QMessageBox.warning(dialog, _("Invalid Translation API"), _("API Header must be a valid JSON object.") + f"\n{e}")
+                    return
+                if not isinstance(headers, dict):
+                    QMessageBox.warning(dialog, _("Invalid Translation API"), _("API Header must be a valid JSON object."))
+                    return
+
+            for key in list(headers.keys()):
+                if str(key).lower() == "content-type":
+                    del headers[key]
+
+            apis = self._load_custom_translation_apis()
+            apis[name] = {"endpoint": endpoint, "headers": headers}
+            self._save_custom_translation_apis(apis)
+            refresh_list(name)
+            self._refresh_translator_combo(selected=name)
+            self.save_settings()
+            print(f"Custom translation API '{name}' saved.")
+
+        def delete_api():
+            item = api_list.currentItem()
+            if not item:
+                QMessageBox.information(dialog, _("No Selection"), _("Please select a custom translation API to delete."))
+                return
+            name = item.text()
+            apis = self._load_custom_translation_apis()
+            if name not in apis:
+                QMessageBox.warning(dialog, _("Not Found"), _("Custom translation API not found."))
+                refresh_list()
+                return
+
+            del apis[name]
+            self._save_custom_translation_apis(apis)
+            fallback = self._default_translator_engine() if self.combo_translator.currentText() == name else self.combo_translator.currentText()
+            refresh_list()
+            name_input.clear()
+            endpoint_input.clear()
+            headers_input.clear()
+            self._refresh_translator_combo(selected=fallback)
+            self.save_settings()
+            print(f"Custom translation API '{name}' deleted.")
+
+        api_list.currentItemChanged.connect(lambda _current, _previous: populate_form())
+        save_button.clicked.connect(save_api)
+        delete_button.clicked.connect(delete_api)
+        buttons.rejected.connect(dialog.reject)
+
+        refresh_list()
+        dialog.exec()
 
     def open_custom_ocr_api_dialog(self):
         dialog = QDialog(self)

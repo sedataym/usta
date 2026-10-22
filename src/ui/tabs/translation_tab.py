@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QLineEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
 from src.config import LANGUAGES, TRANSLATION_ENGINES
 from src.i18n import _
@@ -9,13 +9,20 @@ def build_translation_tab(panel):
     tab_translation = QWidget()
     tab_translation_layout = QVBoxLayout(tab_translation)
     tab_translation_layout.addWidget(QLabel(_("Translation Engine:")))
+    h_translator = QHBoxLayout()
     panel.combo_translator = QComboBox()
     panel.combo_translator.setFocusPolicy(Qt.NoFocus)
     panel.combo_translator.addItems(TRANSLATION_ENGINES)
+    h_translator.addWidget(panel.combo_translator)
+    panel.btn_add_custom_translation = QPushButton("+")
+    panel.btn_add_custom_translation.setFixedWidth(30)
+    panel.btn_add_custom_translation.setToolTip(_("Add custom translation API"))
+    panel.btn_add_custom_translation.clicked.connect(panel.open_custom_translation_api_dialog)
+    h_translator.addWidget(panel.btn_add_custom_translation)
     panel.combo_translator.currentTextChanged.connect(panel.worker.set_translator)
     panel.combo_translator.currentTextChanged.connect(panel.save_settings)
     panel.combo_translator.currentTextChanged.connect(panel.on_translator_changed)
-    tab_translation_layout.addWidget(panel.combo_translator)
+    tab_translation_layout.addLayout(h_translator)
 
     h_lang = QHBoxLayout()
     v_source = QVBoxLayout()
