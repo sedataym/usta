@@ -1,12 +1,15 @@
 """Versioned, atomic settings storage with non-destructive legacy migration."""
 
 import json
+import logging
 import os
 import tempfile
 from pathlib import Path
 
 from usta.application.settings import AppSettings, Preset
 from usta.infrastructure.legacy_settings import load_legacy
+
+logger = logging.getLogger(__name__)
 
 
 class SettingsStore:
@@ -39,7 +42,12 @@ class SettingsStore:
         # Validate existing JSON even when save was called before load.
         path = self.directory / f"{name}.json"
         if path.exists():
-            self._read(name)
+            if name == "presets":
+                self.load_presets()
+            else:
+                self._read(name)
+            if name in self._blocked:
+                raise ValueError("Cannot overwrite malformed presets; original file preserved")
         self.directory.mkdir(parents=True, exist_ok=True)
         descriptor, temporary = tempfile.mkstemp(suffix=".tmp", dir=self.directory)
         try:
@@ -68,9 +76,20 @@ class SettingsStore:
         self._write("settings", settings.to_dict())
 
     def load_presets(self) -> dict[str, Preset]:
-        presets = {name: Preset.from_dict(value) for name, value in self._read("presets").items()}
+        presets = {}
+        for name, value in self._read("presets").items():
+            try:
+                if not isinstance(name, str):
+                    raise ValueError("Preset names must be strings")
+                presets[name] = Preset.from_dict(value)
+            except ValueError:
+                self._blocked.add("presets")
+                logger.warning(
+                    "Malformed preset found; valid entries recovered, original file protected"
+                )
         if (
-            not (self.directory / "presets.json").exists()
+            "presets" not in self._blocked
+            and not (self.directory / "presets.json").exists()
             and (self.directory / "presets.pkl").exists()
         ):
             self.save_presets(presets)

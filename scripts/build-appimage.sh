@@ -35,7 +35,7 @@ EOF
   exit 1
 fi
 
-APP_VERSION="${APP_VERSION:-$(${PYTHON_BIN} -c 'from usta._version import __version__; print(__version__)')}"
+APP_VERSION="${APP_VERSION:-$(${PYTHON_BIN} -c 'import runpy; print(runpy.run_path("src/usta/_version.py")["__version__"])')}"
 
 if ! command -v "${APPIMAGETOOL}" >/dev/null 2>&1; then
   LOCAL_APPIMAGETOOL="${BUILD_DIR}/appimagetool-${APPIMAGE_ARCH}.AppImage"

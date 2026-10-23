@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 class SettingsPresenter:
     def __init__(self, view, store=None):
         self.view = view
+        self._loaded_settings = AppSettings()
         self.store = store if store is not None else SettingsStore(Path(CONFIG_DIR))
 
     def save_settings(self):
@@ -51,7 +52,9 @@ class SettingsPresenter:
             "temporary_region_hotkey": self.view.temporary_region_hotkey,
         }
         try:
-            self.store.save(AppSettings.from_dict(settings))
+            updated = AppSettings.from_dict({**self._loaded_settings.to_dict(), **settings})
+            self.store.save(updated)
+            self._loaded_settings = updated
             logger.info("Settings saved.")
         except Exception as e:
             logger.error(f"Settings save error: {e}")
@@ -60,8 +63,9 @@ class SettingsPresenter:
         self.view._loading_settings = True
         blockers = [QSignalBlocker(widget) for widget in self.view.findChildren(QWidget)]
         try:
-            s = self.store.load().to_dict()
-            # Update UI elements (triggers signals without blocking)
+            self._loaded_settings = self.store.load()
+            s = self._loaded_settings.to_dict()
+            # Apply UI values while signals and persistence are blocked.
             self.view.ocr_tab.combo_ocr.setCurrentText(s.get("ocr_engine", "Tesseract"))
             self.view.translation_tab.combo_translator.setCurrentText(
                 s.get("translator_engine", "Google")
@@ -187,8 +191,10 @@ class SettingsPresenter:
             self.store.save_presets(
                 {name: Preset.from_dict(value) for name, value in presets.items()}
             )
+            return True
         except (OSError, ValueError) as exc:
             logger.error(f"Presets save error: {exc}")
+            return False
 
     def refresh_preset_list(self):
         """Refresh the combo box with preset names."""
@@ -224,7 +230,8 @@ class SettingsPresenter:
 
         presets = self._load_presets_dict()
         presets[name] = preset
-        self._save_presets_dict(presets)
+        if not self._save_presets_dict(presets):
+            return
         self.refresh_preset_list()
         self.view.save_tab.preset_name_input.clear()
         logger.info(f"Preset '{name}' saved.")
@@ -304,7 +311,8 @@ class SettingsPresenter:
         presets = self._load_presets_dict()
         if name in presets:
             del presets[name]
-            self._save_presets_dict(presets)
+            if not self._save_presets_dict(presets):
+                return
             self.refresh_preset_list()
             logger.info(f"Preset '{name}' deleted.")
         else:

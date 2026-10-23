@@ -1,3 +1,4 @@
+import json
 import os
 import pickle
 import tempfile
@@ -5,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from usta.application.settings import AppSettings
+from usta.application.settings import AppSettings, Preset
 from usta.infrastructure.settings_store import SettingsStore
 
 
@@ -76,3 +77,22 @@ class SettingsStoreTests(unittest.TestCase):
         self.assertEqual(s.dpi_scale, 1.0)
         self.assertEqual(s.font_size, 20)
         self.assertEqual(s.capture_rect, (-20, 3, 100, 30))
+
+    def test_malformed_preset_preserves_valid_entries_and_blocks_overwrite(self):
+        path = self.root / "presets.json"
+        raw = json.dumps(
+            {"schema_version": 1, "data": {"valuable": {"font_size": 31}, "broken": None}}
+        )
+        path.write_text(raw)
+        self.assertEqual(self.store.load_presets()["valuable"].font_size, 31)
+        with self.assertRaises(ValueError):
+            self.store.save_presets({"new": Preset()})
+        self.assertEqual(path.read_text(), raw)
+
+    def test_save_without_load_cannot_replace_malformed_presets(self):
+        path = self.root / "presets.json"
+        raw = json.dumps({"schema_version": 1, "data": {"valuable": {}, "broken": None}})
+        path.write_text(raw)
+        with self.assertRaises(ValueError):
+            self.store.save_presets({"new": Preset()})
+        self.assertEqual(path.read_text(), raw)

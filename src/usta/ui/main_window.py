@@ -321,6 +321,7 @@ class ControlPanel(QWidget):
         self._set_temporary_region_hotkey(TEMPORARY_REGION_HOTKEY)
 
     def update_system_status(self, is_running):
+        self.overlay.set_mode(is_running)
         if is_running:
             self.status_tab.system_indicator.setStyleSheet(
                 "background-color: #2E7D32; border-radius: 8px;"
@@ -331,7 +332,6 @@ class ControlPanel(QWidget):
                 "background-color: #C62828; border-radius: 8px;"
             )
             self.status_tab.system_status_label.setText(_("Stopped"))
-            self.overlay.set_mode(False)
             self.perf_bar.setValue(0)
             self.perf_bar.setStyleSheet("")
 

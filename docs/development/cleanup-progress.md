@@ -36,3 +36,27 @@ Task 9: private capture workspace and real Unix socket tests pass outside sandbo
 Task 10: Ruff check/format and mypy (four boundary modules) pass. Contributor, architecture, testing, compatibility and model provenance docs added; README macOS status corrected. UI status/preset messages now use existing TR/UK catalogs; native callback names and window algorithms retained. Model provenance is explicitly unverified rather than assuming source-code license covers models.
 
 Task 11 implementation: CI matrix and package workflow added; wheel/sdist build and byte-for-byte resource checks passed. Clean no-dependency wheel venv imported package/resources/entry point outside repo; full dependency install is defined in CI, not claimed locally. Native macOS suite passed all 59 tests without skips outside sandbox, including fullscreen host helper and Vision. Final acceptance found queued Qt delivery could outlive stop and repeated start could request restart: both reproduced RED and fixed GREEN with new worker signal tests. RapidOCR compatibility option/idempotence contract added. Real Linux KDE/GNOME, AppImage execution, remote CI and additional Python/architecture combinations remain unverified external checks.
+
+Final acceptance before review: all 63 tests passed with USTA_NATIVE_TESTS=1 (no skips), Ruff check/format passed, mypy passed, pip check passed, Bash syntax checks passed. Clean wheel imported all eight ONNX models and catalogs outside repository. Synthetic Apple Vision comparison on same host/image: baseline median 31.5 ms, current 32.3 ms, six warm samples each; identical recognized text. This small timing difference is not a full OCR/provider performance certification. Remaining external checks: Linux desktop/AppImage, remote CI and extra hardware/interpreter combinations.
+
+## Independent final review and fix pass
+
+A fresh gpt-6-astra reviewer examined the full branch read-only. P1 malformed preset data loss and P2 UI unknown-field loss were confirmed. Two additional findings (overlay state during queued restart and stale installed AppImage version) were regraded Important because they affect supported start/stop behavior and release artifact identification; all four were fixed in this single pass.
+
+Final: fixed malformed-preset overwrite — store/presenter regressions RED→GREEN; valid entries recover and writes remain blocked until malformed original is repaired.
+Final: fixed unknown settings fields lost on UI save — Qt regression RED→GREEN; loaded model metadata retained.
+Final: fixed overlay mode after queued restart — false/true status replay RED→GREEN.
+Final: fixed AppImage version source — metadata regression RED→GREEN; source version file used without GUI import.
+No review findings deferred. Linux desktop/AppImage and remote CI remain external acceptance items, not successful checks. Generated native scratch file accidentally included in the CI commit was removed and ignored.
+
+## Final verification
+
+- `USTA_NATIVE_TESTS=1 .venv/bin/python -m unittest discover -s tests -v`: **72 passed, zero skips**, 11.076 seconds, outside sandbox. Includes native fullscreen/overlay/focus, Vision, hotkey lifecycle, real IPC, portable Linux factory/window contracts, storage and review regressions.
+- `ruff check .`, `ruff format --check .`: passed.
+- `mypy`: passed on four declared boundary modules.
+- `python -m pip check`: no broken requirements.
+- `python -m build --no-isolation`: wheel and sdist built. All source model/catalog bytes match both artifacts.
+- Clean wheel venv outside repository: package/resources/entry point imported. Installed wheel Qt startup/close smoke passed using shared existing runtime dependencies; no user settings touched. This is separate from the full clean dependency install in the unrun CI workflow.
+- `bash -n scripts/build-appimage.sh packaging/appimage/AppRun` and `git diff --check`: passed.
+- All eleven implementation stages have landed locally. Full Linux desktop/AppImage acceptance, remote CI version matrix, extra monitor/architecture combinations and exhaustive OCR memory/performance benchmarking remain unverified; they are not marked passed.
+- Changes retained on existing `feature/macos_support_1`; no merge, remote push, release or publication performed.

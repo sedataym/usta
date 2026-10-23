@@ -18,3 +18,8 @@ class MetadataTests(unittest.TestCase):
         self.assertFalse(any(d.startswith("paddleocr") for d in deps))
         self.assertIn("paddle", data["project"]["optional-dependencies"])
         self.assertEqual((ROOT / "requirements.txt").read_text().strip(), ".")
+
+    def test_appimage_version_uses_checkout_version_source(self):
+        script = (ROOT / "scripts/build-appimage.sh").read_text()
+        self.assertIn("src/usta/_version.py", script)
+        self.assertNotIn("from usta._version import __version__", script)

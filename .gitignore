@@ -69,3 +69,6 @@ target/
 .mypy_cache/
 .pytest_cache/
 .superpowers/
+
+# Local native/runtime scratch
+/:memory:.ses
