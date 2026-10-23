@@ -15,3 +15,5 @@ Host: macOS-26.5.2-arm64-arm-64bit-Mach-O; Python 3.14.7
 - deepl: 1.32.0
 
 Task 1: portable baseline 33 tests, 21 native skips, 0 failures. Initial unrestricted discovery aborted in Cocoa and Vision recognition failed because desktop services are inaccessible in sandbox (log /tmp/usta-baseline.log). Native tests now explicitly opt in. Linux window contracts run offscreen on either OS.
+
+Task 2: metadata regression failed before fix (missing DeepL). Dependency declarations now have one source and paddle/dev extras. Python 3.10 is the syntax/API floor, NOT a claim that all untested dependency combinations support 3.10; local 3.14 is recorded separately. Full lower-version install matrix remains CI validation. Existing environment pip check passed.

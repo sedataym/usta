@@ -1,17 +1,1 @@
-PySide6>=6.5.0
-pytesseract>=0.3.10
-rapidocr-onnxruntime>=1.2.0,<1.3.0
-onnxruntime>=1.17.0
-easyocr>=1.7.0
-#paddleocr>=3.6.0
-# paddlepaddle  (PaddleOCR's native inference backend — uncomment when available for your Python version)
-#   pip install paddlepaddle  (requires Python ≤ 3.12 as of June 2026)
-deepl>=1.0.0
-googletrans>=4.0.2
-python-dotenv>=1.0.0
-Pillow>=10.0.0
-dbus-next>=0.2.3
-Babel>=2.12.0
-pynput>=1.7.6
-pyobjc-framework-Cocoa>=10.0; sys_platform == "darwin"
-pyobjc-framework-Vision>=10.0; sys_platform == "darwin"
+.
