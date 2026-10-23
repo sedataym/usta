@@ -16,3 +16,14 @@ def resolve_paths() -> RuntimePaths:
 
 def prepare_paths(paths: RuntimePaths) -> None:
     paths.config_dir.mkdir(parents=True, exist_ok=True)
+
+class CaptureWorkspace:
+    """Only this object's files are removed during cleanup."""
+    def __init__(self):
+        base = resolve_paths().capture_dir
+        self._directory = tempfile.TemporaryDirectory(prefix='usta-', dir=base)
+        self.image_path = str(Path(self._directory.name) / 'snapshot.jpeg')
+        self.fullscreen_path = str(Path(self._directory.name) / 'full-screen.jpeg')
+
+    def close(self) -> None:
+        self._directory.cleanup()

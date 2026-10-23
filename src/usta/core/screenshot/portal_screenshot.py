@@ -57,7 +57,8 @@ CAPTURE_TIMEOUT_SECONDS = 1.0
 class PortalScreenshot(BaseScreenshot):
     """Long-lived screenshot engine based on Wayland/XDG Desktop Portal."""
 
-    def __init__(self):
+    def __init__(self, full_screen_path=FULL_SCREEN_TEMP_PATH):
+        self.full_screen_path = full_screen_path
         self._lock = threading.RLock()
         self._loop = asyncio.new_event_loop()
         self._bus = None
@@ -382,7 +383,7 @@ class PortalScreenshot(BaseScreenshot):
 
     def _save_sample_region(self, sample: Any, rect: QRect, output_path: str, dpi_scale: float) -> bool:
         image = self._build_frame_image(sample)
-        self._save_image_atomically(image, FULL_SCREEN_TEMP_PATH)
+        self._save_image_atomically(image, self.full_screen_path)
         width, height = image.size
 
         x1 = max(0, int(rect.x() * dpi_scale))

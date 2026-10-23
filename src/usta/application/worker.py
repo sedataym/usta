@@ -2,9 +2,9 @@
 from dataclasses import replace
 from PySide6.QtCore import QThread, Signal, QRect
 from usta.application.pipeline import Pipeline
-from usta.config import IMG_PATH
+from usta.infrastructure.paths import CaptureWorkspace
 from usta.core.screenshot import ScreenshotFactory, ImageProcessor
-from usta.core.socket_publisher import TranslationPublisher
+from usta.infrastructure.socket_publisher import TranslationPublisher
 
 class OCRWorker(QThread):
     LOOP_SLEEP_SECONDS = Pipeline.LOOP_SLEEP_SECONDS
@@ -16,8 +16,9 @@ class OCRWorker(QThread):
 
     def __init__(self):
         super().__init__()
-        self.pipeline = Pipeline(capture_factory=ScreenshotFactory.get_engine,
-            publisher=TranslationPublisher(), image_path=IMG_PATH,
+        self.workspace = CaptureWorkspace()
+        self.pipeline = Pipeline(capture_factory=lambda name: ScreenshotFactory.get_engine(name, self.workspace.fullscreen_path),
+            publisher=TranslationPublisher(), image_path=self.workspace.image_path,
             on_translation=self.new_translation.emit, on_error=self.error_occurred.emit,
             on_performance=self.performance_update.emit, on_translating=self.translation_status.emit,
             rect_factory=lambda values: QRect(*values), preprocess=ImageProcessor.preprocess_for_tesseract)
@@ -79,6 +80,7 @@ class OCRWorker(QThread):
     def close(self):
         self.stop()
         self.pipeline.close()
+        self.workspace.close()
 
     def run(self):
         self.running_status.emit(True)
