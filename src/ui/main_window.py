@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QApplic
 from src.core.worker import OCRWorker
 from src.ui.overlay_window import TransparentOverlay
 from src.core.sniper import SniperFactory
-from src.config import LANGUAGES, SETTINGS_FILE, PRESETS_FILE, DPI_SCALE_DEFAULT, SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY, get_language_code
+from src.config import OS, LANGUAGES, SETTINGS_FILE, PRESETS_FILE, DPI_SCALE_DEFAULT, SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY, get_language_code
 from src.core.shortcut import GlobalHotkey
 from src.i18n import _
 from src.ui.tabs import (
@@ -52,6 +52,14 @@ class ControlPanel(QWidget):
         # Disable maximization
         self.setWindowFlags(self.windowFlags() | Qt.MSWindowsFixedSizeDialogHint)
         self.setWindowFlag(Qt.WindowMaximizeButtonHint, False)
+        self._macos_hotkey_window = None
+        if OS == "Darwin":
+            from src.ui.macos_hotkeys import MacOSHotkeyWindow
+            # A decorated NSPanel can join another app's fullscreen Space.
+            self.setWindowFlags((self.windowFlags() & ~Qt.WindowType_Mask) | Qt.Tool)
+            self.setAttribute(Qt.WA_MacAlwaysShowToolWindow, True)
+            self.setAttribute(Qt.WA_ShowWithoutActivating, True)
+            self._macos_hotkey_window = MacOSHotkeyWindow(self)
         self._normal_window_flags = self.windowFlags()
         
         layout = QVBoxLayout(self)
@@ -135,6 +143,13 @@ class ControlPanel(QWidget):
     def set_settings_always_on_top(self, enabled):
         """Toggle the control panel's game-friendly topmost state from the overlay."""
         self._settings_always_on_top = enabled
+
+        if self._macos_hotkey_window is not None:
+            if enabled:
+                self._macos_hotkey_window.show()
+            else:
+                self._macos_hotkey_window.lower()
+            return
 
         if enabled:
             # Keep the control panel decorated by the window manager.
@@ -503,11 +518,16 @@ class ControlPanel(QWidget):
         self.perf_bar.setStyleSheet("")
 
     def closeEvent(self, event):
+        if self._macos_hotkey_window is not None:
+            self._macos_hotkey_window.stop()
         self._temporary_region_restore_timer.stop()
         self._temporary_region_hotkey.stop()
         self.worker.stop()
         self.overlay.close()
         super().closeEvent(event)
+        if self._macos_hotkey_window is not None and event.isAccepted():
+            # Qt.Tool panels do not trigger quitOnLastWindowClosed.
+            QApplication.instance().quit()
  
     # ---------- API Key Helpers ----------
     def _apply_api_key_for_current_engine(self):

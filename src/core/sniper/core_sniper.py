@@ -1,6 +1,7 @@
 import os
+import sys
 from PySide6.QtCore import Qt, QRect, QPoint, Signal, QObject, QEventLoop
-from PySide6.QtGui import QPainter, QColor, QPen
+from PySide6.QtGui import QPainter, QColor, QPen, QCursor
 from PySide6.QtWidgets import QApplication, QWidget
 from src.core.sniper.base_sniper import BaseSniper
 
@@ -40,13 +41,21 @@ class OverlayWindow(QWidget):
         self.manager = manager
         self.screen_geometry = screen.geometry()
         
-        self.setWindowFlags(
+        flags = (
             Qt.FramelessWindowHint |
             Qt.WindowStaysOnTopHint |
-            Qt.X11BypassWindowManagerHint |
             Qt.Tool
         )
+        if sys.platform != "darwin":
+            flags |= Qt.X11BypassWindowManagerHint
+        self.setWindowFlags(flags)
         self.setAttribute(Qt.WA_TranslucentBackground)
+        self._macos_hotkey_window = None
+        if sys.platform == "darwin":
+            from src.ui.macos_hotkeys import MacOSHotkeyWindow
+            self.setAttribute(Qt.WA_ShowWithoutActivating)
+            self.setAttribute(Qt.WA_MacAlwaysShowToolWindow)
+            self._macos_hotkey_window = MacOSHotkeyWindow(self)
         
         self.setGeometry(self.screen_geometry)
         self.setCursor(Qt.CrossCursor)
@@ -87,6 +96,11 @@ class OverlayWindow(QWidget):
         if event.key() == Qt.Key_Escape:
             self.manager.selectionFinished.emit(QRect())
 
+    def closeEvent(self, event):
+        if self._macos_hotkey_window is not None:
+            self._macos_hotkey_window.stop()
+        super().closeEvent(event)
+
 class CoreSniper(BaseSniper):
     def __init__(self):
         super().__init__()
@@ -109,15 +123,27 @@ class CoreSniper(BaseSniper):
         windows = []
         for screen in QApplication.screens():
             win = OverlayWindow(screen, manager)
-            win.show()
-            win.activateWindow()
-            win.raise_()
+            if win._macos_hotkey_window is not None:
+                win._macos_hotkey_window.show(focus=False)
+            else:
+                win.show()
+                win.activateWindow()
+                win.raise_()
             windows.append(win)
+
+        if sys.platform == "darwin" and windows:
+            target = next((win for win in windows if win.screen_geometry.contains(QCursor.pos())), windows[0])
+            target._macos_hotkey_window.focus()
 
         loop.exec()
         
         for win in windows:
             win.close()
+            if sys.platform == "darwin":
+                # Native helpers retain the widget in Python reference cycles.
+                # Schedule C++ destruction on the GUI thread before a later OCR
+                # allocation can collect those cycles on its worker thread.
+                win.deleteLater()
 
         rect = result_rect[0]
         if rect is not None:

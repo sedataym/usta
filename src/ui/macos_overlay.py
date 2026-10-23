@@ -90,8 +90,12 @@ class MacOSOverlayRules(QObject):
         except Exception as ex:
             print(f"macOS overlay öne getirilemedi: {ex}")
 
-    def _apply(self):
-        if not self._running or not self._widget.isVisible():
+    def prepare(self):
+        """Configure a panel before ordering it into an existing fullscreen Space."""
+        self._apply(allow_hidden=True)
+
+    def _apply(self, allow_hidden=False):
+        if not self._running or (not allow_hidden and not self._widget.isVisible()):
             return
         try:
             import AppKit
