@@ -35,7 +35,7 @@ EOF
   exit 1
 fi
 
-APP_VERSION="${APP_VERSION:-$(${PYTHON_BIN} -c 'from src._version import __version__; print(__version__)')}"
+APP_VERSION="${APP_VERSION:-$(${PYTHON_BIN} -c 'from usta._version import __version__; print(__version__)')}"
 
 if ! command -v "${APPIMAGETOOL}" >/dev/null 2>&1; then
   LOCAL_APPIMAGETOOL="${BUILD_DIR}/appimagetool-${APPIMAGE_ARCH}.AppImage"
@@ -95,8 +95,8 @@ chmod +x "${APPDIR}/AppRun" "${APPDIR}/usr/bin/python3"
 
 cp "${ROOT_DIR}/packaging/appimage/usta.desktop" "${APPDIR}/usta.desktop"
 cp "${ROOT_DIR}/packaging/appimage/usta.desktop" "${APPDIR}/usr/share/applications/usta.desktop"
-cp "${ROOT_DIR}/src/ui/assets/usta.png" "${APPDIR}/usta.png"
-cp "${ROOT_DIR}/src/ui/assets/usta.png" "${APPDIR}/usr/share/icons/hicolor/256x256/apps/usta.png"
+cp "${ROOT_DIR}/src/usta/ui/assets/usta.png" "${APPDIR}/usta.png"
+cp "${ROOT_DIR}/src/usta/ui/assets/usta.png" "${APPDIR}/usr/share/icons/hicolor/256x256/apps/usta.png"
 
 OUTPUT="${DIST_DIR}/USTA-${APP_VERSION}-${APPIMAGE_ARCH}.AppImage"
 rm -f "${OUTPUT}"

@@ -12,7 +12,7 @@ from unittest import mock
 from PySide6.QtCore import QEvent, QEventLoop, QTimer, Qt
 from PySide6.QtWidgets import QApplication, QWidget
 
-from src.ui.macos_overlay import MacOSOverlayRules
+from usta.ui.macos_overlay import MacOSOverlayRules
 
 
 def wait_for_events(milliseconds=30):
@@ -75,13 +75,13 @@ class MacOSOverlayTests(unittest.TestCase):
 
     def test_overlay_remains_on_screen_during_another_apps_native_fullscreen(self):
         import Quartz
-        from src.ui.overlay_window import TransparentOverlay
+        from usta.ui.overlay_window import TransparentOverlay
 
         self.rules.stop()
         self.widget.close()
         self.widget.deleteLater()
         # Exercise the real translation update path without global keyboard hooks.
-        with mock.patch('src.ui.overlay_window.GlobalHotkey', autospec=True):
+        with mock.patch('usta.ui.overlay_window.GlobalHotkey', autospec=True):
             self.widget = TransparentOverlay()
         self.widget.move(150, 150)
         self.widget.show()

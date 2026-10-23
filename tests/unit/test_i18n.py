@@ -2,12 +2,12 @@ import os
 import unittest
 from unittest import mock
 
-from src import i18n
+from usta import i18n
 
 
 TRANSLATIONS_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    "src",
+    "src", "usta", "resources",
     "translations",
 )
 

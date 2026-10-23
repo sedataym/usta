@@ -40,19 +40,19 @@ dependencies = [
 "Bug Tracker" = "https://github.com/sedataym/usta/issues"
 
 [project.scripts]
-usta = "src.main:main"
+usta = "usta.main:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["src*"]
+where = ["src"]
+include = ["usta*"]
 
 [tool.setuptools.package-data]
-"src" = ["translations/*/LC_MESSAGES/*.mo"]
-"src.ui" = ["assets/*.png"]
+"usta" = ["resources/translations/*/LC_MESSAGES/*.mo", "resources/translations/*/LC_MESSAGES/*.po", "resources/ocr_models/rapidocr/*.onnx"]
+"usta.ui" = ["assets/*.png"]
 
 [project.optional-dependencies]
 paddle = ["paddleocr>=3.6.0", "paddlepaddle"]
 dev = ["ruff", "mypy", "build", "coverage"]
 
 [tool.setuptools.dynamic]
-version = {attr = "src._version.__version__"}
+version = {attr = "usta._version.__version__"}

@@ -18,4 +18,4 @@ if [[ ! -x "${PYTHON_BIN}" ]]; then
   exit 127
 fi
 
-exec "${PYTHON_BIN}" -m src.main "$@"
+exec "${PYTHON_BIN}" -m usta.main "$@"

@@ -15,8 +15,8 @@ from PySide6.QtCore import QCoreApplication, QEvent, QEventLoop, QTimer, Qt, QPo
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QWidget
 
-from src.core.sniper.core_sniper import CoreSniper, OverlayWindow, SelectionManager
-from src.ui.macos_hotkeys import MacOSHotkeyWindow
+from usta.core.sniper.core_sniper import CoreSniper, OverlayWindow, SelectionManager
+from usta.ui.macos_hotkeys import MacOSHotkeyWindow
 
 
 def pump(milliseconds=40):
@@ -38,18 +38,18 @@ class MacOSHotkeyActionTests(unittest.TestCase):
 
     def make_control_panel(self, os_name):
         from contextlib import ExitStack
-        from src.ui.main_window import ControlPanel
+        from usta.ui.main_window import ControlPanel
 
         stack = ExitStack()
         self.addCleanup(stack.close)
-        stack.enter_context(mock.patch('src.ui.main_window.OS', os_name))
-        stack.enter_context(mock.patch('src.ui.overlay_window.OS', os_name))
-        stack.enter_context(mock.patch('src.core.shortcut.GlobalHotkey.start', return_value=False))
+        stack.enter_context(mock.patch('usta.ui.main_window.OS', os_name))
+        stack.enter_context(mock.patch('usta.ui.overlay_window.OS', os_name))
+        stack.enter_context(mock.patch('usta.core.shortcut.GlobalHotkey.start', return_value=False))
         stack.enter_context(mock.patch.object(ControlPanel, 'load_settings'))
         stack.enter_context(mock.patch.object(ControlPanel, 'save_settings'))
         stack.enter_context(mock.patch.object(ControlPanel, 'refresh_preset_list'))
         quit_app = stack.enter_context(mock.patch.object(QApplication, 'quit'))
-        worker = stack.enter_context(mock.patch('src.ui.main_window.OCRWorker')).return_value
+        worker = stack.enter_context(mock.patch('usta.ui.main_window.OCRWorker')).return_value
         worker.capture_rect = QRect(10, 20, 200, 50)
         worker.dpi_scale = 1.0
         worker.set_rect.side_effect = lambda rect: setattr(worker, 'capture_rect', QRect(rect))
@@ -80,8 +80,8 @@ class MacOSHotkeyActionTests(unittest.TestCase):
         quit_app.assert_not_called()
 
     def test_linux_region_selector_keeps_x11_flags_without_native_imports(self):
-        with mock.patch('src.core.sniper.core_sniper.sys.platform', 'linux'), \
-             mock.patch.dict(sys.modules, {'src.ui.macos_hotkeys': None}):
+        with mock.patch('usta.core.sniper.core_sniper.sys.platform', 'linux'), \
+             mock.patch.dict(sys.modules, {'usta.ui.macos_hotkeys': None}):
             manager = SelectionManager()
             window = OverlayWindow(self.app.primaryScreen(), manager)
             self.assertTrue(window.windowFlags() & Qt.X11BypassWindowManagerHint)

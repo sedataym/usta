@@ -1,7 +1,7 @@
 import unittest
 import warnings
 
-from src.core.ocr.easyocr_engine import EasyOCREngine
+from usta.core.ocr.easyocr_engine import EasyOCREngine
 
 
 PIN_MEMORY_WARNING = (

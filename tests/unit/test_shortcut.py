@@ -5,7 +5,7 @@ import threading
 import unittest
 from unittest import mock
 
-from src.core.shortcut import GlobalHotkey, keyboard
+from usta.core.shortcut import GlobalHotkey, keyboard
 
 
 class PlatformHotkeyTests(unittest.TestCase):
@@ -14,10 +14,10 @@ class PlatformHotkeyTests(unittest.TestCase):
             with self.subTest(platform=platform):
                 backend = mock.Mock()
                 backend.HotKey.parse.return_value = {'ctrl', 'x'}
-                with mock.patch('src.core.shortcut.sys.platform', platform), \
-                     mock.patch('src.core.shortcut.keyboard', backend), \
+                with mock.patch('usta.core.shortcut.sys.platform', platform), \
+                     mock.patch('usta.core.shortcut.keyboard', backend), \
                      mock.patch.dict(sys.modules, {
-                         'src.core.platform.macos.hotkey_listener': None,
+                         'usta.core.platform.macos.hotkey_listener': None,
                      }):
                     hotkey = GlobalHotkey('<ctrl>+x', lambda: None)
                     self.assertTrue(hotkey.start())
@@ -66,7 +66,7 @@ class MacOSHotkeyThreadTests(unittest.TestCase):
         result = []
         hotkey = GlobalHotkey('<ctrl>+x', lambda: None)
         with mock.patch('pynput._util.darwin.keycode_context') as layout:
-            with self.assertLogs('src.core.shortcut', level='ERROR'):
+            with self.assertLogs('usta.core.shortcut', level='ERROR'):
                 thread = threading.Thread(target=lambda: result.append(hotkey.start()))
                 thread.start()
                 thread.join(timeout=2)
