@@ -3,7 +3,7 @@ import sys
 from PySide6.QtCore import Qt, QRect, QPoint, Signal, QObject, QEventLoop
 from PySide6.QtGui import QPainter, QColor, QPen, QCursor
 from PySide6.QtWidgets import QApplication, QWidget
-from usta.core.sniper.base_sniper import BaseSniper
+from usta.ui.region_selection.base_sniper import BaseSniper
 
 class SelectionManager(QObject):
     """Manages the selection state across multiple monitors."""
@@ -52,7 +52,7 @@ class OverlayWindow(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self._macos_hotkey_window = None
         if sys.platform == "darwin":
-            from usta.ui.macos_hotkeys import MacOSHotkeyWindow
+            from usta.ui.platform.macos.hotkeys import MacOSHotkeyWindow
             self.setAttribute(Qt.WA_ShowWithoutActivating)
             self.setAttribute(Qt.WA_MacAlwaysShowToolWindow)
             self._macos_hotkey_window = MacOSHotkeyWindow(self)

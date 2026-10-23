@@ -4,7 +4,7 @@ import unittest
 from unittest import mock
 from PySide6.QtCore import Qt, QRect
 from PySide6.QtWidgets import QApplication
-from usta.core.sniper.core_sniper import OverlayWindow, SelectionManager
+from usta.ui.region_selection.core_sniper import OverlayWindow, SelectionManager
 from tests.native.test_macos_hotkey_actions import pump
 
 class LinuxWindowContracts(unittest.TestCase):
@@ -60,8 +60,8 @@ class LinuxWindowContracts(unittest.TestCase):
 
 
     def test_linux_region_selector_keeps_x11_flags_without_native_imports(self):
-        with mock.patch('usta.core.sniper.core_sniper.sys.platform', 'linux'), \
-             mock.patch.dict(sys.modules, {'usta.ui.macos_hotkeys': None}):
+        with mock.patch('usta.ui.region_selection.core_sniper.sys.platform', 'linux'), \
+             mock.patch.dict(sys.modules, {'usta.ui.platform.macos.hotkeys': None}):
             manager = SelectionManager()
             window = OverlayWindow(self.app.primaryScreen(), manager)
             self.assertTrue(window.windowFlags() & Qt.X11BypassWindowManagerHint)

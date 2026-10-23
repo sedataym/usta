@@ -145,41 +145,50 @@ def _add_hotkey_row(layout, label_text, button, reset_callback, tooltip):
     layout.addLayout(row)
 
 
-def build_hotkey_tab(panel):
-    tab_settings = QWidget()
-    tab_settings_layout = QVBoxLayout(tab_settings)
-    tab_settings_layout.addWidget(QLabel(_("<b>Hotkeys</b>")))
+from usta.config import SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY
+from PySide6.QtCore import Signal
 
-    settings_topmost_tooltip = _(
-        "Use this shortcut to bring the main window to the front while playing a game or watching a video."
-    )
-    temporary_region_tooltip = _(
-        "Use this shortcut when you want to select an area outside your current selection. "
-        "The temporary area you select will be active for 10 seconds."
-    )
 
-    panel.settings_topmost_hotkey_button = HotkeyCaptureButton(panel.settings_topmost_hotkey)
-    panel.settings_topmost_hotkey_button.hotkeyChanged.connect(panel.on_settings_topmost_hotkey_changed)
-    _add_hotkey_row(
-        tab_settings_layout,
-        _("Settings topmost key:"),
-        panel.settings_topmost_hotkey_button,
-        panel.reset_settings_topmost_hotkey,
-        settings_topmost_tooltip,
-    )
+class HotkeyTab(QWidget):
+    settings_hotkey_changed = Signal(str)
+    region_hotkey_changed = Signal(str)
+    reset_settings_requested = Signal()
+    reset_region_requested = Signal()
 
-    panel.temporary_region_hotkey_button = HotkeyCaptureButton(panel.temporary_region_hotkey)
-    panel.temporary_region_hotkey_button.hotkeyChanged.connect(panel.on_temporary_region_hotkey_changed)
-    _add_hotkey_row(
-        tab_settings_layout,
-        _("Temporary region key:"),
-        panel.temporary_region_hotkey_button,
-        panel.reset_temporary_region_hotkey,
-        temporary_region_tooltip,
-    )
-
-    hint = QLabel(_("Click a shortcut field, then press the key combination you want to use."))
-    hint.setWordWrap(True)
-    tab_settings_layout.addWidget(hint)
-    tab_settings_layout.addStretch()
-    return tab_settings
+    def __init__(self, settings_topmost_hotkey=SETTINGS_TOPMOST_HOTKEY, temporary_region_hotkey=TEMPORARY_REGION_HOTKEY):
+        super().__init__()
+        tab_settings_layout = QVBoxLayout(self)
+        tab_settings_layout.addWidget(QLabel(_("<b>Hotkeys</b>")))
+    
+        settings_topmost_tooltip = _(
+            "Use this shortcut to bring the main window to the front while playing a game or watching a video."
+        )
+        temporary_region_tooltip = _(
+            "Use this shortcut when you want to select an area outside your current selection. "
+            "The temporary area you select will be active for 10 seconds."
+        )
+    
+        self.settings_topmost_hotkey_button = HotkeyCaptureButton(settings_topmost_hotkey)
+        self.settings_topmost_hotkey_button.hotkeyChanged.connect(self.settings_hotkey_changed.emit)
+        _add_hotkey_row(
+            tab_settings_layout,
+            _("Settings topmost key:"),
+            self.settings_topmost_hotkey_button,
+            self.reset_settings_requested.emit,
+            settings_topmost_tooltip,
+        )
+    
+        self.temporary_region_hotkey_button = HotkeyCaptureButton(temporary_region_hotkey)
+        self.temporary_region_hotkey_button.hotkeyChanged.connect(self.region_hotkey_changed.emit)
+        _add_hotkey_row(
+            tab_settings_layout,
+            _("Temporary region key:"),
+            self.temporary_region_hotkey_button,
+            self.reset_region_requested.emit,
+            temporary_region_tooltip,
+        )
+    
+        hint = QLabel(_("Click a shortcut field, then press the key combination you want to use."))
+        hint.setWordWrap(True)
+        tab_settings_layout.addWidget(hint)
+        tab_settings_layout.addStretch()

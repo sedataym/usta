@@ -15,8 +15,8 @@ from PySide6.QtCore import QCoreApplication, QEvent, QEventLoop, QTimer, Qt, QPo
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QWidget
 
-from usta.core.sniper.core_sniper import CoreSniper, OverlayWindow, SelectionManager
-from usta.ui.macos_hotkeys import MacOSHotkeyWindow
+from usta.ui.region_selection.core_sniper import CoreSniper, OverlayWindow, SelectionManager
+from usta.ui.platform.macos.hotkeys import MacOSHotkeyWindow
 
 
 def pump(milliseconds=40):
@@ -81,8 +81,8 @@ class MacOSHotkeyActionTests(unittest.TestCase):
         quit_app.assert_not_called()
 
     def test_linux_region_selector_keeps_x11_flags_without_native_imports(self):
-        with mock.patch('usta.core.sniper.core_sniper.sys.platform', 'linux'), \
-             mock.patch.dict(sys.modules, {'usta.ui.macos_hotkeys': None}):
+        with mock.patch('usta.ui.region_selection.core_sniper.sys.platform', 'linux'), \
+             mock.patch.dict(sys.modules, {'usta.ui.platform.macos.hotkeys': None}):
             manager = SelectionManager()
             window = OverlayWindow(self.app.primaryScreen(), manager)
             self.assertTrue(window.windowFlags() & Qt.X11BypassWindowManagerHint)
@@ -188,11 +188,11 @@ class MacOSHotkeyActionTests(unittest.TestCase):
         original = QRect(panel.worker.capture_rect)
         panel._apply_temporary_region(QRect(100, 100, 300, 80), 2.0)
         panel._apply_temporary_region(QRect(200, 200, 300, 80), 1.5)
-        self.assertGreater(panel._temporary_region_restore_timer.remainingTime(), 9000)
-        panel._temporary_region_restore_timer.timeout.emit()
+        self.assertGreater(panel.region_controller.restore_timer.remainingTime(), 9000)
+        panel.region_controller.restore_timer.timeout.emit()
         self.assertEqual(panel.worker.capture_rect, original)
         self.assertEqual(panel.worker.dpi_scale, 1.0)
-        self.assertFalse(panel._temporary_region_active)
+        self.assertFalse(panel.region_controller.temporary_active)
         with mock.patch.object(panel, '_get_selected_region_and_dpi', return_value=(None, None)):
             panel.select_temporary_region()
         self.assertEqual(panel.worker.capture_rect, original)
@@ -204,7 +204,7 @@ class MacOSHotkeyActionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             state = Path(directory) / 'state'
             exit_file = Path(directory) / 'exit'
-            helper = Path(__file__).parent / 'helpers' / 'macos_fullscreen_host.py'
+            helper = Path(__file__).parents[1] / 'helpers' / 'macos_fullscreen_host.py'
             process = subprocess.Popen([sys.executable, str(helper), str(state), str(exit_file)])
             panel = QWidget()
             panel.setWindowFlags(Qt.Tool | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)

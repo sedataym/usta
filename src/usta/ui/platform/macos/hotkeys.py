@@ -2,7 +2,7 @@
 import logging
 import os
 
-from usta.ui.macos_overlay import MacOSOverlayRules
+from usta.ui.platform.macos.overlay import MacOSOverlayRules
 
 logger = logging.getLogger(__name__)
 

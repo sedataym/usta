@@ -12,7 +12,7 @@ from unittest import mock
 from PySide6.QtCore import QEvent, QEventLoop, QTimer, Qt
 from PySide6.QtWidgets import QApplication, QWidget
 
-from usta.ui.macos_overlay import MacOSOverlayRules
+from usta.ui.platform.macos.overlay import MacOSOverlayRules
 
 
 def wait_for_events(milliseconds=30):
@@ -88,7 +88,7 @@ class MacOSOverlayTests(unittest.TestCase):
         self.rules = self.widget._macos_rules
         wait_for_events()
 
-        helper = Path(__file__).parent / 'helpers' / 'macos_fullscreen_host.py'
+        helper = Path(__file__).parents[1] / 'helpers' / 'macos_fullscreen_host.py'
         with tempfile.TemporaryDirectory() as directory:
             state_file = Path(directory) / 'state.json'
             exit_file = Path(directory) / 'exit'

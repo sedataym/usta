@@ -93,7 +93,7 @@ class TransparentOverlay(QWidget):
         self.setAttribute(Qt.WA_ShowWithoutActivating)
         self._macos_rules = None
         if OS == "Darwin":
-            from usta.ui.macos_overlay import MacOSOverlayRules
+            from usta.ui.platform.macos.overlay import MacOSOverlayRules
             self.setAttribute(Qt.WA_MacAlwaysShowToolWindow, True)
             self._macos_rules = MacOSOverlayRules(self)
         self.setMouseTracking(True)

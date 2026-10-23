@@ -3,7 +3,7 @@ import os
 import time
 from PySide6.QtCore import QRect
 from PySide6.QtWidgets import QApplication
-from usta.core.sniper.base_sniper import BaseSniper
+from usta.ui.region_selection.base_sniper import BaseSniper
 from usta.config import SLURP_TEMP_PATH
 
 logger = logging.getLogger(__name__)

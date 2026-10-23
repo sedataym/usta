@@ -1,6 +1,6 @@
-from usta.core.sniper.base_sniper import BaseSniper
-from usta.core.sniper.slurp_sniper import SlurpSniper
-from usta.core.sniper.core_sniper import CoreSniper
+from usta.ui.region_selection.base_sniper import BaseSniper
+from usta.ui.region_selection.slurp_sniper import SlurpSniper
+from usta.ui.region_selection.core_sniper import CoreSniper
 
 class SniperFactory:
     @staticmethod

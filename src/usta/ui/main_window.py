@@ -1,6 +1,9 @@
+from usta.application.controller import ApplicationController
+from usta.application.region_controller import RegionController
+from usta.application.hotkey_controller import HotkeyController
 import logging
 import time
-from pathlib import Path
+from usta.ui.settings_presenter import SettingsPresenter
 from usta.application.settings import AppSettings, Preset
 from usta.infrastructure.settings_store import SettingsStore
 import os
@@ -9,18 +12,18 @@ from PySide6.QtGui import QIcon, QFont
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QApplication, QColorDialog, QProgressBar, QTabWidget, QMessageBox
 from usta.application.worker import OCRWorker
 from usta.ui.overlay_window import TransparentOverlay
-from usta.core.sniper import SniperFactory
+from usta.ui.region_selection import SniperFactory
 from usta.config import OS, LANGUAGES, SETTINGS_FILE, PRESETS_FILE, DPI_SCALE_DEFAULT, SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY, get_language_code
 from usta.core.shortcut import GlobalHotkey
 from usta.i18n import _
 from usta.ui.tabs import (
-    build_about_tab,
-    build_appearance_tab,
-    build_ocr_tab,
-    build_save_tab,
-    build_hotkey_tab,
-    build_status_tab,
-    build_translation_tab,
+    AboutTab,
+    AppearanceTab,
+    OCRTab,
+    SaveTab,
+    HotkeyTab,
+    StatusTab,
+    TranslationTab,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,25 +34,21 @@ class ControlPanel(QWidget):
     def __init__(self):
         super().__init__()
         self._loading_settings = True
-        self.settings_store = SettingsStore(Path(SETTINGS_FILE).parent)
+        self.settings_presenter = SettingsPresenter(self)
         self.worker = OCRWorker()
         self.overlay = TransparentOverlay()
-        self._main_capture_rect = QRect(self.worker.capture_rect)
-        self._main_dpi_scale = self.worker.dpi_scale
-        self._temporary_region_active = False
+        self.controller = ApplicationController(self.worker)
+        self.region_controller = RegionController(self.controller, self)
+        self.region_controller.changed.connect(self._region_changed)
         self._temporary_region_selecting = False
-        self._temporary_region_restore_timer = QTimer(self)
-        self._temporary_region_restore_timer.setSingleShot(True)
-        self._temporary_region_restore_timer.timeout.connect(self._restore_main_region)
         self._temporary_region_hotkey_armed = True
         self.settings_topmost_hotkey = SETTINGS_TOPMOST_HOTKEY
         self.temporary_region_hotkey = TEMPORARY_REGION_HOTKEY
-        self._temporary_region_hotkey = GlobalHotkey(
+        self.hotkey_controller = HotkeyController(
             self.temporary_region_hotkey,
             self._emit_temporary_region_hotkey_pressed,
         )
         self.temporary_region_hotkey_pressed.connect(self._handle_temporary_region_hotkey_pressed)
-        self._temporary_region_hotkey.start()
         self.setWindowTitle("USTA")
         
         # Set window icon
@@ -61,7 +60,7 @@ class ControlPanel(QWidget):
         self.setWindowFlag(Qt.WindowMaximizeButtonHint, False)
         self._macos_hotkey_window = None
         if OS == "Darwin":
-            from usta.ui.macos_hotkeys import MacOSHotkeyWindow
+            from usta.ui.platform.macos.hotkeys import MacOSHotkeyWindow
             # A decorated NSPanel can join another app's fullscreen Space.
             self.setWindowFlags((self.windowFlags() & ~Qt.WindowType_Mask) | Qt.Tool)
             self.setAttribute(Qt.WA_MacAlwaysShowToolWindow, True)
@@ -74,13 +73,45 @@ class ControlPanel(QWidget):
         
         # --- Tabs ---
         self.tabs = QTabWidget()
-        self.tabs.addTab(build_status_tab(self), _("Status"))
-        self.tabs.addTab(build_ocr_tab(self), _("OCR"))
-        self.tabs.addTab(build_translation_tab(self), _("Translation"))
-        self.tabs.addTab(build_appearance_tab(self), _("Appearance"))
-        self.tabs.addTab(build_save_tab(self), _("Save"))
-        self.tabs.addTab(build_hotkey_tab(self), _("Hotkeys"))
-        self.tabs.addTab(build_about_tab(self), _("About"))
+        self.api_keys = {}
+        self.dpi_locked = False
+        self.ocr_tab = OCRTab()
+        self.translation_tab = TranslationTab()
+        self.appearance_tab = AppearanceTab()
+        self.hotkey_tab = HotkeyTab()
+        self.save_tab = SaveTab()
+        self.status_tab = StatusTab()
+        self.about_tab = AboutTab()
+        self.ocr_tab.engine_changed.connect(self.controller.set_engine)
+        self.ocr_tab.screen_engine_changed.connect(self.controller.set_screenshot_engine)
+        self.ocr_tab.changed.connect(self.save_settings)
+        self.ocr_tab.dpi_changed.connect(self.on_dpi_scale_changed)
+        self.ocr_tab.toggle_dpi_requested.connect(self._toggle_dpi_lock)
+        self.translation_tab.translator_changed.connect(self.controller.set_translator)
+        self.translation_tab.changed.connect(self.save_settings)
+        self.translation_tab.translator_selected.connect(self.settings_presenter.on_translator_changed)
+        self.translation_tab.language_changed.connect(self.update_languages)
+        self.translation_tab.api_key_changed.connect(self.settings_presenter.on_api_key_changed)
+        self.appearance_tab.font_changed.connect(self.on_font_changed)
+        self.appearance_tab.font_size_changed.connect(self.on_font_size_changed)
+        self.appearance_tab.text_color_requested.connect(self.choose_color)
+        self.appearance_tab.background_color_requested.connect(self.choose_bg_color)
+        self.appearance_tab.opacity_changed.connect(self.on_bg_opacity_changed)
+        self.hotkey_tab.settings_hotkey_changed.connect(self.on_settings_topmost_hotkey_changed)
+        self.hotkey_tab.region_hotkey_changed.connect(self.on_temporary_region_hotkey_changed)
+        self.hotkey_tab.reset_settings_requested.connect(self.reset_settings_topmost_hotkey)
+        self.hotkey_tab.reset_region_requested.connect(self.reset_temporary_region_hotkey)
+        self.save_tab.save_requested.connect(self.settings_presenter.save_preset)
+        self.save_tab.load_requested.connect(self.settings_presenter.load_preset)
+        self.save_tab.delete_requested.connect(self.settings_presenter.delete_preset)
+
+        self.tabs.addTab(self.status_tab, _("Status"))
+        self.tabs.addTab(self.ocr_tab, _("OCR"))
+        self.tabs.addTab(self.translation_tab, _("Translation"))
+        self.tabs.addTab(self.appearance_tab, _("Appearance"))
+        self.tabs.addTab(self.save_tab, _("Save"))
+        self.tabs.addTab(self.hotkey_tab, _("Hotkeys"))
+        self.tabs.addTab(self.about_tab, _("About"))
 
         
         layout.addWidget(self.tabs)
@@ -185,122 +216,27 @@ class ControlPanel(QWidget):
         self.save_settings()
 
     def on_dpi_scale_changed(self, percent_value):
-        self.worker.dpi_scale = percent_value / 100.0
+        self.controller.dpi_scale = percent_value / 100.0
         self.dpi_locked = True
-        self.dpi_lock_label.setText("🔒")
-        self.dpi_lock_label.setToolTip(_("DPI locked (click to unlock)"))
+        self.ocr_tab.dpi_lock_label.setText("🔒")
+        self.ocr_tab.dpi_lock_label.setToolTip(_("DPI locked (click to unlock)"))
         self.save_settings()
 
     def _toggle_dpi_lock(self, event):
         self.dpi_locked = not self.dpi_locked
         if self.dpi_locked:
-            self.dpi_lock_label.setText("🔒")
-            self.dpi_lock_label.setToolTip(_("DPI locked (click to unlock)"))
+            self.ocr_tab.dpi_lock_label.setText("🔒")
+            self.ocr_tab.dpi_lock_label.setToolTip(_("DPI locked (click to unlock)"))
         else:
-            self.dpi_lock_label.setText("🔓")
-            self.dpi_lock_label.setToolTip(_("DPI unlocked (click to lock)"))
+            self.ocr_tab.dpi_lock_label.setText("🔓")
+            self.ocr_tab.dpi_lock_label.setToolTip(_("DPI unlocked (click to lock)"))
         return True
 
     def on_bg_opacity_changed(self, opacity):
         self.overlay.set_bg_opacity(opacity)
         self.save_settings()
 
-    def save_settings(self):
-        if self._loading_settings:
-            return
-        settings = {
-            "ocr_engine": self.combo_ocr.currentText(),
-            "translator_engine": self.combo_translator.currentText(),
-            "source_lang": self.combo_source.currentText(),
-            "target_lang": self.combo_target.currentText(),
-            "font_family": self.font_picker.currentFont().family(),
-            "font_size": self.font_size_spin.value(),
-            "font_color": self.overlay.font_color,
-            "bg_color": self.overlay.bg_color,
-            "bg_opacity": self.overlay.bg_opacity,
-            "translator_api_keys": self.api_keys,
-            "capture_rect": (self.worker.capture_rect.x(), self.worker.capture_rect.y(), 
-                            self.worker.capture_rect.width(), self.worker.capture_rect.height()),
-            "dpi_scale": self.worker.dpi_scale,
-            "screenshot_engine": self.combo_screenshot.currentText(),
-            "settings_topmost_hotkey": self.settings_topmost_hotkey,
-            "temporary_region_hotkey": self.temporary_region_hotkey,
-        }
-        try:
-            self.settings_store.save(AppSettings.from_dict(settings))
-            logger.info("Settings saved.")
-        except Exception as e:
-            logger.error(f"Settings save error: {e}")
 
-    def load_settings(self):
-        self._loading_settings = True
-        blockers = [QSignalBlocker(widget) for widget in self.findChildren(QWidget)]
-        try:
-            s = self.settings_store.load().to_dict()
-            # Update UI elements (triggers signals without blocking)
-            self.combo_ocr.setCurrentText(s.get("ocr_engine", "Tesseract"))
-            self.combo_translator.setCurrentText(s.get("translator_engine", "Google"))
-            self.combo_source.setCurrentText(s.get("source_lang", "English"))
-            self.combo_target.setCurrentText(s.get("target_lang", "Turkish"))
-            
-            font_family = s.get("font_family", "Arial")
-            self.font_picker.setCurrentFont(QFont(font_family))
-            self.overlay.set_font_family(font_family)
-            
-            font_size = s.get("font_size", 20)
-            self.font_size_spin.setValue(font_size)
-            self.overlay.set_font_size(font_size)
-            
-            font_color = s.get("font_color", "white")
-            self.overlay.set_font_color(font_color)
-            self.color_sample.setStyleSheet(f"background-color: {font_color}; border: 1px solid gray; border-radius: 4px;")
-            
-            bg_color = s.get("bg_color", "#000000")
-            self.overlay.set_bg_color(bg_color)
-            self.bg_color_sample.setStyleSheet(f"background-color: {bg_color}; border: 1px solid gray; border-radius: 4px;")
-            
-            bg_opacity = s.get("bg_opacity", 180)
-            self.bg_opacity_spin.setValue(bg_opacity)
-            self.overlay.set_bg_opacity(bg_opacity)
-            
-            # Load DPI scale
-            dpi_scale = s.get("dpi_scale", DPI_SCALE_DEFAULT)
-            
-            self.dpi_scale_spin.setValue(dpi_scale * 100)
-            
-            self.worker.dpi_scale = dpi_scale
-            self._main_dpi_scale = self.worker.dpi_scale
-    
-            rect = s.get("capture_rect")
-            if rect:
-                self.worker.set_rect(QRect(rect[0], rect[1], rect[2], rect[3]))
-                self._main_capture_rect = QRect(self.worker.capture_rect)
-                self.update_rect_label()
-            
-            # Load screenshot engine
-            screenshot_engine = s.get("screenshot_engine", "Portal")
-            self.combo_screenshot.setCurrentText(screenshot_engine)
-            self.worker.set_screenshot_engine(screenshot_engine)
-    
-            # Load API keys
-            self.api_keys = s.get("translator_api_keys", {})
-            self._apply_api_key_for_current_engine()
-    
-            self._apply_saved_hotkeys(
-                s.get("settings_topmost_hotkey", SETTINGS_TOPMOST_HOTKEY),
-                s.get("temporary_region_hotkey", TEMPORARY_REGION_HOTKEY),
-            )
-    
-            self.worker.set_engine(self.combo_ocr.currentText())
-            self.worker.set_translator(self.combo_translator.currentText())
-            self.update_languages()
-        except (OSError, ValueError) as exc:
-            logger.error(f"Settings load error: {exc}")
-            self._apply_saved_hotkeys(SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY)
-            self.update_languages()
-        finally:
-            del blockers
-            self._loading_settings = False
 
     def _apply_saved_hotkeys(self, settings_topmost_hotkey, temporary_region_hotkey):
         self._set_settings_topmost_hotkey(settings_topmost_hotkey, save=False, show_error=False)
@@ -308,10 +244,10 @@ class ControlPanel(QWidget):
         self._sync_hotkey_buttons()
 
     def _sync_hotkey_buttons(self):
-        if hasattr(self, "settings_topmost_hotkey_button"):
-            self.settings_topmost_hotkey_button.set_hotkey(self.settings_topmost_hotkey)
-        if hasattr(self, "temporary_region_hotkey_button"):
-            self.temporary_region_hotkey_button.set_hotkey(self.temporary_region_hotkey)
+        if hasattr(self.hotkey_tab, "settings_topmost_hotkey_button"):
+            self.hotkey_tab.settings_topmost_hotkey_button.set_hotkey(self.settings_topmost_hotkey)
+        if hasattr(self.hotkey_tab, "temporary_region_hotkey_button"):
+            self.hotkey_tab.temporary_region_hotkey_button.set_hotkey(self.temporary_region_hotkey)
 
     def _set_settings_topmost_hotkey(self, hotkey, save=True, show_error=True):
         if self.overlay.set_settings_topmost_hotkey(hotkey):
@@ -331,10 +267,7 @@ class ControlPanel(QWidget):
             self._sync_hotkey_buttons()
             return True
 
-        candidate = GlobalHotkey(hotkey, self._emit_temporary_region_hotkey_pressed)
-        if candidate.start():
-            self._temporary_region_hotkey.stop()
-            self._temporary_region_hotkey = candidate
+        if self.hotkey_controller.set_hotkey(hotkey):
             self.temporary_region_hotkey = hotkey
             self._sync_hotkey_buttons()
             if save:
@@ -360,22 +293,22 @@ class ControlPanel(QWidget):
 
     def update_system_status(self, is_running):
         if is_running:
-            self.system_indicator.setStyleSheet(
+            self.status_tab.system_indicator.setStyleSheet(
                 "background-color: #2E7D32; border-radius: 8px;"
             )
-            self.system_status_label.setText("Running")
+            self.status_tab.system_status_label.setText("Running")
         else:
-            self.system_indicator.setStyleSheet(
+            self.status_tab.system_indicator.setStyleSheet(
                 "background-color: #C62828; border-radius: 8px;"
             )
-            self.system_status_label.setText("Stopped")
+            self.status_tab.system_status_label.setText("Stopped")
             self.overlay.set_mode(False)
             self.perf_bar.setValue(0)
             self.perf_bar.setStyleSheet("")
 
     def update_rect_label(self):
-        r = self.worker.capture_rect
-        self.rect_label_status.setText(
+        r = self.controller.capture_rect
+        self.status_tab.rect_label_status.setText(
             _("Region: X:{x} Y:{y}  {w}×{h}").format(x=r.x(), y=r.y(), w=r.width(), h=r.height())
         )
 
@@ -409,9 +342,9 @@ class ControlPanel(QWidget):
         """)
 
     def update_languages(self):
-        source_code = get_language_code(self.combo_source.currentText(), "en")
-        target_code = get_language_code(self.combo_target.currentText(), "tr")
-        self.worker.set_languages(source_code, target_code)
+        source_code = get_language_code(self.translation_tab.combo_source.currentText(), "en")
+        target_code = get_language_code(self.translation_tab.combo_target.currentText(), "tr")
+        self.controller.set_languages(source_code, target_code)
         self.save_settings()
 
     def choose_color(self):
@@ -419,7 +352,7 @@ class ControlPanel(QWidget):
         if color.isValid():
             color_name = color.name()
             self.overlay.set_font_color(color_name)
-            self.color_sample.setStyleSheet(f"background-color: {color_name}; border: 1px solid gray; border-radius: 4px;")
+            self.appearance_tab.color_sample.setStyleSheet(f"background-color: {color_name}; border: 1px solid gray; border-radius: 4px;")
             self.save_settings()
 
     def choose_bg_color(self):
@@ -427,7 +360,7 @@ class ControlPanel(QWidget):
         if color.isValid():
             color_name = color.name()
             self.overlay.set_bg_color(color_name)
-            self.bg_color_sample.setStyleSheet(f"background-color: {color_name}; border: 1px solid gray; border-radius: 4px;")
+            self.appearance_tab.bg_color_sample.setStyleSheet(f"background-color: {color_name}; border: 1px solid gray; border-radius: 4px;")
             self.save_settings()
 
     def _emit_temporary_region_hotkey_pressed(self):
@@ -440,14 +373,13 @@ class ControlPanel(QWidget):
 
         self._temporary_region_hotkey_armed = False
         QTimer.singleShot(200, self._rearm_temporary_region_hotkey)
-        self.select_temporary_region()
+        QTimer.singleShot(200, self.select_temporary_region)
 
     def _rearm_temporary_region_hotkey(self):
         self._temporary_region_hotkey_armed = True
 
     def _get_selected_region_and_dpi(self):
         QApplication.processEvents()
-        time.sleep(0.2)
 
         sniper = SniperFactory.get_engine()
         rect = sniper.get_region()
@@ -457,46 +389,25 @@ class ControlPanel(QWidget):
         detected_dpi = getattr(sniper, "detected_dpi", None)
         return rect, detected_dpi
 
-    def _apply_main_region(self, rect, dpi_scale=None):
-        if not self.dpi_locked and dpi_scale is not None:
-            self.dpi_scale_spin.blockSignals(True)
-            self.dpi_scale_spin.setValue(dpi_scale * 100)
-            self.dpi_scale_spin.blockSignals(False)
-            self.worker.dpi_scale = dpi_scale
-
-        self.worker.set_rect(rect)
-        self._main_capture_rect = QRect(self.worker.capture_rect)
-        self._main_dpi_scale = self.worker.dpi_scale
-        self.overlay.label.setText(f"Region: {rect.x()},{rect.y()} {rect.width()}x{rect.height()}")
+    def _region_changed(self, text):
+        self.overlay.label.setText(text)
         self.update_rect_label()
+
+    def _apply_main_region(self, rect, dpi_scale=None):
+        if self.dpi_locked:
+            dpi_scale = None
+        if dpi_scale is not None:
+            blocker = QSignalBlocker(self.ocr_tab.dpi_scale_spin)
+            self.ocr_tab.dpi_scale_spin.setValue(dpi_scale * 100)
+            del blocker
+        self.region_controller.apply_main_region(rect, dpi_scale)
         self.save_settings()
 
     def _apply_temporary_region(self, rect, dpi_scale=None):
-        if not self._temporary_region_active:
-            self._main_capture_rect = QRect(self.worker.capture_rect)
-            self._main_dpi_scale = self.worker.dpi_scale
-
-        if not self.dpi_locked and dpi_scale is not None:
-            self.worker.dpi_scale = dpi_scale
-
-        self.worker.set_rect(rect)
-        self._temporary_region_active = True
-        self._temporary_region_restore_timer.start(10_000)
-        self.overlay.label.setText(f"Temporary Region: {rect.x()},{rect.y()} {rect.width()}x{rect.height()} (10s)")
-        self.update_rect_label()
+        self.region_controller.apply_temporary_region(rect, None if self.dpi_locked else dpi_scale)
 
     def _restore_main_region(self):
-        if not self._temporary_region_active:
-            return
-
-        self.worker.dpi_scale = self._main_dpi_scale
-        self.worker.set_rect(self._main_capture_rect)
-        self._temporary_region_active = False
-        self.overlay.label.setText(
-            f"Region: {self._main_capture_rect.x()},{self._main_capture_rect.y()} "
-            f"{self._main_capture_rect.width()}x{self._main_capture_rect.height()}"
-        )
-        self.update_rect_label()
+        self.region_controller.restore_main_region()
 
     def select_temporary_region(self):
         self._temporary_region_selecting = True
@@ -509,19 +420,20 @@ class ControlPanel(QWidget):
             self._apply_temporary_region(rect, detected_dpi)
 
     def select_region(self):
+        QTimer.singleShot(200, self._select_region_now)
+
+    def _select_region_now(self):
         rect, detected_dpi = self._get_selected_region_and_dpi()
         if rect:
-            self._temporary_region_restore_timer.stop()
-            self._temporary_region_active = False
             self._apply_main_region(rect, detected_dpi)
 
     def start(self): 
         self.overlay.set_mode(True)
         if not self.worker.isRunning():
-            self.worker.start()
+            self.controller.start()
 
     def stop(self):
-        self.worker.stop()
+        self.controller.stop()
         self.overlay.set_mode(False)
         self.perf_bar.setValue(0)
         self.perf_bar.setStyleSheet("")
@@ -530,14 +442,14 @@ class ControlPanel(QWidget):
         if self.worker.isRunning():
             event.ignore()
             self.worker.finished.connect(self.close)
-            self.worker.stop()
+            self.controller.stop()
             return
         self.worker.close()
         if self._macos_hotkey_window is not None:
             self._macos_hotkey_window.stop()
-        self._temporary_region_restore_timer.stop()
-        self._temporary_region_hotkey.stop()
-        self.worker.stop()
+        self.region_controller.restore_timer.stop()
+        self.hotkey_controller.close()
+        self.controller.stop()
         self.overlay.close()
         super().closeEvent(event)
         if self._macos_hotkey_window is not None and event.isAccepted():
@@ -545,167 +457,22 @@ class ControlPanel(QWidget):
             QApplication.instance().quit()
  
     # ---------- API Key Helpers ----------
-    def _apply_api_key_for_current_engine(self):
-        """Update the API key textbox state and value for the current engine."""
-        engine = self.combo_translator.currentText()
-        key = self.api_keys.get(engine, "")
-        # Block signals to avoid triggering on_api_key_changed during load
-        self.api_key_input.blockSignals(True)
-        self.api_key_input.setText(key)
-        self.api_key_input.blockSignals(False)
-        # Push to worker so the engine uses the saved key
-        if key:
-            self.worker.set_api_key(engine, key)
-        # Toggle editable state based on engine (always visible, fixed window size)
-        self._update_api_key_state(engine)
 
-    def _update_api_key_state(self, engine: str):
-        """Enable/disable the API key field based on engine, keep it always visible."""
-        engines_needing_key = {"DeepL"}
-        if engine in engines_needing_key:
-            self.api_key_input.setReadOnly(False)
-            self.api_key_input.setEnabled(True)
-            self.api_key_input.setToolTip("")
-        else:
-            self.api_key_input.setReadOnly(True)
-            self.api_key_input.setEnabled(False)
-            self.api_key_input.setToolTip(_("This engine does not require an API key"))
 
-    def on_translator_changed(self, engine: str):
-        """Called when the translation engine combo box changes."""
-        self._apply_api_key_for_current_engine()
 
-    def on_api_key_changed(self, text: str):
-        """Called when the user types in the API key text box."""
-        engine = self.combo_translator.currentText()
-        self.api_keys[engine] = text
-        self.worker.set_api_key(engine, text)
-        self.save_settings()
 
     # ---------- Preset Management ----------
-    def _load_presets_dict(self):
-        try:
-            return {name: preset.to_dict() for name, preset in self.settings_store.load_presets().items()}
-        except (OSError, ValueError) as exc:
-            logger.error(f"Presets load error: {exc}")
-            return {}
 
-    def _save_presets_dict(self, presets):
-        try:
-            self.settings_store.save_presets({name: Preset.from_dict(value) for name, value in presets.items()})
-        except (OSError, ValueError) as exc:
-            logger.error(f"Presets save error: {exc}")
+
+
+
+
+
+    def save_settings(self):
+        self.settings_presenter.save_settings()
+
+    def load_settings(self):
+        self.settings_presenter.load_settings()
 
     def refresh_preset_list(self):
-        """Refresh the combo box with preset names."""
-        self.preset_combo.clear()
-        presets = self._load_presets_dict()
-        for name in sorted(presets.keys()):
-            self.preset_combo.addItem(name)
-
-    def save_preset(self):
-        """Save current overlay position/size + capture rect + appearance to a named preset."""
-        name = self.preset_name_input.text().strip()
-        if not name:
-            QMessageBox.warning(self, "No Name", "Please enter a preset name.")
-            return
-        
-        preset = {
-            "capture_rect": (
-                self.worker.capture_rect.x(),
-                self.worker.capture_rect.y(),
-                self.worker.capture_rect.width(),
-                self.worker.capture_rect.height(),
-            ),
-            "overlay_x": self.overlay.pos().x(),
-            "overlay_y": self.overlay.pos().y(),
-            "overlay_w": self.overlay.width(),
-            "overlay_h": self.overlay.height(),
-            "font_family": self.overlay.font_family,
-            "font_size": self.overlay.font_size,
-            "font_color": self.overlay.font_color,
-            "bg_color": self.overlay.bg_color,
-            "bg_opacity": self.overlay.bg_opacity,
-        }
-        
-        presets = self._load_presets_dict()
-        presets[name] = preset
-        self._save_presets_dict(presets)
-        self.refresh_preset_list()
-        self.preset_name_input.clear()
-        logger.info(f"Preset '{name}' saved.")
-
-    def load_preset(self):
-        """Load the selected preset from the combo box and apply it."""
-        name = self.preset_combo.currentText()
-        if not name:
-            QMessageBox.information(self, _("No Selection"), _("Please select a preset to load."))
-            return
-        presets = self._load_presets_dict()
-        preset = presets.get(name)
-        if preset is None:
-            QMessageBox.warning(self, "Not Found", f"Preset '{name}' not found.")
-            return
-        
-        # Apply capture rect
-        rect_data = preset.get("capture_rect")
-        if rect_data:
-            self.worker.set_rect(QRect(rect_data[0], rect_data[1], rect_data[2], rect_data[3]))
-            self.update_rect_label()
-        
-        # Apply overlay position and size
-        ox = preset.get("overlay_x")
-        oy = preset.get("overlay_y")
-        ow = preset.get("overlay_w")
-        oh = preset.get("overlay_h")
-        if ox is not None and oy is not None:
-            self.overlay.move(ox, oy)
-        if ow is not None and oh is not None:
-            self.overlay.resize(ow, oh)
-        
-        # Apply appearance
-        ff = preset.get("font_family")
-        if ff:
-            self.overlay.set_font_family(ff)
-            self.font_picker.setCurrentFont(QFont(ff))
-        
-        fs = preset.get("font_size")
-        if fs:
-            self.overlay.set_font_size(fs)
-            self.font_size_spin.setValue(fs)
-        
-        fc = preset.get("font_color")
-        if fc:
-            self.overlay.set_font_color(fc)
-            self.color_sample.setStyleSheet(
-                f"background-color: {fc}; border: 1px solid gray; border-radius: 4px;"
-            )
-        
-        bgc = preset.get("bg_color")
-        if bgc:
-            self.overlay.set_bg_color(bgc)
-            self.bg_color_sample.setStyleSheet(
-                f"background-color: {bgc}; border: 1px solid gray; border-radius: 4px;"
-            )
-        
-        bgo = preset.get("bg_opacity")
-        if bgo is not None:
-            self.overlay.set_bg_opacity(bgo)
-            self.bg_opacity_spin.setValue(bgo)
-        
-        logger.info(f"Preset '{name}' loaded.")
-
-    def delete_preset(self):
-        """Delete the selected preset."""
-        name = self.preset_combo.currentText()
-        if not name:
-            QMessageBox.information(self, "No Selection", "Please select a preset to delete.")
-            return
-        presets = self._load_presets_dict()
-        if name in presets:
-            del presets[name]
-            self._save_presets_dict(presets)
-            self.refresh_preset_list()
-            logger.info(f"Preset '{name}' deleted.")
-        else:
-            QMessageBox.warning(self, "Not Found", f"Preset '{name}' not found.")
+        self.settings_presenter.refresh_preset_list()
