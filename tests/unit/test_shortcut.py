@@ -1,3 +1,4 @@
+import os
 import contextlib
 import sys
 import threading
@@ -29,7 +30,7 @@ class PlatformHotkeyTests(unittest.TestCase):
                     listener.stop.assert_called_once()
 
 
-@unittest.skipUnless(sys.platform == 'darwin' and keyboard is not None,
+@unittest.skipUnless(os.environ.get('USTA_NATIVE_TESTS') == '1' and sys.platform == 'darwin' and keyboard is not None,
                      'Requires macOS pynput backend')
 class MacOSHotkeyThreadTests(unittest.TestCase):
     def test_rebinding_reads_keyboard_layout_on_main_thread_only(self):

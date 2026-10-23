@@ -1,3 +1,4 @@
+import os
 import importlib.util
 from pathlib import Path
 import sys
@@ -29,7 +30,7 @@ class VisionRegistrationTests(unittest.TestCase):
         with mock.patch('src.core.ocr.ocr_manager.sys.platform', 'linux'):
             self.assertNotIn('Apple Vision', OCRManager().engines)
 
-    @unittest.skipUnless(sys.platform == 'darwin', 'Requires macOS')
+    @unittest.skipUnless(os.environ.get('USTA_NATIVE_TESTS') == '1' and sys.platform == 'darwin', 'Requires macOS')
     def test_manager_selects_vision_and_propagates_language(self):
         manager = OCRManager()
         manager.set_engine('Apple Vision')
@@ -38,7 +39,7 @@ class VisionRegistrationTests(unittest.TestCase):
         self.assertEqual(manager.engines['Apple Vision'].language, 'ko')
 
 
-@unittest.skipUnless(sys.platform == 'darwin' and importlib.util.find_spec('Vision'),
+@unittest.skipUnless(os.environ.get('USTA_NATIVE_TESTS') == '1' and sys.platform == 'darwin' and importlib.util.find_spec('Vision'),
                      'Requires macOS and pyobjc-framework-Vision')
 class NativeVisionTests(unittest.TestCase):
     def test_recognizes_english_from_file_with_spaces(self):

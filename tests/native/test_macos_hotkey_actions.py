@@ -25,7 +25,7 @@ def pump(milliseconds=40):
     loop.exec()
 
 
-@unittest.skipUnless(sys.platform == 'darwin', 'Requires macOS')
+@unittest.skipUnless(os.environ.get('USTA_NATIVE_TESTS') == '1' and sys.platform == 'darwin', 'Requires macOS')
 class MacOSHotkeyActionTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

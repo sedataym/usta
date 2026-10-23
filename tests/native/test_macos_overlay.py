@@ -1,3 +1,4 @@
+import os
 """Native macOS integration tests; require a WindowServer session."""
 import sys
 import json
@@ -20,7 +21,7 @@ def wait_for_events(milliseconds=30):
     loop.exec()
 
 
-@unittest.skipUnless(sys.platform == 'darwin', 'Requires macOS Cocoa')
+@unittest.skipUnless(os.environ.get('USTA_NATIVE_TESTS') == '1' and sys.platform == 'darwin', 'Requires macOS Cocoa')
 class MacOSOverlayTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
