@@ -1,12 +1,5 @@
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
-@dataclass
-class TranslationResult:
-    translated_text: str
-    source_lang: str = "en"
-    target_lang: str = "tr"
-    engine_name: str = "unknown"
 
 class BaseTranslator(ABC):
     @abstractmethod

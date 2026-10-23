@@ -24,3 +24,5 @@ Task 3 artifact follow-up: wheel and sdist built; all resources present in both.
 Task 4: six storage regression tests passed; full portable suite 42 tests green (21 skips). Primitive-only legacy migration preserves originals, future/corrupt JSON cannot be overwritten, atomic replace failure preserves last settings. UI load signals blocked and does not save.
 
 Task 5: import side-effect test reproduced stdout output before removal and passes after. 43 portable tests green (21 skips); config no longer creates directories; bootstrap owns path preparation and logging. Diagnostic print calls replaced with module loggers; OCR content/key diagnostics are debug-only.
+
+Task 6: three new engine contract tests plus full suite pass (46 tests, 21 skips). Managers lazily construct selected engines; provider failures use EngineError and existing read_text string boundary is retained for backend compatibility, with typed read_result/translate_request boundaries for pipeline. Ruling: installed RapidOCR 1.2.x has no public thread-count option (source inspected); preserve proven patch in dedicated adapter rather than changing runtime threading.

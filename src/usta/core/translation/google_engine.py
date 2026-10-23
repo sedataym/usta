@@ -1,5 +1,6 @@
 import logging
 import asyncio
+from usta.application.results import EngineError
 from googletrans import Translator
 from usta.config import get_translation_language_code
 from usta.core.translation.base_translator import BaseTranslator
@@ -28,5 +29,4 @@ class GoogleEngine(BaseTranslator):
 
             return asyncio.run(translate_text())
         except Exception as e:
-            logger.error(f"Google Translation Error: {e}")
-            return f"Error: {e}"
+            raise EngineError("translation", "Google translation failed; check the connection.") from e

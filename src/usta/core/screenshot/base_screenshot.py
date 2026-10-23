@@ -6,3 +6,6 @@ class BaseScreenshot(ABC):
     def capture(self, rect: QRect, output_path: str, dpi_scale: float = 1.0) -> bool:
         """Captures a screenshot of the specified region, applying DPI scaling if needed."""
         pass
+
+    def close(self) -> None:
+        """Release resources; stateless backends need no cleanup."""

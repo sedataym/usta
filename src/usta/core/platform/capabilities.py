@@ -1,8 +1,10 @@
 import os
 
 
-OCR_ENGINES = ["RapidOCR","Tesseract", "EasyOCR"]  # "PaddleOCR" (uncomment when paddlepaddle is available)
-TRANSLATION_ENGINES = ["Google", "DeepL"]
+from usta.core.registry import DEFAULT_OCR_NAMES, TRANSLATOR_FACTORIES
+
+OCR_ENGINES = list(DEFAULT_OCR_NAMES)
+TRANSLATION_ENGINES = list(TRANSLATOR_FACTORIES)
 SCREENSHOT_ENGINES = ["Portal", "Spectacle"]
 
 LANGUAGES = {
