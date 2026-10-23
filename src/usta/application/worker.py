@@ -2,7 +2,7 @@
 
 from dataclasses import replace
 
-from PySide6.QtCore import QRect, QThread, Signal
+from PySide6.QtCore import QRect, QThread, Signal, Slot
 
 from usta.application.pipeline import Pipeline
 from usta.core.screenshot import ImageProcessor, ScreenshotFactory
@@ -17,6 +17,8 @@ class OCRWorker(QThread):
     translation_status = Signal(bool)
     running_status = Signal(bool)
     error_occurred = Signal(str)
+    _translation_ready = Signal(object)
+    _error_ready = Signal(object)
 
     def __init__(self):
         super().__init__()
@@ -27,15 +29,35 @@ class OCRWorker(QThread):
             ),
             publisher=TranslationPublisher(),
             image_path=self.workspace.image_path,
-            on_translation=self.new_translation.emit,
-            on_error=self.error_occurred.emit,
+            on_translation=self._queue_translation,
+            on_error=self._queue_error,
             on_performance=self.performance_update.emit,
             on_translating=self.translation_status.emit,
             rect_factory=lambda values: QRect(*values),
             preprocess=ImageProcessor.preprocess_for_tesseract,
         )
+        self._translation_ready.connect(self._deliver_translation)
+        self._error_ready.connect(self._deliver_error)
         self._restart_requested = False
         self.finished.connect(self._restart_if_requested)
+
+    def _queue_translation(self, text):
+        self._translation_ready.emit((self.pipeline.session_id, text))
+
+    def _queue_error(self, text):
+        self._error_ready.emit((self.pipeline.session_id, text))
+
+    @Slot(object)
+    def _deliver_translation(self, payload):
+        session, text = payload
+        if self.pipeline.is_current(session):
+            self.new_translation.emit(text)
+
+    @Slot(object)
+    def _deliver_error(self, payload):
+        session, text = payload
+        if self.pipeline.is_current(session):
+            self.error_occurred.emit(text)
 
     @property
     def capture_rect(self):
@@ -80,7 +102,7 @@ class OCRWorker(QThread):
 
     def start(self):
         if self.isRunning():
-            self._restart_requested = True
+            self._restart_requested = self.pipeline.is_stopped
             return
         self.pipeline.start()
         super().start()

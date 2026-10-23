@@ -55,6 +55,19 @@ class Pipeline:
         self._job = None
 
     @property
+    def session_id(self):
+        with self._lock:
+            return self._session
+
+    @property
+    def is_stopped(self):
+        return self._stopped.is_set()
+
+    def is_current(self, session):
+        with self._lock:
+            return not self._stopped.is_set() and self._session == session
+
+    @property
     def settings(self):
         with self._lock:
             return deepcopy(self._settings)

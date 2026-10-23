@@ -47,6 +47,7 @@ class ControlPanel(QWidget):
 
     def __init__(self):
         super().__init__()
+        self._closing = False
         self._loading_settings = True
         self.settings_presenter = SettingsPresenter(self)
         self.worker = OCRWorker()
@@ -465,8 +466,7 @@ class ControlPanel(QWidget):
 
     def start(self):
         self.overlay.set_mode(True)
-        if not self.worker.isRunning():
-            self.controller.start()
+        self.controller.start()
 
     def stop(self):
         self.controller.stop()
@@ -477,8 +477,10 @@ class ControlPanel(QWidget):
     def closeEvent(self, event):
         if self.worker.isRunning():
             event.ignore()
-            self.worker.finished.connect(self.close)
-            self.controller.stop()
+            if not self._closing:
+                self._closing = True
+                self.worker.finished.connect(self.close)
+                self.controller.stop()
             return
         self.worker.close()
         if self._macos_hotkey_window is not None:
