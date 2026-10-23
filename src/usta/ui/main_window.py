@@ -342,7 +342,7 @@ class ControlPanel(QWidget):
         )
 
     def update_performance_bar(self, duration):
-        # Inverse logic: 0.5s -> %100 (Best), 3.0s -> %0 (Worst)
+        # Capture + preprocessing + OCR + translation: 0.5s -> 100%, 3.0s -> 0%.
         if not self.worker.isRunning():
             return
         percent = int(100 - (((duration - 0.5) / 2.5) * 100))

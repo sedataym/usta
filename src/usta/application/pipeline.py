@@ -53,6 +53,7 @@ class Pipeline:
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="usta-translation")
         self._future = None
         self._job = None
+        self._job_started = None
 
     @property
     def session_id(self):
@@ -96,20 +97,21 @@ class Pipeline:
         translator = self.translator_factory()
         for name, key in keys.items():
             translator.set_api_key(name, key)
-        return translator.translate_request(request)
+        result = translator.translate_request(request)
+        return result, time.perf_counter()
 
     def _collect(self):
         if self._future is None or not self._future.done():
             return
-        future, job = self._future, self._job
-        self._future = self._job = None
+        future, job, started = self._future, self._job, self._job_started
+        self._future = self._job = self._job_started = None
         with self._lock:
             valid = not self._stopped.is_set() and job.session_id == self._session
             if not valid:
                 return
             self.on_translating(False)
             try:
-                result = future.result()
+                result, completed = future.result()
             except Exception as exc:
                 self.on_error(str(exc))
                 return
@@ -121,6 +123,7 @@ class Pipeline:
                 target_lang=job.target_lang,
                 engine=job.engine_name,
             )
+            self.on_performance(completed - started)
 
     def run(self) -> None:
         capture = None
@@ -131,7 +134,6 @@ class Pipeline:
         try:
             self.publisher.start()
             while not self._stopped.is_set():
-                started = time.perf_counter()
                 try:
                     with self._lock:
                         settings, session = deepcopy(self._settings), self._session
@@ -150,6 +152,7 @@ class Pipeline:
                     self._collect()
                     if self._stopped.is_set():
                         break
+                    started = time.perf_counter()
                     if capture.capture(
                         self.rect_factory(settings.capture_rect),
                         self.image_path,
@@ -174,12 +177,12 @@ class Pipeline:
                                     session,
                                 )
                                 self._job = request
+                                self._job_started = started
                                 self._future = self._executor.submit(
                                     self._translate, request, settings.translator_api_keys
                                 )
                                 last_text = text
                                 self.on_translating(True)
-                    self.on_performance(time.perf_counter() - started)
                 except PortalCanceledError:
                     self.stop()
                 except Exception as exc:
