@@ -1,8 +1,10 @@
 import time
-import pickle
+from pathlib import Path
+from usta.application.settings import AppSettings, Preset
+from usta.infrastructure.settings_store import SettingsStore
 import os
-from PySide6.QtCore import Qt, QRect, QPoint, QTimer, Signal, Slot
-from PySide6.QtGui import QIcon
+from PySide6.QtCore import Qt, QRect, QPoint, QTimer, Signal, Slot, QSignalBlocker
+from PySide6.QtGui import QIcon, QFont
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QApplication, QColorDialog, QProgressBar, QTabWidget, QMessageBox
 from usta.core.worker import OCRWorker
 from usta.ui.overlay_window import TransparentOverlay
@@ -25,6 +27,8 @@ class ControlPanel(QWidget):
 
     def __init__(self):
         super().__init__()
+        self._loading_settings = True
+        self.settings_store = SettingsStore(Path(SETTINGS_FILE).parent)
         self.worker = OCRWorker()
         self.overlay = TransparentOverlay()
         self._main_capture_rect = QRect(self.worker.capture_rect)
@@ -198,6 +202,8 @@ class ControlPanel(QWidget):
         self.save_settings()
 
     def save_settings(self):
+        if self._loading_settings:
+            return
         settings = {
             "ocr_engine": self.combo_ocr.currentText(),
             "translator_engine": self.combo_translator.currentText(),
@@ -217,81 +223,80 @@ class ControlPanel(QWidget):
             "temporary_region_hotkey": self.temporary_region_hotkey,
         }
         try:
-            with open(SETTINGS_FILE, "wb") as f:
-                pickle.dump(settings, f)
+            self.settings_store.save(AppSettings.from_dict(settings))
             print("Settings saved.")
         except Exception as e:
             print(f"Settings save error: {e}")
 
     def load_settings(self):
-        if os.path.exists(SETTINGS_FILE):
-            try:
-                with open(SETTINGS_FILE, "rb") as f:
-                    s = pickle.load(f)
-                
-                # Update UI elements (triggers signals without blocking)
-                self.combo_ocr.setCurrentText(s.get("ocr_engine", "Tesseract"))
-                self.combo_translator.setCurrentText(s.get("translator_engine", "Google"))
-                self.combo_source.setCurrentText(s.get("source_lang", "English"))
-                self.combo_target.setCurrentText(s.get("target_lang", "Turkish"))
-                
-                font_family = s.get("font_family", "Arial")
-                self.font_picker.setCurrentFont(font_family)
-                self.overlay.set_font_family(font_family)
-                
-                font_size = s.get("font_size", 20)
-                self.font_size_spin.setValue(font_size)
-                self.overlay.set_font_size(font_size)
-                
-                font_color = s.get("font_color", "white")
-                self.overlay.set_font_color(font_color)
-                self.color_sample.setStyleSheet(f"background-color: {font_color}; border: 1px solid gray; border-radius: 4px;")
-                
-                bg_color = s.get("bg_color", "#000000")
-                self.overlay.set_bg_color(bg_color)
-                self.bg_color_sample.setStyleSheet(f"background-color: {bg_color}; border: 1px solid gray; border-radius: 4px;")
-                
-                bg_opacity = s.get("bg_opacity", 180)
-                self.bg_opacity_spin.setValue(bg_opacity)
-                self.overlay.set_bg_opacity(bg_opacity)
-                
-                # Load DPI scale
-                dpi_scale = s.get("dpi_scale", DPI_SCALE_DEFAULT)
-                self.dpi_scale_spin.blockSignals(True)
-                self.dpi_scale_spin.setValue(dpi_scale * 100)
-                self.dpi_scale_spin.blockSignals(False)
-                self.worker.dpi_scale = dpi_scale
-                self._main_dpi_scale = self.worker.dpi_scale
-
-                rect = s.get("capture_rect")
-                if rect:
-                    self.worker.set_rect(QRect(rect[0], rect[1], rect[2], rect[3]))
-                    self._main_capture_rect = QRect(self.worker.capture_rect)
-                    self.update_rect_label()
-                
-                # Load screenshot engine
-                screenshot_engine = s.get("screenshot_engine", "Portal")
-                self.combo_screenshot.setCurrentText(screenshot_engine)
-                self.worker.set_screenshot_engine(screenshot_engine)
-
-                # Load API keys
-                self.api_keys = s.get("translator_api_keys", {})
-                self._apply_api_key_for_current_engine()
-
-                self._apply_saved_hotkeys(
-                    s.get("settings_topmost_hotkey", SETTINGS_TOPMOST_HOTKEY),
-                    s.get("temporary_region_hotkey", TEMPORARY_REGION_HOTKEY),
-                )
-
-                self.update_languages()
-                print("Settings loaded.")
-                return
-            except Exception as e:
-                print(f"Settings load error: {e}")
-        
-        # If file not exists or error occurs, set defaults
-        self._apply_saved_hotkeys(SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY)
-        self.update_languages()
+        self._loading_settings = True
+        blockers = [QSignalBlocker(widget) for widget in self.findChildren(QWidget)]
+        try:
+            s = self.settings_store.load().to_dict()
+            # Update UI elements (triggers signals without blocking)
+            self.combo_ocr.setCurrentText(s.get("ocr_engine", "Tesseract"))
+            self.combo_translator.setCurrentText(s.get("translator_engine", "Google"))
+            self.combo_source.setCurrentText(s.get("source_lang", "English"))
+            self.combo_target.setCurrentText(s.get("target_lang", "Turkish"))
+            
+            font_family = s.get("font_family", "Arial")
+            self.font_picker.setCurrentFont(QFont(font_family))
+            self.overlay.set_font_family(font_family)
+            
+            font_size = s.get("font_size", 20)
+            self.font_size_spin.setValue(font_size)
+            self.overlay.set_font_size(font_size)
+            
+            font_color = s.get("font_color", "white")
+            self.overlay.set_font_color(font_color)
+            self.color_sample.setStyleSheet(f"background-color: {font_color}; border: 1px solid gray; border-radius: 4px;")
+            
+            bg_color = s.get("bg_color", "#000000")
+            self.overlay.set_bg_color(bg_color)
+            self.bg_color_sample.setStyleSheet(f"background-color: {bg_color}; border: 1px solid gray; border-radius: 4px;")
+            
+            bg_opacity = s.get("bg_opacity", 180)
+            self.bg_opacity_spin.setValue(bg_opacity)
+            self.overlay.set_bg_opacity(bg_opacity)
+            
+            # Load DPI scale
+            dpi_scale = s.get("dpi_scale", DPI_SCALE_DEFAULT)
+            
+            self.dpi_scale_spin.setValue(dpi_scale * 100)
+            
+            self.worker.dpi_scale = dpi_scale
+            self._main_dpi_scale = self.worker.dpi_scale
+    
+            rect = s.get("capture_rect")
+            if rect:
+                self.worker.set_rect(QRect(rect[0], rect[1], rect[2], rect[3]))
+                self._main_capture_rect = QRect(self.worker.capture_rect)
+                self.update_rect_label()
+            
+            # Load screenshot engine
+            screenshot_engine = s.get("screenshot_engine", "Portal")
+            self.combo_screenshot.setCurrentText(screenshot_engine)
+            self.worker.set_screenshot_engine(screenshot_engine)
+    
+            # Load API keys
+            self.api_keys = s.get("translator_api_keys", {})
+            self._apply_api_key_for_current_engine()
+    
+            self._apply_saved_hotkeys(
+                s.get("settings_topmost_hotkey", SETTINGS_TOPMOST_HOTKEY),
+                s.get("temporary_region_hotkey", TEMPORARY_REGION_HOTKEY),
+            )
+    
+            self.worker.set_engine(self.combo_ocr.currentText())
+            self.worker.set_translator(self.combo_translator.currentText())
+            self.update_languages()
+        except (OSError, ValueError) as exc:
+            print(f"Settings load error: {exc}")
+            self._apply_saved_hotkeys(SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY)
+            self.update_languages()
+        finally:
+            del blockers
+            self._loading_settings = False
 
     def _apply_saved_hotkeys(self, settings_topmost_hotkey, temporary_region_hotkey):
         self._set_settings_topmost_hotkey(settings_topmost_hotkey, save=False, show_error=False)
@@ -569,22 +574,17 @@ class ControlPanel(QWidget):
 
     # ---------- Preset Management ----------
     def _load_presets_dict(self):
-        """Load all presets from pickle file, returns dict."""
-        if os.path.exists(PRESETS_FILE):
-            try:
-                with open(PRESETS_FILE, "rb") as f:
-                    return pickle.load(f)
-            except Exception as e:
-                print(f"Presets load error: {e}")
-        return {}
+        try:
+            return {name: preset.to_dict() for name, preset in self.settings_store.load_presets().items()}
+        except (OSError, ValueError) as exc:
+            print(f"Presets load error: {exc}")
+            return {}
 
     def _save_presets_dict(self, presets):
-        """Save presets dict to pickle file."""
         try:
-            with open(PRESETS_FILE, "wb") as f:
-                pickle.dump(presets, f)
-        except Exception as e:
-            print(f"Presets save error: {e}")
+            self.settings_store.save_presets({name: Preset.from_dict(value) for name, value in presets.items()})
+        except (OSError, ValueError) as exc:
+            print(f"Presets save error: {exc}")
 
     def refresh_preset_list(self):
         """Refresh the combo box with preset names."""
@@ -657,7 +657,7 @@ class ControlPanel(QWidget):
         ff = preset.get("font_family")
         if ff:
             self.overlay.set_font_family(ff)
-            self.font_picker.setCurrentFont(ff)
+            self.font_picker.setCurrentFont(QFont(ff))
         
         fs = preset.get("font_size")
         if fs:
