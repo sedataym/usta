@@ -1,6 +1,5 @@
 import os
 
-
 from usta.core.registry import DEFAULT_OCR_NAMES, TRANSLATOR_FACTORIES
 
 OCR_ENGINES = list(DEFAULT_OCR_NAMES)

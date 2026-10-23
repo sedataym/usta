@@ -1,21 +1,20 @@
 # USTA AppImage Packaging
 
-This document describes the AppImage packaging strategy for USTA without changing the
-application source code.
+This document describes the AppImage packaging strategy for USTA using the installed application package.
 
 ## Strategy
 
 USTA is a Python/PySide6 application with the runtime entry point declared in
-`pyproject.toml` as `usta = "src.main:main"`. The AppImage build creates an
+`pyproject.toml` as `usta = "usta.main:main"`. The AppImage build creates an
 AppDir containing:
 
 - the installed USTA Python package,
-- Python wheel dependencies from `requirements.txt`,
-- the application icon from `src/ui/assets/usta.png`,
+- Python dependencies from the project metadata,
+- the application icon from `src/usta/ui/assets/usta.png`,
 - a desktop entry from `packaging/appimage/usta.desktop`,
 - an `AppRun` wrapper from `packaging/appimage/AppRun`.
 
-The wrapper starts the app with `python3 -m src.main` and sets `QT_QPA_PLATFORM=xcb`
+The wrapper starts the app with `python3 -m usta.main` and sets `QT_QPA_PLATFORM=xcb`
 unless the user already provided a different value.
 
 ## Why some dependencies remain system dependencies
@@ -139,5 +138,5 @@ Validate the following:
 
 ## Notes
 
-This build path avoids changes to application modules such as `src/main.py` and keeps
+This build path avoids changes to application modules such as `src/usta/main.py` and keeps
 all AppImage-specific behavior in `packaging/appimage` and `scripts`.

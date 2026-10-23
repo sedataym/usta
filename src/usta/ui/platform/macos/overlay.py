@@ -1,4 +1,5 @@
 """Keep a Qt overlay's Cocoa rules in sync with macOS window transitions."""
+
 import logging
 import weakref
 
@@ -53,7 +54,10 @@ class MacOSOverlayRules(QObject):
             )
             for center, name in notifications:
                 token = center.addObserverForName_object_queue_usingBlock_(
-                    name, None, AppKit.NSOperationQueue.mainQueue(), changed,
+                    name,
+                    None,
+                    AppKit.NSOperationQueue.mainQueue(),
+                    changed,
                 )
                 self._observers.append((center, token))
             self._running = True
@@ -116,9 +120,11 @@ class MacOSOverlayRules(QObject):
                 style = window.styleMask() | AppKit.NSWindowStyleMaskNonactivatingPanel
                 if style != window.styleMask():
                     window.setStyleMask_(style)
-            behavior = (AppKit.NSWindowCollectionBehaviorCanJoinAllSpaces |
-                        AppKit.NSWindowCollectionBehaviorFullScreenAuxiliary |
-                        AppKit.NSWindowCollectionBehaviorStationary)
+            behavior = (
+                AppKit.NSWindowCollectionBehaviorCanJoinAllSpaces
+                | AppKit.NSWindowCollectionBehaviorFullScreenAuxiliary
+                | AppKit.NSWindowCollectionBehaviorStationary
+            )
             # Older macOS/PyObjC versions may not expose this behavior.
             behavior |= getattr(AppKit, "NSWindowCollectionBehaviorCanJoinAllApplications", 0)
             # Build the mask explicitly: primary/auxiliary conflict with joining all apps.

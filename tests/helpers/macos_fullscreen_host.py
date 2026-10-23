@@ -1,13 +1,13 @@
 """Separate, focused app for testing native macOS fullscreen Spaces."""
+
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import AppKit
 import objc
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QLabel
-
 
 app = QApplication([])
 state_file = Path(sys.argv[1])
@@ -21,16 +21,28 @@ center = AppKit.NSNotificationCenter.defaultCenter()
 
 
 def report(_notification):
-    state_file.write_text(json.dumps({
-        "fullscreen": bool(window.styleMask() & AppKit.NSWindowStyleMaskFullScreen),
-        "active": bool(AppKit.NSApp.isActive()),
-    }))
+    state_file.write_text(
+        json.dumps(
+            {
+                "fullscreen": bool(window.styleMask() & AppKit.NSWindowStyleMaskFullScreen),
+                "active": bool(AppKit.NSApp.isActive()),
+            }
+        )
+    )
 
 
-tokens = [center.addObserverForName_object_queue_usingBlock_(
-    name, window, None, report,
-) for name in (AppKit.NSWindowDidEnterFullScreenNotification,
-               AppKit.NSWindowDidExitFullScreenNotification)]
+tokens = [
+    center.addObserverForName_object_queue_usingBlock_(
+        name,
+        window,
+        None,
+        report,
+    )
+    for name in (
+        AppKit.NSWindowDidEnterFullScreenNotification,
+        AppKit.NSWindowDidExitFullScreenNotification,
+    )
+]
 
 
 def enter_fullscreen():

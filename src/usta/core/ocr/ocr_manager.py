@@ -1,13 +1,21 @@
 import sys
-from usta.core.registry import LazyEngines, OCR_FACTORIES
+
 from usta.application.results import OCRResult
+from usta.core.registry import OCR_FACTORIES, LazyEngines
+
 
 class OCRManager:
     def __init__(self):
-        self.language = 'en'
-        factories = {name: spec for name, spec in OCR_FACTORIES.items() if name != 'Apple Vision' or sys.platform == 'darwin'}
-        self.engines = LazyEngines(factories, lambda name, engine: engine.set_language(self.language))
-        self.current_engine_name = 'RapidOCR'
+        self.language = "en"
+        factories = {
+            name: spec
+            for name, spec in OCR_FACTORIES.items()
+            if name != "Apple Vision" or sys.platform == "darwin"
+        }
+        self.engines = LazyEngines(
+            factories, lambda name, engine: engine.set_language(self.language)
+        )
+        self.current_engine_name = "RapidOCR"
 
     def set_engine(self, name: str):
         if name in self.engines:

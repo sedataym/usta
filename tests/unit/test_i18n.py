@@ -4,10 +4,11 @@ from unittest import mock
 
 from usta import i18n
 
-
 TRANSLATIONS_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    "src", "usta", "resources",
+    "src",
+    "usta",
+    "resources",
     "translations",
 )
 

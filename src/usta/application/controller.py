@@ -1,4 +1,6 @@
 """Application actions consumed by views; the worker owns mutable engines."""
+
+
 class ApplicationController:
     def __init__(self, worker):
         self.worker = worker

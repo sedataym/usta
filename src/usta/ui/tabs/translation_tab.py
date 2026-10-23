@@ -1,11 +1,8 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QLineEdit, QVBoxLayout, QWidget
 
 from usta.config import LANGUAGES, TRANSLATION_ENGINES
 from usta.i18n import _
-
-
-from PySide6.QtCore import Signal
 
 
 class TranslationTab(QWidget):
@@ -26,7 +23,7 @@ class TranslationTab(QWidget):
         self.combo_translator.currentTextChanged.connect(self.changed.emit)
         self.combo_translator.currentTextChanged.connect(self.translator_selected.emit)
         tab_translation_layout.addWidget(self.combo_translator)
-    
+
         h_lang = QHBoxLayout()
         v_source = QVBoxLayout()
         v_source.addWidget(QLabel(_("Source Language:")))
@@ -37,7 +34,7 @@ class TranslationTab(QWidget):
         self.combo_source.currentTextChanged.connect(self.language_changed.emit)
         v_source.addWidget(self.combo_source)
         h_lang.addLayout(v_source)
-    
+
         v_target = QVBoxLayout()
         v_target.addWidget(QLabel(_("Target Language:")))
         self.combo_target = QComboBox()
@@ -48,7 +45,7 @@ class TranslationTab(QWidget):
         v_target.addWidget(self.combo_target)
         h_lang.addLayout(v_target)
         tab_translation_layout.addLayout(h_lang)
-    
+
         self.api_key_label = QLabel(_("API Key"))
         tab_translation_layout.addWidget(self.api_key_label)
         self.api_key_input = QLineEdit()
@@ -56,5 +53,5 @@ class TranslationTab(QWidget):
         self.api_key_input.setPlaceholderText(_("Enter API key..."))
         self.api_key_input.textChanged.connect(self.api_key_changed.emit)
         tab_translation_layout.addWidget(self.api_key_input)
-    
+
         tab_translation_layout.addStretch()

@@ -1,11 +1,11 @@
-import logging
-from usta.resource_paths import resource_path
-
 import gettext
-import os
 import locale
+import logging
+import os
 import unicodedata
 import warnings
+
+from usta.resource_paths import resource_path
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +17,7 @@ _LOCALE_ENV_VARS = ("LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG")
 
 def _strip_invisible_characters(value):
     """Remove Unicode control/format characters from locale values."""
-    return "".join(
-        character
-        for character in value
-        if unicodedata.category(character)[0] != "C"
-    )
+    return "".join(character for character in value if unicodedata.category(character)[0] != "C")
 
 
 def _normalize_locale(value):
@@ -77,13 +73,14 @@ def _get_locale_candidates():
 
     return candidates
 
+
 def init_i18n(locale_dir=None, domain="messages"):
     """
     Initialize internationalization.
     If locale_dir is not provided, it defaults to 'src/translations'.
     """
     global _translator
-    
+
     if locale_dir is None:
         # Default translation directory: src/translations
         locale_dir = str(resource_path("resources/translations"))
@@ -94,12 +91,13 @@ def init_i18n(locale_dir=None, domain="messages"):
     try:
         languages = locale_candidates or None
         _translator = gettext.translation(domain, locale_dir, languages=languages, fallback=True)
-        _translator.install() # This installs _() into builtins
+        _translator.install()  # This installs _() into builtins
     except Exception as e:
         logger.info(f"Warning: Could not load translation for {locale_candidates}: {e}")
         # Fallback to null translation
         _translator = gettext.NullTranslations()
         _translator.install()
+
 
 def _(message):
     """

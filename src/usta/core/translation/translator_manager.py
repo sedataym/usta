@@ -1,17 +1,18 @@
-from usta.core.registry import LazyEngines, TRANSLATOR_FACTORIES
 from usta.application.results import TranslationRequest, TranslationResult
+from usta.core.registry import TRANSLATOR_FACTORIES, LazyEngines
+
 
 class TranslatorManager:
     def __init__(self):
-        self._source_lang = 'en'
-        self._target_lang = 'tr'
+        self._source_lang = "en"
+        self._target_lang = "tr"
         self._api_keys = {}
         self.translators = LazyEngines(TRANSLATOR_FACTORIES, self._initialize)
-        self.current_translator_name = 'Google'
+        self.current_translator_name = "Google"
 
     def _initialize(self, name, translator):
         translator.set_languages(self._source_lang, self._target_lang)
-        if name in self._api_keys and hasattr(translator, 'set_api_key'):
+        if name in self._api_keys and hasattr(translator, "set_api_key"):
             translator.set_api_key(self._api_keys[name])
 
     def set_translator(self, name: str):
@@ -21,7 +22,7 @@ class TranslatorManager:
     def set_api_key(self, engine: str, api_key: str):
         self._api_keys[engine] = api_key
         translator = self.translators.instances.get(engine)
-        if translator and hasattr(translator, 'set_api_key'):
+        if translator and hasattr(translator, "set_api_key"):
             translator.set_api_key(api_key)
 
     def set_languages(self, source: str, target: str):
@@ -38,4 +39,10 @@ class TranslatorManager:
     def translate_request(self, request: TranslationRequest) -> TranslationResult:
         self.set_translator(request.engine_name)
         self.set_languages(request.source_lang, request.target_lang)
-        return TranslationResult(self.translate(request.text), request.source_lang, request.target_lang, request.engine_name, request.session_id)
+        return TranslationResult(
+            self.translate(request.text),
+            request.source_lang,
+            request.target_lang,
+            request.engine_name,
+            request.session_id,
+        )

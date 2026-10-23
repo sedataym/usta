@@ -1,11 +1,11 @@
 # USTA (Universal Screen Translator Application)
 Real-time OCR translation for games, videos and desktop.
 
-[![USTA demo cover](src/ui/assets/usta_cover.png)](https://www.youtube.com/watch?v=jGHMmDznum8)
+[![USTA demo cover](src/usta/ui/assets/usta_cover.png)](https://www.youtube.com/watch?v=jGHMmDznum8)
 
 By "sniping" a specific area of your screen, USTA continuously monitors that region, extracts text using OCR (Optical Character Recognition), and overlays the translated text instantly, making it perfect for playing untranslated games or watching foreign media.
 
-> **Note:** Current version is optimized for **KDE Plasma and GNOME (Wayland)** using **xcb** mode. Future versions will expand compatibility.
+> **Platforms:** Linux KDE Plasma/GNOME (Wayland with xcb) and macOS. See [compatibility and validation status](docs/compatibility.md).
 
 ## 🚀 Key Features
 
@@ -54,7 +54,7 @@ While currently focused on KDE/Linux, support for the following is planned:
 - [ ] **Native Linux Packaging:** Distribution via `.deb` (Debian/Ubuntu), AUR (Arch Linux), and **Flatpak**.
 - [ ] **Other Linux DEs:** Full native Wayland support without xcb.
 - [ ] **Windows Support:** Integration with Windows-native capture and OCR APIs.
-- [ ] **macOS Support:** Support for macOS native APIs and capture systems.
+- [x] **macOS Support:** Native capture, Apple Vision OCR, fullscreen overlays and global shortcuts.
 
 ---
 
@@ -218,6 +218,10 @@ automatic detection with a warning in the console.
 The macOS dependency is included in `requirements.txt`. To add it to an existing
 installation, run `.venv/bin/python -m pip install 'pyobjc-framework-Vision>=10.0'`
 and restart USTA. Apple Vision does not appear in the engine list on Linux or Windows.
+
+## Development and contributions
+
+See [CONTRIBUTING](CONTRIBUTING.md) for development setup, tests and code standards, [architecture](docs/architecture.md) for module boundaries, and [testing](docs/testing.md) for native desktop checks. Install optional Paddle support with `pip install '.[paddle]'` when its native runtime is available.
 
 ## 🛠️ Tech Stack
 * **GUI:** PySide6

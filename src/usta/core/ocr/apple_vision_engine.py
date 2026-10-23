@@ -1,4 +1,5 @@
 """On-device text recognition using macOS Vision through PyObjC."""
+
 import logging
 from pathlib import Path
 
@@ -25,17 +26,27 @@ class AppleVisionEngine(BaseOCREngine):
             raise RuntimeError(f"Vision language lookup failed: {error}")
         supported = [str(language) for language in supported or []]
         preferred = {"zh": "zh-Hans"}.get(self.language, self.language).replace("_", "-")
-        selected = next((language for language in supported
-                         if language.lower() == preferred.lower()), None)
+        selected = next(
+            (language for language in supported if language.lower() == preferred.lower()), None
+        )
         if selected is None:
-            selected = next((language for language in supported
-                             if language.lower().startswith(preferred.lower() + "-")), None)
+            selected = next(
+                (
+                    language
+                    for language in supported
+                    if language.lower().startswith(preferred.lower() + "-")
+                ),
+                None,
+            )
         automatic = preferred == "auto" or selected is None
         if automatic:
             languages = supported
             if preferred != "auto" and preferred not in self._warned_languages:
-                logger.warning("Apple Vision does not support language %s on this macOS; "
-                               "using automatic language detection", self.language)
+                logger.warning(
+                    "Apple Vision does not support language %s on this macOS; "
+                    "using automatic language detection",
+                    self.language,
+                )
                 self._warned_languages.add(preferred)
         else:
             languages = [selected]

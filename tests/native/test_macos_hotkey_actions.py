@@ -1,22 +1,22 @@
-import json
 import gc
+import json
 import os
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
-import time
 import threading
+import time
 import unittest
 import weakref
+from pathlib import Path
 from unittest import mock
 
-from PySide6.QtCore import QCoreApplication, QEvent, QEventLoop, QTimer, Qt, QPoint, QRect
+from PySide6.QtCore import QCoreApplication, QEvent, QEventLoop, QPoint, QRect, Qt, QTimer
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QWidget
 
-from usta.ui.region_selection.core_sniper import CoreSniper, OverlayWindow, SelectionManager
 from usta.ui.platform.macos.hotkeys import MacOSHotkeyWindow
+from usta.ui.region_selection.core_sniper import CoreSniper, OverlayWindow, SelectionManager
 
 
 def pump(milliseconds=40):
@@ -25,12 +25,15 @@ def pump(milliseconds=40):
     loop.exec()
 
 
-@unittest.skipUnless(os.environ.get('USTA_NATIVE_TESTS') == '1' and sys.platform == 'darwin', 'Requires macOS')
+@unittest.skipUnless(
+    os.environ.get("USTA_NATIVE_TESTS") == "1" and sys.platform == "darwin", "Requires macOS"
+)
 class MacOSHotkeyActionTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import AppKit
         import objc
+
         cls.cocoa = AppKit
         cls.objc = objc
         cls.app = QApplication.instance() or QApplication([])
@@ -38,39 +41,44 @@ class MacOSHotkeyActionTests(unittest.TestCase):
 
     def make_control_panel(self, os_name):
         from contextlib import ExitStack
+
         from usta.ui.main_window import ControlPanel
 
         stack = ExitStack()
         self.addCleanup(stack.close)
-        stack.enter_context(mock.patch('usta.ui.main_window.OS', os_name))
-        stack.enter_context(mock.patch('usta.ui.overlay_window.OS', os_name))
-        stack.enter_context(mock.patch('usta.core.shortcut.GlobalHotkey.start', return_value=False))
-        stack.enter_context(mock.patch.object(ControlPanel, 'load_settings'))
-        stack.enter_context(mock.patch.object(ControlPanel, 'save_settings'))
-        stack.enter_context(mock.patch.object(ControlPanel, 'refresh_preset_list'))
-        quit_app = stack.enter_context(mock.patch.object(QApplication, 'quit'))
-        worker = stack.enter_context(mock.patch('usta.ui.main_window.OCRWorker')).return_value
+        stack.enter_context(mock.patch("usta.ui.main_window.OS", os_name))
+        stack.enter_context(mock.patch("usta.ui.overlay_window.OS", os_name))
+        stack.enter_context(mock.patch("usta.core.shortcut.GlobalHotkey.start", return_value=False))
+        stack.enter_context(mock.patch.object(ControlPanel, "load_settings"))
+        stack.enter_context(mock.patch.object(ControlPanel, "save_settings"))
+        stack.enter_context(mock.patch.object(ControlPanel, "refresh_preset_list"))
+        quit_app = stack.enter_context(mock.patch.object(QApplication, "quit"))
+        worker = stack.enter_context(mock.patch("usta.ui.main_window.OCRWorker")).return_value
         worker.isRunning.return_value = False
         worker.capture_rect = QRect(10, 20, 200, 50)
         worker.dpi_scale = 1.0
-        worker.set_rect.side_effect = lambda rect: setattr(worker, 'capture_rect', QRect(rect))
+        worker.set_rect.side_effect = lambda rect: setattr(worker, "capture_rect", QRect(rect))
         panel = ControlPanel()
         pump(150)  # Finish the normal startup overlay-position timer.
+
         def close():
             if panel.isVisible():
                 panel.close()
             panel.overlay.deleteLater()
             panel.deleteLater()
             pump()
+
         self.addCleanup(close)
         return panel, quit_app
 
     def test_linux_settings_action_keeps_original_window_behavior(self):
-        panel, quit_app = self.make_control_panel('Linux')
+        panel, quit_app = self.make_control_panel("Linux")
         self.assertIsNone(panel._macos_hotkey_window)
         self.assertIsNone(panel.overlay._macos_rules)
-        with mock.patch.object(panel, 'raise_') as raise_window, \
-             mock.patch.object(panel, 'activateWindow') as activate:
+        with (
+            mock.patch.object(panel, "raise_") as raise_window,
+            mock.patch.object(panel, "activateWindow") as activate,
+        ):
             panel.set_settings_always_on_top(True)
             self.assertTrue(panel.windowFlags() & Qt.WindowStaysOnTopHint)
             raise_window.assert_called_once()
@@ -81,8 +89,10 @@ class MacOSHotkeyActionTests(unittest.TestCase):
         quit_app.assert_not_called()
 
     def test_linux_region_selector_keeps_x11_flags_without_native_imports(self):
-        with mock.patch('usta.ui.region_selection.core_sniper.sys.platform', 'linux'), \
-             mock.patch.dict(sys.modules, {'usta.ui.platform.macos.hotkeys': None}):
+        with (
+            mock.patch("usta.ui.region_selection.core_sniper.sys.platform", "linux"),
+            mock.patch.dict(sys.modules, {"usta.ui.platform.macos.hotkeys": None}),
+        ):
             manager = SelectionManager()
             window = OverlayWindow(self.app.primaryScreen(), manager)
             self.assertTrue(window.windowFlags() & Qt.X11BypassWindowManagerHint)
@@ -100,15 +110,19 @@ class MacOSHotkeyActionTests(unittest.TestCase):
                 gui_thread = threading.get_ident()
 
                 def finish():
-                    windows.extend(w for w in self.app.topLevelWidgets()
-                                   if isinstance(w, OverlayWindow) and w.isVisible())
+                    windows.extend(
+                        w
+                        for w in self.app.topLevelWidgets()
+                        if isinstance(w, OverlayWindow) and w.isVisible()
+                    )
                     for window in windows:
                         window.destroyed.connect(
                             lambda: destroyed_on.append(threading.get_ident()),
                             Qt.DirectConnection,
                         )
                     windows[0].manager.selectionFinished.emit(
-                        QRect() if cancel else QRect(50, 50, 150, 50))
+                        QRect() if cancel else QRect(50, 50, 150, 50)
+                    )
 
                 QTimer.singleShot(100, finish)
                 rect = CoreSniper().get_region()
@@ -118,8 +132,10 @@ class MacOSHotkeyActionTests(unittest.TestCase):
                 QCoreApplication.sendPostedEvents(None, QEvent.DeferredDelete)
                 try:
                     self.assertTrue(windows)
-                    self.assertTrue(all(not shiboken6.isValid(w) for w in windows),
-                                    'Closed selection windows retain live native widgets')
+                    self.assertTrue(
+                        all(not shiboken6.isValid(w) for w in windows),
+                        "Closed selection windows retain live native widgets",
+                    )
                     self.assertEqual(destroyed_on, [gui_thread] * len(windows))
                     windows.clear()
                     worker = threading.Thread(target=gc.collect)
@@ -165,20 +181,23 @@ class MacOSHotkeyActionTests(unittest.TestCase):
             QCoreApplication.sendPostedEvents(None, QEvent.DeferredDelete)
             self.assertTrue(references)
             self.assertEqual(destroyed_on, [gui_thread] * len(references))
-            self.assertTrue(all(ref() is None or not shiboken6.isValid(ref())
-                                for ref in references))
+            self.assertTrue(
+                all(ref() is None or not shiboken6.isValid(ref()) for ref in references)
+            )
             pump()
         finally:
             if was_enabled:
                 gc.enable()
 
     def test_macos_controls_use_native_action_and_restore_temporary_region(self):
-        panel, quit_app = self.make_control_panel('Darwin')
+        panel, quit_app = self.make_control_panel("Darwin")
         self.assertEqual(panel.windowType(), Qt.Tool)
-        with mock.patch.object(panel._macos_hotkey_window, 'show') as show, \
-             mock.patch.object(panel._macos_hotkey_window, 'lower') as lower, \
-             mock.patch.object(panel, 'raise_') as raise_window, \
-             mock.patch.object(panel, 'activateWindow') as activate:
+        with (
+            mock.patch.object(panel._macos_hotkey_window, "show") as show,
+            mock.patch.object(panel._macos_hotkey_window, "lower") as lower,
+            mock.patch.object(panel, "raise_") as raise_window,
+            mock.patch.object(panel, "activateWindow") as activate,
+        ):
             panel.overlay._toggle_main_window_topmost()
             show.assert_called_once()
             panel.overlay._toggle_main_window_topmost()
@@ -193,7 +212,7 @@ class MacOSHotkeyActionTests(unittest.TestCase):
         self.assertEqual(panel.worker.capture_rect, original)
         self.assertEqual(panel.worker.dpi_scale, 1.0)
         self.assertFalse(panel.region_controller.temporary_active)
-        with mock.patch.object(panel, '_get_selected_region_and_dpi', return_value=(None, None)):
+        with mock.patch.object(panel, "_get_selected_region_and_dpi", return_value=(None, None)):
             panel.select_temporary_region()
         self.assertEqual(panel.worker.capture_rect, original)
         self.assertFalse(panel._temporary_region_selecting)
@@ -202,9 +221,9 @@ class MacOSHotkeyActionTests(unittest.TestCase):
 
     def test_settings_and_region_selection_preserve_fullscreen_space(self):
         with tempfile.TemporaryDirectory() as directory:
-            state = Path(directory) / 'state'
-            exit_file = Path(directory) / 'exit'
-            helper = Path(__file__).parents[1] / 'helpers' / 'macos_fullscreen_host.py'
+            state = Path(directory) / "state"
+            exit_file = Path(directory) / "exit"
+            helper = Path(__file__).parents[1] / "helpers" / "macos_fullscreen_host.py"
             process = subprocess.Popen([sys.executable, str(helper), str(state), str(exit_file)])
             panel = QWidget()
             panel.setWindowFlags(Qt.Tool | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
@@ -218,12 +237,12 @@ class MacOSHotkeyActionTests(unittest.TestCase):
                     pump()
                     if state.exists():
                         try:
-                            if json.loads(state.read_text())['fullscreen']:
+                            if json.loads(state.read_text())["fullscreen"]:
                                 break
                         except json.JSONDecodeError:
                             pass
                 else:
-                    self.fail('Fullscreen host did not enter its Space')
+                    self.fail("Fullscreen host did not enter its Space")
                 actions.show()
                 pump(450)
                 native = self.objc.objc_object(c_void_p=int(panel.winId())).window()
@@ -231,43 +250,78 @@ class MacOSHotkeyActionTests(unittest.TestCase):
                 self.assertTrue(native.isKindOfClass_(self.cocoa.NSPanel))
                 self.assertTrue(native.styleMask() & self.cocoa.NSWindowStyleMaskTitled)
                 import Quartz
-                on_screen = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListOptionOnScreenOnly, 0)
-                self.assertTrue(any(w['kCGWindowOwnerPID'] == process.pid for w in on_screen),
-                                'Showing settings switched away from the fullscreen Space')
+
+                on_screen = Quartz.CGWindowListCopyWindowInfo(
+                    Quartz.kCGWindowListOptionOnScreenOnly, 0
+                )
+                self.assertTrue(
+                    any(w["kCGWindowOwnerPID"] == process.pid for w in on_screen),
+                    "Showing settings switched away from the fullscreen Space",
+                )
                 # A panel can become key while its owning app remains inactive.
-                self.assertIn(self.cocoa.NSWorkspace.sharedWorkspace().frontmostApplication().processIdentifier(),
-                              (os.getpid(), process.pid))
+                self.assertIn(
+                    self.cocoa.NSWorkspace.sharedWorkspace()
+                    .frontmostApplication()
+                    .processIdentifier(),
+                    (os.getpid(), process.pid),
+                )
                 self.assertTrue(native.isKeyWindow())
                 actions.lower()
                 deadline = time.monotonic() + 2
                 while time.monotonic() < deadline:
                     pump()
-                    if self.cocoa.NSWorkspace.sharedWorkspace().frontmostApplication().processIdentifier() == process.pid:
+                    if (
+                        self.cocoa.NSWorkspace.sharedWorkspace()
+                        .frontmostApplication()
+                        .processIdentifier()
+                        == process.pid
+                    ):
                         break
                 self.assertEqual(native.level(), self.cocoa.NSNormalWindowLevel)
-                self.assertEqual(self.cocoa.NSWorkspace.sharedWorkspace().frontmostApplication().processIdentifier(), process.pid)
+                self.assertEqual(
+                    self.cocoa.NSWorkspace.sharedWorkspace()
+                    .frontmostApplication()
+                    .processIdentifier(),
+                    process.pid,
+                )
                 observations = []
+
                 def select():
-                    windows = [w for w in self.app.topLevelWidgets()
-                               if isinstance(w, OverlayWindow) and w.isVisible()]
+                    windows = [
+                        w
+                        for w in self.app.topLevelWidgets()
+                        if isinstance(w, OverlayWindow) and w.isVisible()
+                    ]
                     if not windows:
                         observations.append(False)
                         return
-                    target = next((w for w in windows if w.screen_geometry.contains(QPoint(150, 150))), windows[0])
+                    target = next(
+                        (w for w in windows if w.screen_geometry.contains(QPoint(150, 150))),
+                        windows[0],
+                    )
                     n = self.objc.objc_object(c_void_p=int(target.winId())).window()
                     observations.append(n.isOnActiveSpace())
-                    on_screen = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListOptionOnScreenOnly, 0)
-                    observations.append(any(w['kCGWindowOwnerPID'] == process.pid for w in on_screen))
+                    on_screen = Quartz.CGWindowListCopyWindowInfo(
+                        Quartz.kCGWindowListOptionOnScreenOnly, 0
+                    )
+                    observations.append(
+                        any(w["kCGWindowOwnerPID"] == process.pid for w in on_screen)
+                    )
                     QTest.mousePress(target, Qt.LeftButton, pos=QPoint(50, 50))
                     QTest.mouseMove(target, QPoint(200, 100))
                     QTest.mouseRelease(target, Qt.LeftButton, pos=QPoint(200, 100))
+
                 QTimer.singleShot(150, select)
                 # A watchdog avoids a stuck nested loop on failure.
                 watchdog = QTimer()
                 watchdog.setSingleShot(True)
-                watchdog.timeout.connect(lambda: [w.manager.selectionFinished.emit(QRect())
-                                                   for w in self.app.topLevelWidgets()
-                                                   if isinstance(w, OverlayWindow) and w.isVisible()])
+                watchdog.timeout.connect(
+                    lambda: [
+                        w.manager.selectionFinished.emit(QRect())
+                        for w in self.app.topLevelWidgets()
+                        if isinstance(w, OverlayWindow) and w.isVisible()
+                    ]
+                )
                 watchdog.start(1500)
                 try:
                     rect = CoreSniper().get_region()
@@ -280,22 +334,38 @@ class MacOSHotkeyActionTests(unittest.TestCase):
                 deadline = time.monotonic() + 2
                 while time.monotonic() < deadline:
                     pump()
-                    if self.cocoa.NSWorkspace.sharedWorkspace().frontmostApplication().processIdentifier() == process.pid:
+                    if (
+                        self.cocoa.NSWorkspace.sharedWorkspace()
+                        .frontmostApplication()
+                        .processIdentifier()
+                        == process.pid
+                    ):
                         break
-                self.assertEqual(self.cocoa.NSWorkspace.sharedWorkspace().frontmostApplication().processIdentifier(), process.pid)
+                self.assertEqual(
+                    self.cocoa.NSWorkspace.sharedWorkspace()
+                    .frontmostApplication()
+                    .processIdentifier(),
+                    process.pid,
+                )
+
                 def cancel():
                     for window in self.app.topLevelWidgets():
                         if isinstance(window, OverlayWindow) and window.isVisible():
                             QTest.keyClick(window, Qt.Key_Escape)
                             break
+
                 QTimer.singleShot(150, cancel)
                 watchdog.start(1500)
                 try:
                     self.assertIsNone(CoreSniper().get_region())
                 finally:
                     watchdog.stop()
-                self.assertFalse(any(isinstance(w, OverlayWindow) and w.isVisible()
-                                     for w in self.app.topLevelWidgets()))
+                self.assertFalse(
+                    any(
+                        isinstance(w, OverlayWindow) and w.isVisible()
+                        for w in self.app.topLevelWidgets()
+                    )
+                )
             finally:
                 actions.stop()
                 panel.close()

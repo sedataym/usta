@@ -1,19 +1,21 @@
 """Names and lazy engine factories; importing this module loads no backend."""
+
 from collections.abc import Mapping
 from importlib import import_module
 
 OCR_FACTORIES = {
-    'RapidOCR': ('usta.core.ocr.rapidocr_engine', 'RapidOCREngine'),
-    'Tesseract': ('usta.core.ocr.tesseract_engine', 'TesseractEngine'),
-    'EasyOCR': ('usta.core.ocr.easyocr_engine', 'EasyOCREngine'),
-    'PaddleOCR': ('usta.core.ocr.paddleocr_engine', 'PaddleOCREngine'),
-    'Apple Vision': ('usta.core.ocr.apple_vision_engine', 'AppleVisionEngine'),
+    "RapidOCR": ("usta.core.ocr.rapidocr_engine", "RapidOCREngine"),
+    "Tesseract": ("usta.core.ocr.tesseract_engine", "TesseractEngine"),
+    "EasyOCR": ("usta.core.ocr.easyocr_engine", "EasyOCREngine"),
+    "PaddleOCR": ("usta.core.ocr.paddleocr_engine", "PaddleOCREngine"),
+    "Apple Vision": ("usta.core.ocr.apple_vision_engine", "AppleVisionEngine"),
 }
-DEFAULT_OCR_NAMES = ['RapidOCR', 'Tesseract', 'EasyOCR']
+DEFAULT_OCR_NAMES = ["RapidOCR", "Tesseract", "EasyOCR"]
 TRANSLATOR_FACTORIES = {
-    'Google': ('usta.core.translation.google_engine', 'GoogleEngine'),
-    'DeepL': ('usta.core.translation.deepl_engine', 'DeepLTranslatorEngine'),
+    "Google": ("usta.core.translation.google_engine", "GoogleEngine"),
+    "DeepL": ("usta.core.translation.deepl_engine", "DeepLTranslatorEngine"),
 }
+
 
 class LazyEngines(Mapping):
     def __init__(self, factories, initialize):

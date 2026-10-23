@@ -81,7 +81,9 @@ msgstr "Недійсне сполучення клавіш"
 
 #: src/ui/main_window.py:301 src/ui/main_window.py:321
 msgid "Could not register this shortcut. The previous shortcut is still active."
-msgstr "Не вдалося зареєструвати це сполучення клавіш. Попереднє сполучення все ще активне."
+msgstr ""
+"Не вдалося зареєструвати це сполучення клавіш. Попереднє сполучення все "
+"ще активне."
 
 #: src/ui/main_window.py:355
 #, python-brace-format
@@ -166,8 +168,8 @@ msgid ""
 "Use this shortcut to bring the main window to the front while playing a "
 "game or watching a video."
 msgstr ""
-"Використовуйте це сполучення клавіш, щоб вивести головне вікно на передній "
-"план під час гри або перегляду відео."
+"Використовуйте це сполучення клавіш, щоб вивести головне вікно на "
+"передній план під час гри або перегляду відео."
 
 #: src/ui/tabs/hotkey_tab.py:157
 msgid ""
@@ -175,7 +177,8 @@ msgid ""
 "selection. The temporary area you select will be active for 10 seconds."
 msgstr ""
 "Використовуйте це сполучення клавіш, коли потрібно вибрати область поза "
-"поточним виділенням. Вибрана тимчасова область буде активною протягом 10 секунд."
+"поточним виділенням. Вибрана тимчасова область буде активною протягом 10 "
+"секунд."
 
 #: src/ui/tabs/hotkey_tab.py:165
 msgid "Settings topmost key:"
@@ -187,7 +190,9 @@ msgstr "Клавіша тимч. області:"
 
 #: src/ui/tabs/hotkey_tab.py:181
 msgid "Click a shortcut field, then press the key combination you want to use."
-msgstr "Натисніть поле сполучення клавіш, а потім натисніть комбінацію клавіш, яку хочете використовувати."
+msgstr ""
+"Натисніть поле сполучення клавіш, а потім натисніть комбінацію клавіш, "
+"яку хочете використовувати."
 
 #: src/ui/tabs/ocr_tab.py:11
 msgid "OCR Engine:"
@@ -256,3 +261,26 @@ msgstr "API-ключ"
 #: src/ui/tabs/translation_tab.py:46
 msgid "Enter API key..."
 msgstr "Введіть API-ключ..."
+
+msgid "Running"
+msgstr "Працює"
+
+msgid "Stopped"
+msgstr "Зупинено"
+
+msgid "No Name"
+msgstr "Немає назви"
+
+msgid "Please enter a preset name."
+msgstr "Введіть назву набору налаштувань."
+
+msgid "Not Found"
+msgstr "Не знайдено"
+
+msgid "Please select a preset to delete."
+msgstr "Виберіть набір налаштувань для видалення."
+
+#, python-brace-format
+msgid "Preset '{name}' not found."
+msgstr "Набір налаштувань '{name}' не знайдено."
+

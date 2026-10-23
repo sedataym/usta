@@ -1,10 +1,16 @@
-from PySide6.QtWidgets import QFontComboBox, QHBoxLayout, QLabel, QPushButton, QSpinBox, QVBoxLayout, QWidget
-
-from usta.i18n import _
-
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import (
+    QFontComboBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
 
 from usta.application.settings import AppSettings
-from PySide6.QtCore import Signal
+from usta.i18n import _
 
 
 class AppearanceTab(QWidget):
@@ -18,7 +24,7 @@ class AppearanceTab(QWidget):
         super().__init__()
         settings = settings or AppSettings()
         tab_appearance_layout = QVBoxLayout(self)
-    
+
         h_font = QHBoxLayout()
         v_font_family = QVBoxLayout()
         v_font_family.addWidget(QLabel(_("Font Family:")))
@@ -26,7 +32,7 @@ class AppearanceTab(QWidget):
         self.font_picker.currentFontChanged.connect(self.font_changed.emit)
         v_font_family.addWidget(self.font_picker)
         h_font.addLayout(v_font_family)
-    
+
         v_font_size = QVBoxLayout()
         v_font_size.addWidget(QLabel(_("Size:")))
         self.font_size_spin = QSpinBox()
@@ -36,27 +42,31 @@ class AppearanceTab(QWidget):
         v_font_size.addWidget(self.font_size_spin)
         h_font.addLayout(v_font_size)
         tab_appearance_layout.addLayout(h_font)
-    
+
         h_colors = QHBoxLayout()
         self.btn_color = QPushButton(_("🎨 Text Color"))
         self.btn_color.clicked.connect(self.text_color_requested.emit)
         h_colors.addWidget(self.btn_color)
-    
+
         self.color_sample = QLabel()
         self.color_sample.setFixedSize(24, 24)
-        self.color_sample.setStyleSheet(f"background-color: {settings.font_color}; border: 1px solid gray; border-radius: 4px;")
+        self.color_sample.setStyleSheet(
+            f"background-color: {settings.font_color}; border: 1px solid gray; border-radius: 4px;"
+        )
         h_colors.addWidget(self.color_sample)
-    
+
         self.btn_bg_color = QPushButton(_("🎨 Background"))
         self.btn_bg_color.clicked.connect(self.background_color_requested.emit)
         h_colors.addWidget(self.btn_bg_color)
-    
+
         self.bg_color_sample = QLabel()
         self.bg_color_sample.setFixedSize(24, 24)
-        self.bg_color_sample.setStyleSheet(f"background-color: {settings.bg_color}; border: 1px solid gray; border-radius: 4px;")
+        self.bg_color_sample.setStyleSheet(
+            f"background-color: {settings.bg_color}; border: 1px solid gray; border-radius: 4px;"
+        )
         h_colors.addWidget(self.bg_color_sample)
         tab_appearance_layout.addLayout(h_colors)
-    
+
         h_bg_opacity = QHBoxLayout()
         h_bg_opacity.addWidget(QLabel(_("Background Opacity:")))
         self.bg_opacity_spin = QSpinBox()

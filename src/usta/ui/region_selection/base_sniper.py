@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+
 from PySide6.QtCore import QRect
+
 
 class BaseSniper(ABC):
     @abstractmethod

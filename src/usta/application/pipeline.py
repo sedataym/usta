@@ -1,9 +1,10 @@
 """Single-owner capture loop with immutable translation jobs."""
-from concurrent.futures import ThreadPoolExecutor
-from copy import deepcopy
+
 import logging
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 
 from usta.application.results import TranslationRequest
 from usta.application.settings import AppSettings
@@ -14,13 +15,25 @@ from usta.core.translation.translator_manager import TranslatorManager
 
 logger = logging.getLogger(__name__)
 
+
 class Pipeline:
     LOOP_SLEEP_SECONDS = 0.2
 
-    def __init__(self, *, capture_factory, publisher, image_path, on_translation,
-                 on_error, ocr_factory=OCRManager, translator_factory=TranslatorManager,
-                 rect_factory=tuple, preprocess=None, on_performance=lambda value: None,
-                 on_translating=lambda value: None):
+    def __init__(
+        self,
+        *,
+        capture_factory,
+        publisher,
+        image_path,
+        on_translation,
+        on_error,
+        ocr_factory=OCRManager,
+        translator_factory=TranslatorManager,
+        rect_factory=tuple,
+        preprocess=None,
+        on_performance=lambda value: None,
+        on_translating=lambda value: None,
+    ):
         self.capture_factory = capture_factory
         self.publisher = publisher
         self.image_path = image_path
@@ -37,7 +50,7 @@ class Pipeline:
         self._stopped = threading.Event()
         self._stopped.set()
         self._session = 0
-        self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='usta-translation')
+        self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="usta-translation")
         self._future = None
         self._job = None
 
@@ -88,15 +101,19 @@ class Pipeline:
                 self.on_error(str(exc))
                 return
             self.on_translation(result.translated_text)
-            self.publisher.broadcast(original=job.text, translated=result.translated_text,
-                                     source_lang=job.source_lang, target_lang=job.target_lang,
-                                     engine=job.engine_name)
+            self.publisher.broadcast(
+                original=job.text,
+                translated=result.translated_text,
+                source_lang=job.source_lang,
+                target_lang=job.target_lang,
+                engine=job.engine_name,
+            )
 
     def run(self) -> None:
         capture = None
         applied = -1
         capture_name = None
-        last_text = ''
+        last_text = ""
         ocr = self.ocr_factory()
         try:
             self.publisher.start()
@@ -112,32 +129,48 @@ class Pipeline:
                             capture = self.capture_factory(settings.screenshot_engine)
                             capture_name = settings.screenshot_engine
                         ocr.set_engine(settings.ocr_engine)
-                        ocr.set_language(get_language_code(settings.source_lang, settings.source_lang))
+                        ocr.set_language(
+                            get_language_code(settings.source_lang, settings.source_lang)
+                        )
                         applied = session
-                        last_text = ''
+                        last_text = ""
                     self._collect()
                     if self._stopped.is_set():
                         break
-                    if capture.capture(self.rect_factory(settings.capture_rect), self.image_path, settings.dpi_scale):
-                        if settings.ocr_engine == 'Tesseract' and self.preprocess:
+                    if capture.capture(
+                        self.rect_factory(settings.capture_rect),
+                        self.image_path,
+                        settings.dpi_scale,
+                    ):
+                        if settings.ocr_engine == "Tesseract" and self.preprocess:
                             self.preprocess(self.image_path, self.image_path)
                         text = ocr.read_result(self.image_path).text
                         with self._lock:
-                            if (session == self._session and not self._stopped.is_set()
-                                    and len(text) > 2 and text != last_text and self._future is None):
-                                request = TranslationRequest(text,
+                            if (
+                                session == self._session
+                                and not self._stopped.is_set()
+                                and len(text) > 2
+                                and text != last_text
+                                and self._future is None
+                            ):
+                                request = TranslationRequest(
+                                    text,
                                     get_language_code(settings.source_lang, settings.source_lang),
                                     get_language_code(settings.target_lang, settings.target_lang),
-                                    settings.translator_engine, session)
+                                    settings.translator_engine,
+                                    session,
+                                )
                                 self._job = request
-                                self._future = self._executor.submit(self._translate, request, settings.translator_api_keys)
+                                self._future = self._executor.submit(
+                                    self._translate, request, settings.translator_api_keys
+                                )
                                 last_text = text
                                 self.on_translating(True)
                     self.on_performance(time.perf_counter() - started)
                 except PortalCanceledError:
                     self.stop()
                 except Exception as exc:
-                    logger.exception('Capture/OCR pipeline failed')
+                    logger.exception("Capture/OCR pipeline failed")
                     self.on_error(str(exc))
                 self._stopped.wait(self.LOOP_SLEEP_SECONDS)
         except Exception as exc:

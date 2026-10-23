@@ -4,11 +4,7 @@ from usta.config import APP_VERSION
 from usta.i18n import _
 
 
-from PySide6.QtCore import Signal
-
-
 class AboutTab(QWidget):
-
     def __init__(self):
         super().__init__()
         tab_about_layout = QVBoxLayout(self)

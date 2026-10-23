@@ -1,32 +1,46 @@
-from usta.application.controller import ApplicationController
-from usta.application.region_controller import RegionController
-from usta.application.hotkey_controller import HotkeyController
 import logging
-import time
-from usta.ui.settings_presenter import SettingsPresenter
-from usta.application.settings import AppSettings, Preset
-from usta.infrastructure.settings_store import SettingsStore
 import os
-from PySide6.QtCore import Qt, QRect, QPoint, QTimer, Signal, Slot, QSignalBlocker
-from PySide6.QtGui import QIcon, QFont
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QApplication, QColorDialog, QProgressBar, QTabWidget, QMessageBox
+
+from PySide6.QtCore import QSignalBlocker, Qt, QTimer, Signal, Slot
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import (
+    QApplication,
+    QColorDialog,
+    QLabel,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
+
+from usta.application.controller import ApplicationController
+from usta.application.hotkey_controller import HotkeyController
+from usta.application.region_controller import RegionController
 from usta.application.worker import OCRWorker
+from usta.config import (
+    OS,
+    SETTINGS_TOPMOST_HOTKEY,
+    TEMPORARY_REGION_HOTKEY,
+    get_language_code,
+)
+from usta.i18n import _
 from usta.ui.overlay_window import TransparentOverlay
 from usta.ui.region_selection import SniperFactory
-from usta.config import OS, LANGUAGES, SETTINGS_FILE, PRESETS_FILE, DPI_SCALE_DEFAULT, SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY, get_language_code
-from usta.core.shortcut import GlobalHotkey
-from usta.i18n import _
+from usta.ui.settings_presenter import SettingsPresenter
 from usta.ui.tabs import (
     AboutTab,
     AppearanceTab,
+    HotkeyTab,
     OCRTab,
     SaveTab,
-    HotkeyTab,
     StatusTab,
     TranslationTab,
 )
 
 logger = logging.getLogger(__name__)
+
 
 class ControlPanel(QWidget):
     temporary_region_hotkey_pressed = Signal()
@@ -50,27 +64,28 @@ class ControlPanel(QWidget):
         )
         self.temporary_region_hotkey_pressed.connect(self._handle_temporary_region_hotkey_pressed)
         self.setWindowTitle("USTA")
-        
+
         # Set window icon
         icon_path = os.path.join(os.path.dirname(__file__), "assets", "usta.png")
         self.setWindowIcon(QIcon(icon_path))
-        
+
         # Disable maximization
         self.setWindowFlags(self.windowFlags() | Qt.MSWindowsFixedSizeDialogHint)
         self.setWindowFlag(Qt.WindowMaximizeButtonHint, False)
         self._macos_hotkey_window = None
         if OS == "Darwin":
             from usta.ui.platform.macos.hotkeys import MacOSHotkeyWindow
+
             # A decorated NSPanel can join another app's fullscreen Space.
             self.setWindowFlags((self.windowFlags() & ~Qt.WindowType_Mask) | Qt.Tool)
             self.setAttribute(Qt.WA_MacAlwaysShowToolWindow, True)
             self.setAttribute(Qt.WA_ShowWithoutActivating, True)
             self._macos_hotkey_window = MacOSHotkeyWindow(self)
         self._normal_window_flags = self.windowFlags()
-        
+
         layout = QVBoxLayout(self)
-        layout.setSizeConstraint(QVBoxLayout.SetFixedSize) # Fixed size according to content
-        
+        layout.setSizeConstraint(QVBoxLayout.SetFixedSize)  # Fixed size according to content
+
         # --- Tabs ---
         self.tabs = QTabWidget()
         self.api_keys = {}
@@ -89,7 +104,9 @@ class ControlPanel(QWidget):
         self.ocr_tab.toggle_dpi_requested.connect(self._toggle_dpi_lock)
         self.translation_tab.translator_changed.connect(self.controller.set_translator)
         self.translation_tab.changed.connect(self.save_settings)
-        self.translation_tab.translator_selected.connect(self.settings_presenter.on_translator_changed)
+        self.translation_tab.translator_selected.connect(
+            self.settings_presenter.on_translator_changed
+        )
         self.translation_tab.language_changed.connect(self.update_languages)
         self.translation_tab.api_key_changed.connect(self.settings_presenter.on_api_key_changed)
         self.appearance_tab.font_changed.connect(self.on_font_changed)
@@ -113,7 +130,6 @@ class ControlPanel(QWidget):
         self.tabs.addTab(self.hotkey_tab, _("Hotkeys"))
         self.tabs.addTab(self.about_tab, _("About"))
 
-        
         layout.addWidget(self.tabs)
 
         # --- Performance Indicator (outside tabs) ---
@@ -124,31 +140,37 @@ class ControlPanel(QWidget):
         self.perf_bar.setTextVisible(False)
         self.perf_bar.setFixedHeight(10)
         layout.addWidget(self.perf_bar)
-        
+
         # --- Controls (outside tabs) ---
         layout.addWidget(QLabel(_("<b>Controls</b>")))
         self.btn_reg = QPushButton(_("🖼 Select Region"))
-        self.btn_reg.setStyleSheet("background-color: #1565C0; color: white; font-weight: bold; padding: 10px;")
+        self.btn_reg.setStyleSheet(
+            "background-color: #1565C0; color: white; font-weight: bold; padding: 10px;"
+        )
         self.btn_reg.clicked.connect(self.select_region)
         layout.addWidget(self.btn_reg)
-        
+
         self.btn_start = QPushButton(_("▶ Start"))
-        self.btn_start.setStyleSheet("background-color: #2E7D32; color: white; font-weight: bold; padding: 10px;")
+        self.btn_start.setStyleSheet(
+            "background-color: #2E7D32; color: white; font-weight: bold; padding: 10px;"
+        )
         self.btn_start.clicked.connect(self.start)
         layout.addWidget(self.btn_start)
-        
+
         self.btn_stop = QPushButton(_("■ Stop"))
-        self.btn_stop.setStyleSheet("background-color: #C62828; color: white; font-weight: bold; padding: 10px;")
+        self.btn_stop.setStyleSheet(
+            "background-color: #C62828; color: white; font-weight: bold; padding: 10px;"
+        )
         self.btn_stop.clicked.connect(self.stop)
         layout.addWidget(self.btn_stop)
-        
+
         self.worker.error_occurred.connect(self.overlay.update_text)
         self.worker.new_translation.connect(self.overlay.update_text)
         self.worker.performance_update.connect(self.update_performance_bar)
         self.worker.running_status.connect(self.update_system_status)
         self.overlay.main_window_topmost_requested.connect(self.set_settings_always_on_top)
         self._settings_always_on_top = False
-        
+
         # Load settings or set defaults
         self.load_settings()
 
@@ -156,7 +178,7 @@ class ControlPanel(QWidget):
         self.update_rect_label()
         self.refresh_preset_list()
         self.show()
-        
+
         # Align overlay to the right of the control panel with a slight delay
         # to ensure the window manager has placed the main window.
         QTimer.singleShot(100, self.align_overlay)
@@ -165,16 +187,16 @@ class ControlPanel(QWidget):
         """Positions the overlay window next to the main window."""
         # Force a refresh of the window's geometry information
         QApplication.processEvents()
-        
+
         # Get the global position of the main window's frame
         rect = self.frameGeometry()
         target_x = rect.right() + 10
         target_y = rect.top()
-        
+
         # Move and then show the overlay
         self.overlay.move(target_x, target_y)
         self.overlay.show()
-        
+
         # For windows bypassing the WM, move after show is often more reliable
         self.overlay.move(target_x, target_y)
 
@@ -236,8 +258,6 @@ class ControlPanel(QWidget):
         self.overlay.set_bg_opacity(opacity)
         self.save_settings()
 
-
-
     def _apply_saved_hotkeys(self, settings_topmost_hotkey, temporary_region_hotkey):
         self._set_settings_topmost_hotkey(settings_topmost_hotkey, save=False, show_error=False)
         self._set_temporary_region_hotkey(temporary_region_hotkey, save=False, show_error=False)
@@ -258,7 +278,11 @@ class ControlPanel(QWidget):
             return True
 
         if show_error:
-            QMessageBox.warning(self, _("Invalid shortcut"), _("Could not register this shortcut. The previous shortcut is still active."))
+            QMessageBox.warning(
+                self,
+                _("Invalid shortcut"),
+                _("Could not register this shortcut. The previous shortcut is still active."),
+            )
         self._sync_hotkey_buttons()
         return False
 
@@ -275,7 +299,11 @@ class ControlPanel(QWidget):
             return True
 
         if show_error:
-            QMessageBox.warning(self, _("Invalid shortcut"), _("Could not register this shortcut. The previous shortcut is still active."))
+            QMessageBox.warning(
+                self,
+                _("Invalid shortcut"),
+                _("Could not register this shortcut. The previous shortcut is still active."),
+            )
         self._sync_hotkey_buttons()
         return False
 
@@ -296,12 +324,12 @@ class ControlPanel(QWidget):
             self.status_tab.system_indicator.setStyleSheet(
                 "background-color: #2E7D32; border-radius: 8px;"
             )
-            self.status_tab.system_status_label.setText("Running")
+            self.status_tab.system_status_label.setText(_("Running"))
         else:
             self.status_tab.system_indicator.setStyleSheet(
                 "background-color: #C62828; border-radius: 8px;"
             )
-            self.status_tab.system_status_label.setText("Stopped")
+            self.status_tab.system_status_label.setText(_("Stopped"))
             self.overlay.set_mode(False)
             self.perf_bar.setValue(0)
             self.perf_bar.setStyleSheet("")
@@ -318,17 +346,17 @@ class ControlPanel(QWidget):
             return
         percent = int(100 - (((duration - 0.5) / 2.5) * 100))
         percent = max(0, min(100, percent))
-        
+
         self.perf_bar.setValue(percent)
-        
+
         # Color determination based on percentage (Health bar logic)
         if percent >= 75:
-            color = "#2E7D32" # Green (Great)
+            color = "#2E7D32"  # Green (Great)
         elif percent >= 35:
-            color = "#F9A825" # Yellow/Orange (Normal)
+            color = "#F9A825"  # Yellow/Orange (Normal)
         else:
-            color = "#C62828" # Red (Poor)
-            
+            color = "#C62828"  # Red (Poor)
+
         self.perf_bar.setStyleSheet(f"""
             QProgressBar::chunk {{
                 background-color: {color};
@@ -352,7 +380,9 @@ class ControlPanel(QWidget):
         if color.isValid():
             color_name = color.name()
             self.overlay.set_font_color(color_name)
-            self.appearance_tab.color_sample.setStyleSheet(f"background-color: {color_name}; border: 1px solid gray; border-radius: 4px;")
+            self.appearance_tab.color_sample.setStyleSheet(
+                f"background-color: {color_name}; border: 1px solid gray; border-radius: 4px;"
+            )
             self.save_settings()
 
     def choose_bg_color(self):
@@ -360,7 +390,9 @@ class ControlPanel(QWidget):
         if color.isValid():
             color_name = color.name()
             self.overlay.set_bg_color(color_name)
-            self.appearance_tab.bg_color_sample.setStyleSheet(f"background-color: {color_name}; border: 1px solid gray; border-radius: 4px;")
+            self.appearance_tab.bg_color_sample.setStyleSheet(
+                f"background-color: {color_name}; border: 1px solid gray; border-radius: 4px;"
+            )
             self.save_settings()
 
     def _emit_temporary_region_hotkey_pressed(self):
@@ -368,7 +400,11 @@ class ControlPanel(QWidget):
 
     @Slot()
     def _handle_temporary_region_hotkey_pressed(self):
-        if not self.worker.isRunning() or self._temporary_region_selecting or not self._temporary_region_hotkey_armed:
+        if (
+            not self.worker.isRunning()
+            or self._temporary_region_selecting
+            or not self._temporary_region_hotkey_armed
+        ):
             return
 
         self._temporary_region_hotkey_armed = False
@@ -427,7 +463,7 @@ class ControlPanel(QWidget):
         if rect:
             self._apply_main_region(rect, detected_dpi)
 
-    def start(self): 
+    def start(self):
         self.overlay.set_mode(True)
         if not self.worker.isRunning():
             self.controller.start()
@@ -455,18 +491,10 @@ class ControlPanel(QWidget):
         if self._macos_hotkey_window is not None and event.isAccepted():
             # Qt.Tool panels do not trigger quitOnLastWindowClosed.
             QApplication.instance().quit()
- 
+
     # ---------- API Key Helpers ----------
 
-
-
-
     # ---------- Preset Management ----------
-
-
-
-
-
 
     def save_settings(self):
         self.settings_presenter.save_settings()

@@ -1,17 +1,20 @@
 """Bounded, non-blocking Unix socket translation broadcast."""
+
 import errno
 import json
 import logging
-from pathlib import Path
 import queue
 import select
 import socket
 import stat
 import threading
 import time
+from pathlib import Path
+
 from usta.config import SOCKET_PATH
 
 logger = logging.getLogger(__name__)
+
 
 class TranslationPublisher:
     MAX_PENDING_BYTES = 1024 * 1024
@@ -31,7 +34,7 @@ class TranslationPublisher:
         if self.path.exists():
             identity = self.path.lstat()
             if not stat.S_ISSOCK(identity.st_mode):
-                raise OSError(errno.EADDRINUSE, 'IPC path is not a socket')
+                raise OSError(errno.EADDRINUSE, "IPC path is not a socket")
             with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as probe:
                 probe.settimeout(0.2)
                 try:
@@ -40,9 +43,9 @@ class TranslationPublisher:
                     if exc.errno != errno.ECONNREFUSED:
                         raise
                 else:
-                    raise OSError(errno.EADDRINUSE, 'USTA IPC socket is already in use')
+                    raise OSError(errno.EADDRINUSE, "USTA IPC socket is already in use")
             if self.path.lstat().st_ino != identity.st_ino:
-                raise OSError(errno.EADDRINUSE, 'IPC path changed during startup')
+                raise OSError(errno.EADDRINUSE, "IPC path changed during startup")
             self.path.unlink()
         server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         try:
@@ -56,7 +59,7 @@ class TranslationPublisher:
         self._identity = self.path.stat().st_ino
         self._messages = queue.Queue(maxsize=256)
         self._stopped.clear()
-        self._thread = threading.Thread(target=self._run, name='usta-ipc', daemon=True)
+        self._thread = threading.Thread(target=self._run, name="usta-ipc", daemon=True)
         self._thread.start()
 
     def stop(self):
@@ -64,7 +67,7 @@ class TranslationPublisher:
         if self._thread is not None:
             self._thread.join(timeout=2)
             if self._thread.is_alive():
-                logger.error('IPC thread did not stop within deadline')
+                logger.error("IPC thread did not stop within deadline")
                 return
             self._thread = None
         if self._server is not None:
@@ -78,23 +81,34 @@ class TranslationPublisher:
                 pass
             self._identity = None
 
-    def broadcast(self, original, translated, source_lang='en', target_lang='tr', engine='unknown'):
+    def broadcast(self, original, translated, source_lang="en", target_lang="tr", engine="unknown"):
         if self._stopped.is_set():
             return
-        data = (json.dumps({'original': original, 'translated': translated,
-                'source': source_lang, 'target': target_lang, 'engine': engine,
-                'timestamp': time.time()}) + '\n').encode('utf-8')
+        data = (
+            json.dumps(
+                {
+                    "original": original,
+                    "translated": translated,
+                    "source": source_lang,
+                    "target": target_lang,
+                    "engine": engine,
+                    "timestamp": time.time(),
+                }
+            )
+            + "\n"
+        ).encode("utf-8")
         try:
             self._messages.put_nowait(data)
         except queue.Full:
-            logger.warning('IPC queue full; dropping broadcast')
+            logger.warning("IPC queue full; dropping broadcast")
 
     def _run(self):
         clients = {}
         try:
             while not self._stopped.is_set():
-                readable, writable, _ = select.select([self._server],
-                    [c for c, pending in clients.items() if pending], [], 0.05)
+                readable, writable, _ = select.select(
+                    [self._server], [c for c, pending in clients.items() if pending], [], 0.05
+                )
                 if readable:
                     while True:
                         try:
@@ -111,7 +125,8 @@ class TranslationPublisher:
                     for client in list(clients):
                         pending = clients[client]
                         if len(pending) + len(data) > self.MAX_PENDING_BYTES:
-                            client.close(); del clients[client]
+                            client.close()
+                            del clients[client]
                         else:
                             pending.extend(data)
                 for client in writable:
@@ -120,15 +135,16 @@ class TranslationPublisher:
                     try:
                         sent = client.send(clients[client])
                         if sent == 0:
-                            raise ConnectionError('IPC peer closed')
+                            raise ConnectionError("IPC peer closed")
                         del clients[client][:sent]
                     except BlockingIOError:
                         pass
                     except OSError:
-                        client.close(); del clients[client]
+                        client.close()
+                        del clients[client]
         except OSError:
             if not self._stopped.is_set():
-                logger.exception('IPC loop failed')
+                logger.exception("IPC loop failed")
         finally:
             for client in clients:
                 client.close()

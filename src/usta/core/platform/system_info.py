@@ -3,7 +3,6 @@ import platform
 import subprocess
 from typing import Optional
 
-
 _COMPOSITOR_PROCESSES = {
     "kwin_wayland": "kwin",
     "kwin_x11": "kwin",

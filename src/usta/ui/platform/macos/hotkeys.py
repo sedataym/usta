@@ -1,4 +1,5 @@
 """Native panel actions for macOS settings and region-selection shortcuts."""
+
 import logging
 import os
 
@@ -15,16 +16,20 @@ class MacOSHotkeyWindow:
         self._previous_app = None
         try:
             import AppKit
+
             window = self._window()
             self._normal_behavior = window.collectionBehavior()
             # Prepare before the first show, not after a fullscreen transition.
             if window.isKindOfClass_(AppKit.NSPanel):
-                window.setStyleMask_(window.styleMask() | AppKit.NSWindowStyleMaskNonactivatingPanel)
+                window.setStyleMask_(
+                    window.styleMask() | AppKit.NSWindowStyleMaskNonactivatingPanel
+                )
         except Exception as ex:
             logger.error("Could not prepare macOS hotkey panel: %s", ex)
 
     def _window(self):
         import objc
+
         return objc.objc_object(c_void_p=int(self.widget.winId())).window()
 
     def show(self, focus=True):
@@ -50,6 +55,7 @@ class MacOSHotkeyWindow:
     def _remember_application(self):
         try:
             import AppKit
+
             previous = AppKit.NSWorkspace.sharedWorkspace().frontmostApplication()
             if previous is not None and previous.processIdentifier() != os.getpid():
                 self._previous_app = previous
@@ -60,6 +66,7 @@ class MacOSHotkeyWindow:
         self.rules.stop()
         try:
             import AppKit
+
             window = self._window()
             window.resignKeyWindow()
             if self._normal_behavior is not None:
@@ -76,14 +83,20 @@ class MacOSHotkeyWindow:
             return
         try:
             import AppKit
+
             current = AppKit.NSWorkspace.sharedWorkspace().frontmostApplication()
-            if current is not None and current.processIdentifier() == os.getpid() and not previous.isTerminated():
+            if (
+                current is not None
+                and current.processIdentifier() == os.getpid()
+                and not previous.isTerminated()
+            ):
                 # macOS 14+ uses cooperative activation; the old ignore-other-
                 # apps flag no longer guarantees handing focus back.
                 if hasattr(AppKit.NSApp, "yieldActivationToApplication_"):
                     AppKit.NSApp.yieldActivationToApplication_(previous)
                     previous.activateFromApplication_options_(
-                        AppKit.NSRunningApplication.currentApplication(), 0,
+                        AppKit.NSRunningApplication.currentApplication(),
+                        0,
                     )
                 else:
                     previous.activateWithOptions_(AppKit.NSApplicationActivateIgnoringOtherApps)

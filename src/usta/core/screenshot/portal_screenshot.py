@@ -1,5 +1,5 @@
-import logging
 import asyncio
+import logging
 import os
 import secrets
 import threading
@@ -33,6 +33,7 @@ try:
 
     gi.require_version("Gst", "1.0")
     from gi.repository import Gst
+
     gi.require_version("GstVideo", "1.0")
     from gi.repository import GstVideo
 except ImportError as exc:
@@ -88,7 +89,9 @@ class PortalScreenshot(BaseScreenshot):
             try:
                 self._ensure_dependencies()
                 if not self._started:
-                    self._loop.run_until_complete(asyncio.wait_for(self._start_portal_session(), timeout=60.0))
+                    self._loop.run_until_complete(
+                        asyncio.wait_for(self._start_portal_session(), timeout=60.0)
+                    )
                     self._start_gstreamer_pipeline()
                     self._started = True
 
@@ -123,7 +126,9 @@ class PortalScreenshot(BaseScreenshot):
 
             if self._session_handle and self._bus is not None:
                 try:
-                    self._loop.run_until_complete(asyncio.wait_for(self._close_portal_session(), timeout=3.0))
+                    self._loop.run_until_complete(
+                        asyncio.wait_for(self._close_portal_session(), timeout=3.0)
+                    )
                 except Exception as exc:
                     logger.error(f"Portal Close Error: {exc}")
 
@@ -140,7 +145,9 @@ class PortalScreenshot(BaseScreenshot):
 
     def _ensure_dependencies(self):
         if _DBUS_IMPORT_ERROR is not None:
-            raise RuntimeError("dbus-next module was not found. Install it with `pip install dbus-next`.") from _DBUS_IMPORT_ERROR
+            raise RuntimeError(
+                "dbus-next module was not found. Install it with `pip install dbus-next`."
+            ) from _DBUS_IMPORT_ERROR
         if _GST_IMPORT_ERROR is not None or Gst is None:
             raise RuntimeError(
                 "PyGObject/GStreamer Python module was not found. Install PyGObject, GStreamer, "
@@ -160,14 +167,16 @@ class PortalScreenshot(BaseScreenshot):
         if path is not None:
             parts.append(f"path='{path}'")
 
-        await self._bus.call(Message(
-            destination=DBUS_NAME,
-            path=DBUS_PATH,
-            interface=DBUS_INTERFACE,
-            member="AddMatch",
-            signature="s",
-            body=[",".join(parts)],
-        ))
+        await self._bus.call(
+            Message(
+                destination=DBUS_NAME,
+                path=DBUS_PATH,
+                interface=DBUS_INTERFACE,
+                member="AddMatch",
+                signature="s",
+                body=[",".join(parts)],
+            )
+        )
 
     def _token_to_request_path(self, handle_token):
         sender = self._bus.unique_name.removeprefix(":").replace(".", "_")
@@ -192,14 +201,16 @@ class PortalScreenshot(BaseScreenshot):
         await self._add_signal_match(None, expected_request_path, REQUEST_INTERFACE, "Response")
 
         try:
-            reply = await self._bus.call(Message(
-                destination=BUS_NAME,
-                path=OBJECT_PATH,
-                interface=SCREENCAST_INTERFACE,
-                member=member,
-                signature=signature,
-                body=body,
-            ))
+            reply = await self._bus.call(
+                Message(
+                    destination=BUS_NAME,
+                    path=OBJECT_PATH,
+                    interface=SCREENCAST_INTERFACE,
+                    member=member,
+                    signature=signature,
+                    body=body,
+                )
+            )
 
             returned_request_path = reply.body[0]
             if returned_request_path != expected_request_path:
@@ -213,8 +224,12 @@ class PortalScreenshot(BaseScreenshot):
 
         if response_code != 0:
             if response_code == 1:
-                raise PortalCanceledError(f"Portal request was canceled or rejected: {member}, response={response_code}")
-            raise RuntimeError(f"Portal request was canceled or rejected: {member}, response={response_code}")
+                raise PortalCanceledError(
+                    f"Portal request was canceled or rejected: {member}, response={response_code}"
+                )
+            raise RuntimeError(
+                f"Portal request was canceled or rejected: {member}, response={response_code}"
+            )
 
         return results
 
@@ -223,24 +238,48 @@ class PortalScreenshot(BaseScreenshot):
 
         token = secrets.token_hex(8)
         create_token = f"create_{token}"
-        create_results = await self._call_portal_request("CreateSession", "a{sv}", [{
-            "session_handle_token": Variant("s", f"session_{token}"),
-            "handle_token": Variant("s", create_token),
-        }], create_token)
+        create_results = await self._call_portal_request(
+            "CreateSession",
+            "a{sv}",
+            [
+                {
+                    "session_handle_token": Variant("s", f"session_{token}"),
+                    "handle_token": Variant("s", create_token),
+                }
+            ],
+            create_token,
+        )
         self._session_handle = create_results["session_handle"].value
 
         select_token = f"select_{token}"
-        await self._call_portal_request("SelectSources", "oa{sv}", [self._session_handle, {
-            "handle_token": Variant("s", select_token),
-            "types": Variant("u", 3),
-            "multiple": Variant("b", False),
-            "cursor_mode": Variant("u", 2),
-        }], select_token)
+        await self._call_portal_request(
+            "SelectSources",
+            "oa{sv}",
+            [
+                self._session_handle,
+                {
+                    "handle_token": Variant("s", select_token),
+                    "types": Variant("u", 3),
+                    "multiple": Variant("b", False),
+                    "cursor_mode": Variant("u", 2),
+                },
+            ],
+            select_token,
+        )
 
         start_token = f"start_{token}"
-        start_results = await self._call_portal_request("Start", "osa{sv}", [self._session_handle, "", {
-            "handle_token": Variant("s", start_token),
-        }], start_token)
+        start_results = await self._call_portal_request(
+            "Start",
+            "osa{sv}",
+            [
+                self._session_handle,
+                "",
+                {
+                    "handle_token": Variant("s", start_token),
+                },
+            ],
+            start_token,
+        )
 
         streams = start_results.get("streams")
         if streams is None or not streams.value:
@@ -254,14 +293,16 @@ class PortalScreenshot(BaseScreenshot):
         self._pipewire_fd = await self._open_pipewire_remote()
 
     async def _open_pipewire_remote(self):
-        reply = await self._bus.call(Message(
-            destination=BUS_NAME,
-            path=OBJECT_PATH,
-            interface=SCREENCAST_INTERFACE,
-            member="OpenPipeWireRemote",
-            signature="oa{sv}",
-            body=[self._session_handle, {}],
-        ))
+        reply = await self._bus.call(
+            Message(
+                destination=BUS_NAME,
+                path=OBJECT_PATH,
+                interface=SCREENCAST_INTERFACE,
+                member="OpenPipeWireRemote",
+                signature="oa{sv}",
+                body=[self._session_handle, {}],
+            )
+        )
 
         fd_index = reply.body[0]
         try:
@@ -274,12 +315,14 @@ class PortalScreenshot(BaseScreenshot):
         return fd
 
     async def _close_portal_session(self):
-        await self._bus.call(Message(
-            destination=BUS_NAME,
-            path=self._session_handle,
-            interface=SESSION_INTERFACE,
-            member="Close",
-        ))
+        await self._bus.call(
+            Message(
+                destination=BUS_NAME,
+                path=self._session_handle,
+                interface=SESSION_INTERFACE,
+                member="Close",
+            )
+        )
 
     def _start_gstreamer_pipeline(self):
         if not self._gst_initialized:
@@ -306,14 +349,18 @@ class PortalScreenshot(BaseScreenshot):
                 self._appsink = self._pipeline.get_by_name("sink")
                 state_result = self._pipeline.set_state(Gst.State.PLAYING)
                 if state_result == Gst.StateChangeReturn.FAILURE:
-                    raise RuntimeError(f"GStreamer pipeline could not switch to PLAYING state: {pipeline_description}")
+                    raise RuntimeError(
+                        f"GStreamer pipeline could not switch to PLAYING state: {pipeline_description}"
+                    )
 
                 self._wait_for_pipeline_ready()
                 logger.info(f"Portal GStreamer pipeline is ready: {pipeline_description}")
                 return
             except Exception as exc:
                 last_error = exc
-                logger.error(f"Portal GStreamer pipeline attempt failed ({type(exc).__name__}): {exc!r}")
+                logger.error(
+                    f"Portal GStreamer pipeline attempt failed ({type(exc).__name__}): {exc!r}"
+                )
                 self._print_gstreamer_bus_errors()
                 if self._pipeline is not None:
                     self._pipeline.set_state(Gst.State.NULL)
@@ -372,16 +419,22 @@ class PortalScreenshot(BaseScreenshot):
 
         try:
             if video_format == "RGB":
-                return Image.frombytes("RGB", (width, height), map_info.data, "raw", "RGB", stride, orientation)
+                return Image.frombytes(
+                    "RGB", (width, height), map_info.data, "raw", "RGB", stride, orientation
+                )
 
             if video_format == "BGR":
-                return Image.frombytes("RGB", (width, height), map_info.data, "raw", "BGR", stride, orientation)
+                return Image.frombytes(
+                    "RGB", (width, height), map_info.data, "raw", "BGR", stride, orientation
+                )
 
             raise RuntimeError(f"Unsupported GStreamer video format: {video_format}")
         finally:
             buffer.unmap(map_info)
 
-    def _save_sample_region(self, sample: Any, rect: QRect, output_path: str, dpi_scale: float) -> bool:
+    def _save_sample_region(
+        self, sample: Any, rect: QRect, output_path: str, dpi_scale: float
+    ) -> bool:
         image = self._build_frame_image(sample)
         self._save_image_atomically(image, self.full_screen_path)
         width, height = image.size

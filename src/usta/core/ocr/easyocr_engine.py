@@ -1,34 +1,36 @@
 import logging
 import warnings
 
-from usta.core.ocr.base_ocr import BaseOCREngine
 from usta.config import OCR_LANG_MAPPING
+from usta.core.ocr.base_ocr import BaseOCREngine
 
 logger = logging.getLogger(__name__)
+
 
 class EasyOCREngine(BaseOCREngine):
     def __init__(self):
         self.reader = None
-        self.current_langs = ['en']
+        self.current_langs = ["en"]
 
     def set_language(self, lang_code: str):
         mapping = OCR_LANG_MAPPING.get(lang_code, OCR_LANG_MAPPING["en"])
         new_lang = mapping["easy"]
-        
+
         # Always include 'en' as base, but add the target language if different
-        target_langs = list({'en', new_lang})
-        
+        target_langs = list({"en", new_lang})
+
         if target_langs != self.current_langs:
             self.current_langs = target_langs
-            self.reader = None # Trigger re-initialization on next read
+            self.reader = None  # Trigger re-initialization on next read
             logger.info(f"EasyOCREngine: Languages scheduled for update: {self.current_langs}")
 
     def read_text(self, image_path: str) -> str:
         if self.reader is None:
             import easyocr
+
             logger.info(f"EasyOCREngine: Initializing reader with {self.current_langs}")
             self.reader = easyocr.Reader(self.current_langs, gpu=True)
-        
+
         try:
             with warnings.catch_warnings():
                 if str(getattr(self.reader, "device", "")).split(":")[0] == "mps":

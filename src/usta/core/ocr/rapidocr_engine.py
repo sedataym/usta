@@ -1,10 +1,9 @@
-import logging
 import glob
+import logging
 import os
 
-from usta.core.ocr.base_ocr import BaseOCREngine
 from usta.config import OCR_LANG_MAPPING
-
+from usta.core.ocr.base_ocr import BaseOCREngine
 from usta.resource_paths import resource_path
 
 logger = logging.getLogger(__name__)
@@ -36,10 +35,14 @@ class RapidOCREngine(BaseOCREngine):
         pattern = os.path.join(_MODELS_DIR, f"{lang_code}_PP-OCR*.onnx")
         matches = sorted(glob.glob(pattern))
         if matches:
-            logger.info(f"RapidOCREngine: Found recognition model for lang={lang_code}: {os.path.basename(matches[0])}")
+            logger.info(
+                f"RapidOCREngine: Found recognition model for lang={lang_code}: {os.path.basename(matches[0])}"
+            )
             return matches[0]
 
-        logger.info(f"RapidOCREngine: No recognition model found for lang={lang_code}, using default")
+        logger.info(
+            f"RapidOCREngine: No recognition model found for lang={lang_code}, using default"
+        )
         return ""
 
     def set_language(self, lang_code: str):
@@ -59,6 +62,7 @@ class RapidOCREngine(BaseOCREngine):
 
     def _patch_rapidocr_ort_session(self):
         from usta.core.ocr.rapidocr_compat import patch_ort_session
+
         patch_ort_session(self.cpu_threads)
 
     def _initialize(self) -> bool:

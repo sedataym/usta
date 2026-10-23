@@ -1,5 +1,7 @@
 """Replace hotkey listeners only after the candidate registered successfully."""
+
 from usta.core.shortcut import GlobalHotkey
+
 
 class HotkeyController:
     def __init__(self, initial, callback):

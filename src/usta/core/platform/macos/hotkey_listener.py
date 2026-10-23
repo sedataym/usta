@@ -1,4 +1,5 @@
 """Keep macOS keyboard-layout queries off pynput's listener thread."""
+
 import threading
 
 from pynput import keyboard

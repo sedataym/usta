@@ -1,6 +1,7 @@
 import logging
-from usta.core.ocr.base_ocr import BaseOCREngine
+
 from usta.config import OCR_LANG_MAPPING
+from usta.core.ocr.base_ocr import BaseOCREngine
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +26,13 @@ class PaddleOCREngine(BaseOCREngine):
         if self.ocr is None and self._unavailable_reason is None:
             try:
                 from paddleocr import PaddleOCR
+
                 logger.info(f"PaddleOCREngine: Initializing reader with lang={self.current_lang}")
                 self.ocr = PaddleOCR(
                     lang=self.current_lang,
                     use_textline_orientation=True,
                 )
-            except ImportError as e:
+            except ImportError:
                 self._unavailable_reason = (
                     "PaddleOCR is not installed. "
                     "Install it with: pip install paddleocr\n"

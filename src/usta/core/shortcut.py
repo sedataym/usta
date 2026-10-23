@@ -54,6 +54,7 @@ class GlobalHotkey:
             listener_type = keyboard.Listener
             if sys.platform == "darwin":
                 from usta.core.platform.macos.hotkey_listener import MainThreadLayoutListener
+
                 listener_type = MainThreadLayoutListener
             self._listener = listener_type(
                 on_press=self._on_press,

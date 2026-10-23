@@ -1,11 +1,8 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from usta.config import DPI_SCALE_DEFAULT, OCR_ENGINES, SCREENSHOT_ENGINES
 from usta.i18n import _
-
-
-from PySide6.QtCore import Signal
 
 
 class OCRTab(QWidget):
@@ -25,7 +22,7 @@ class OCRTab(QWidget):
         self.combo_ocr.currentTextChanged.connect(self.engine_changed.emit)
         self.combo_ocr.currentTextChanged.connect(self.changed.emit)
         tab_ocr_layout.addWidget(self.combo_ocr)
-    
+
         tab_ocr_layout.addWidget(QLabel(_("Screen Engine:")))
         self.combo_screenshot = QComboBox()
         self.combo_screenshot.setFocusPolicy(Qt.NoFocus)
@@ -35,7 +32,7 @@ class OCRTab(QWidget):
         self.combo_screenshot.currentTextChanged.connect(self.screen_engine_changed.emit)
         self.combo_screenshot.currentTextChanged.connect(self.changed.emit)
         tab_ocr_layout.addWidget(self.combo_screenshot)
-    
+
         h_dpi = QHBoxLayout()
         h_dpi.addWidget(QLabel(_("DPI Scale:")))
         self.dpi_lock_label = QLabel("🔓")
@@ -51,9 +48,11 @@ class OCRTab(QWidget):
         self.dpi_scale_spin.setDecimals(0)
         self.dpi_scale_spin.setSuffix(" %")
         self.dpi_scale_spin.setValue(DPI_SCALE_DEFAULT * 100)
-        self.dpi_scale_spin.setToolTip(_("Scale factor for high-DPI monitors.\nAuto-detected when selecting a region."))
+        self.dpi_scale_spin.setToolTip(
+            _("Scale factor for high-DPI monitors.\nAuto-detected when selecting a region.")
+        )
         self.dpi_scale_spin.valueChanged.connect(self.dpi_changed.emit)
         h_dpi.addWidget(self.dpi_scale_spin)
         tab_ocr_layout.addLayout(h_dpi)
-    
+
         tab_ocr_layout.addStretch()

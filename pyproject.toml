@@ -52,7 +52,23 @@ include = ["usta*"]
 
 [project.optional-dependencies]
 paddle = ["paddleocr>=3.6.0", "paddlepaddle"]
-dev = ["ruff", "mypy", "build", "coverage"]
+dev = ["ruff", "mypy", "build", "coverage", "tomli; python_version < '3.11'"]
 
 [tool.setuptools.dynamic]
 version = {attr = "usta._version.__version__"}
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/usta/config.py" = ["F401"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src/usta/application/settings.py", "src/usta/application/results.py", "src/usta/infrastructure/settings_store.py", "src/usta/infrastructure/legacy_settings.py"]
+check_untyped_defs = true
+follow_imports = "silent"

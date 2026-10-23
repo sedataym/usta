@@ -1,10 +1,14 @@
 """Qt signals and thread lifecycle around the application pipeline."""
+
 from dataclasses import replace
-from PySide6.QtCore import QThread, Signal, QRect
+
+from PySide6.QtCore import QRect, QThread, Signal
+
 from usta.application.pipeline import Pipeline
+from usta.core.screenshot import ImageProcessor, ScreenshotFactory
 from usta.infrastructure.paths import CaptureWorkspace
-from usta.core.screenshot import ScreenshotFactory, ImageProcessor
 from usta.infrastructure.socket_publisher import TranslationPublisher
+
 
 class OCRWorker(QThread):
     LOOP_SLEEP_SECONDS = Pipeline.LOOP_SLEEP_SECONDS
@@ -17,11 +21,19 @@ class OCRWorker(QThread):
     def __init__(self):
         super().__init__()
         self.workspace = CaptureWorkspace()
-        self.pipeline = Pipeline(capture_factory=lambda name: ScreenshotFactory.get_engine(name, self.workspace.fullscreen_path),
-            publisher=TranslationPublisher(), image_path=self.workspace.image_path,
-            on_translation=self.new_translation.emit, on_error=self.error_occurred.emit,
-            on_performance=self.performance_update.emit, on_translating=self.translation_status.emit,
-            rect_factory=lambda values: QRect(*values), preprocess=ImageProcessor.preprocess_for_tesseract)
+        self.pipeline = Pipeline(
+            capture_factory=lambda name: ScreenshotFactory.get_engine(
+                name, self.workspace.fullscreen_path
+            ),
+            publisher=TranslationPublisher(),
+            image_path=self.workspace.image_path,
+            on_translation=self.new_translation.emit,
+            on_error=self.error_occurred.emit,
+            on_performance=self.performance_update.emit,
+            on_translating=self.translation_status.emit,
+            rect_factory=lambda values: QRect(*values),
+            preprocess=ImageProcessor.preprocess_for_tesseract,
+        )
         self._restart_requested = False
         self.finished.connect(self._restart_if_requested)
 
@@ -39,8 +51,13 @@ class OCRWorker(QThread):
 
     def set_rect(self, qrect, dpi_scale=None):
         settings = self.pipeline.settings
-        self.pipeline.configure(replace(settings, capture_rect=(qrect.x(),qrect.y(),qrect.width(),qrect.height()),
-            dpi_scale=settings.dpi_scale if dpi_scale is None else dpi_scale))
+        self.pipeline.configure(
+            replace(
+                settings,
+                capture_rect=(qrect.x(), qrect.y(), qrect.width(), qrect.height()),
+                dpi_scale=settings.dpi_scale if dpi_scale is None else dpi_scale,
+            )
+        )
 
     def set_engine(self, name):
         self.pipeline.configure(replace(self.pipeline.settings, ocr_engine=name))
@@ -52,7 +69,9 @@ class OCRWorker(QThread):
         self.pipeline.configure(replace(self.pipeline.settings, screenshot_engine=name))
 
     def set_languages(self, source, target):
-        self.pipeline.configure(replace(self.pipeline.settings, source_lang=source, target_lang=target))
+        self.pipeline.configure(
+            replace(self.pipeline.settings, source_lang=source, target_lang=target)
+        )
 
     def set_api_key(self, engine, key):
         keys = self.pipeline.settings.translator_api_keys

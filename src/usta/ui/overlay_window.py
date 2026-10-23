@@ -1,9 +1,11 @@
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
+
 from usta.config import OS, SETTINGS_TOPMOST_HOTKEY
 from usta.core.shortcut import GlobalHotkey
 from usta.i18n import _
+
 
 class CornerLabel(QLabel):
     def __init__(self, parent=None):
@@ -30,7 +32,9 @@ class CornerLabel(QLabel):
 
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
-        painter.setPen(QPen(color, self.corner_line_thickness, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        painter.setPen(
+            QPen(color, self.corner_line_thickness, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+        )
 
         offset = self.corner_line_thickness / 2
         left = offset
@@ -81,10 +85,9 @@ class TransparentOverlay(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("USTA_TRANSLATION_OVERLAY")
-        window_flags = (Qt.WindowStaysOnTopHint |
-                        Qt.FramelessWindowHint |
-                        Qt.WindowDoesNotAcceptFocus |
-                        Qt.Tool)
+        window_flags = (
+            Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.WindowDoesNotAcceptFocus | Qt.Tool
+        )
         if OS == "Linux":
             window_flags |= Qt.X11BypassWindowManagerHint
         self.setWindowFlags(window_flags)
@@ -94,14 +97,15 @@ class TransparentOverlay(QWidget):
         self._macos_rules = None
         if OS == "Darwin":
             from usta.ui.platform.macos.overlay import MacOSOverlayRules
+
             self.setAttribute(Qt.WA_MacAlwaysShowToolWindow, True)
             self._macos_rules = MacOSOverlayRules(self)
         self.setMouseTracking(True)
         self.resize(800, 200)
-        
+
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
-        
+
         # Style variables
         self.font_family = "Arial"
         self.font_size = 20
@@ -109,9 +113,9 @@ class TransparentOverlay(QWidget):
         self.bg_color = "#000000"
         self.bg_opacity = 180
         self._show_corner_lines = False
-        
+
         self.label = CornerLabel(self)
-        self.label.setText("Translation will appear here.")
+        self.label.setText(_("Translation will appear here."))
         self.label.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignCenter)
@@ -127,7 +131,7 @@ class TransparentOverlay(QWidget):
         )
         self.settings_topmost_hotkey_pressed.connect(self._handle_settings_topmost_hotkey_pressed)
         self._settings_topmost_hotkey.start()
-        
+
         self.hide_timer = QTimer(self)
         self.hide_timer.setSingleShot(True)
         self.hide_timer.timeout.connect(lambda: self.label.setText(""))
@@ -253,7 +257,10 @@ class TransparentOverlay(QWidget):
         if event.button() == Qt.LeftButton:
             self._drag_start_pos = event.globalPosition().toPoint()
             self._drag_start_geometry = self.geometry()
-            if event.position().x() > self.width() - 20 and event.position().y() > self.height() - 20:
+            if (
+                event.position().x() > self.width() - 20
+                and event.position().y() > self.height() - 20
+            ):
                 self._drag_mode = "resize"
                 self.setCursor(Qt.SizeFDiagCursor)
             else:
@@ -263,7 +270,10 @@ class TransparentOverlay(QWidget):
 
     def mouseMoveEvent(self, event):
         if self._drag_mode is None:
-            if event.position().x() > self.width() - 20 and event.position().y() > self.height() - 20:
+            if (
+                event.position().x() > self.width() - 20
+                and event.position().y() > self.height() - 20
+            ):
                 self.setCursor(Qt.SizeFDiagCursor)
             else:
                 self.setCursor(Qt.SizeAllCursor)
@@ -274,8 +284,9 @@ class TransparentOverlay(QWidget):
 
         delta = event.globalPosition().toPoint() - self._drag_start_pos
         if self._drag_mode == "move":
-            self.move(self._drag_start_geometry.x() + delta.x(),
-                      self._drag_start_geometry.y() + delta.y())
+            self.move(
+                self._drag_start_geometry.x() + delta.x(), self._drag_start_geometry.y() + delta.y()
+            )
         elif self._drag_mode == "resize":
             new_w = max(200, self._drag_start_geometry.width() + delta.x())
             new_h = max(60, self._drag_start_geometry.height() + delta.y())
@@ -287,7 +298,10 @@ class TransparentOverlay(QWidget):
             self._drag_mode = None
             self._drag_start_pos = None
             self._drag_start_geometry = None
-            if event.position().x() > self.width() - 20 and event.position().y() > self.height() - 20:
+            if (
+                event.position().x() > self.width() - 20
+                and event.position().y() > self.height() - 20
+            ):
                 self.setCursor(Qt.SizeFDiagCursor)
             else:
                 self.setCursor(Qt.SizeAllCursor)

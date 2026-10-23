@@ -2,7 +2,6 @@ import os
 import tempfile
 
 from usta._version import __version__ as APP_VERSION
-
 from usta.core.platform.capability_resolver import (
     CONFIG_DIR,
     LANGUAGES,
@@ -44,6 +43,7 @@ def get_translation_language_code(language_code: str, provider: str, direction: 
         if language == language_code:
             return language_code
     return language_code
+
 
 SETTINGS_FILE = os.path.join(CONFIG_DIR, "settings.pkl")
 PRESETS_FILE = os.path.join(CONFIG_DIR, "presets.pkl")

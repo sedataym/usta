@@ -5,7 +5,6 @@ from typing import Any, Iterable, Optional
 from usta.core.platform import capabilities as base_capabilities
 from usta.core.platform.system_info import get_desktop_environment, get_os
 
-
 CAPABILITY_NAMES = (
     "OCR_ENGINES",
     "TRANSLATION_ENGINES",

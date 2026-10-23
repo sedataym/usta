@@ -2,13 +2,15 @@
 
 The installed version exposes no public thread-count setting.
 """
+
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def patch_ort_session(cpu_threads: int):
     from onnxruntime import GraphOptimizationLevel, InferenceSession, SessionOptions
     from rapidocr_onnxruntime.utils import OrtInferSession, get_available_providers, get_device
-
 
     def limited_init(session_self, config):
         sess_opt = SessionOptions()
@@ -33,11 +35,7 @@ def patch_ort_session(cpu_threads: int):
         }
 
         ep_list = []
-        if (
-            config["use_cuda"]
-            and get_device() == "GPU"
-            and cuda_ep in get_available_providers()
-        ):
+        if config["use_cuda"] and get_device() == "GPU" and cuda_ep in get_available_providers():
             ep_list = [(cuda_ep, cuda_provider_options)]
         ep_list.append((cpu_ep, cpu_provider_options))
 
@@ -55,4 +53,3 @@ def patch_ort_session(cpu_threads: int):
     limited_init._usta_cpu_limited = True
     OrtInferSession.__init__ = limited_init
     logger.info("RapidOCREngine: OrtInferSession monkey-patched for CPU thread limiting")
-

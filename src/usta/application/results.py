@@ -1,10 +1,13 @@
 """Values crossing OCR/translation application boundaries."""
+
 from dataclasses import dataclass
+
 
 @dataclass(frozen=True)
 class OCRResult:
     text: str
     confidence: float | None = None
+
 
 @dataclass(frozen=True)
 class TranslationRequest:
@@ -14,6 +17,7 @@ class TranslationRequest:
     engine_name: str
     session_id: int
 
+
 @dataclass(frozen=True)
 class TranslationResult:
     translated_text: str
@@ -21,6 +25,7 @@ class TranslationResult:
     target_lang: str
     engine_name: str
     session_id: int
+
 
 class EngineError(Exception):
     def __init__(self, code: str, message: str):
