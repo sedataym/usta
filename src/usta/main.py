@@ -7,7 +7,12 @@ from usta.config import OS
 from usta.ui.main_window import ControlPanel
 from usta.i18n import init_i18n
 
+from usta.infrastructure.paths import resolve_paths, prepare_paths
+from usta.infrastructure.logging_setup import configure_logging
+
 def main():
+    configure_logging()
+    prepare_paths(resolve_paths())
     # Initialize internationalization
     init_i18n()
     

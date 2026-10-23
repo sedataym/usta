@@ -1,3 +1,4 @@
+import logging
 import glob
 import os
 
@@ -5,6 +6,8 @@ from usta.core.ocr.base_ocr import BaseOCREngine
 from usta.config import OCR_LANG_MAPPING
 
 from usta.resource_paths import resource_path
+
+logger = logging.getLogger(__name__)
 
 _MODELS_DIR = str(resource_path("resources/ocr_models/rapidocr"))
 
@@ -33,10 +36,10 @@ class RapidOCREngine(BaseOCREngine):
         pattern = os.path.join(_MODELS_DIR, f"{lang_code}_PP-OCR*.onnx")
         matches = sorted(glob.glob(pattern))
         if matches:
-            print(f"RapidOCREngine: Found recognition model for lang={lang_code}: {os.path.basename(matches[0])}")
+            logger.info(f"RapidOCREngine: Found recognition model for lang={lang_code}: {os.path.basename(matches[0])}")
             return matches[0]
 
-        print(f"RapidOCREngine: No recognition model found for lang={lang_code}, using default")
+        logger.info(f"RapidOCREngine: No recognition model found for lang={lang_code}, using default")
         return ""
 
     def set_language(self, lang_code: str):
@@ -47,7 +50,7 @@ class RapidOCREngine(BaseOCREngine):
             self.current_lang = new_lang
             self.ocr = None  # Trigger re-initialization on next read
             self._unavailable_reason = None
-            print(f"RapidOCREngine: Language scheduled for update: {self.current_lang}")
+            logger.info(f"RapidOCREngine: Language scheduled for update: {self.current_lang}")
 
     def _apply_cpu_limit(self):
         thread_count = str(self.cpu_threads)
@@ -99,12 +102,12 @@ class RapidOCREngine(BaseOCREngine):
             )
 
         if getattr(OrtInferSession.__init__, "_usta_cpu_limited", False):
-            print("RapidOCREngine: OrtInferSession already patched, skipping")
+            logger.info("RapidOCREngine: OrtInferSession already patched, skipping")
             return
 
         limited_init._usta_cpu_limited = True
         OrtInferSession.__init__ = limited_init
-        print("RapidOCREngine: OrtInferSession monkey-patched for CPU thread limiting")
+        logger.info("RapidOCREngine: OrtInferSession monkey-patched for CPU thread limiting")
 
     def _initialize(self) -> bool:
         if self.ocr is not None:
@@ -120,7 +123,7 @@ class RapidOCREngine(BaseOCREngine):
 
             self._patch_rapidocr_ort_session()
 
-            print(
+            logger.info(
                 "RapidOCREngine: Initializing reader "
                 f"with lang={self.current_lang}, cpu_threads={self.cpu_threads}, "
                 "use_text_det=True, use_angle_cls=False"
@@ -141,11 +144,11 @@ class RapidOCREngine(BaseOCREngine):
                 "RapidOCR is not installed. "
                 "Install it with: pip install rapidocr-onnxruntime onnxruntime"
             )
-            print(f"RapidOCREngine: {self._unavailable_reason}")
+            logger.info(f"RapidOCREngine: {self._unavailable_reason}")
             return False
         except Exception as e:
             self._unavailable_reason = f"RapidOCR initialization failed: {e}"
-            print(f"RapidOCREngine: {self._unavailable_reason}")
+            logger.info(f"RapidOCREngine: {self._unavailable_reason}")
             return False
 
     def _extract_lines(self, result):
@@ -205,5 +208,5 @@ class RapidOCREngine(BaseOCREngine):
             clean = " ".join(lines)
             return " ".join(clean.split()).strip().strip("_").rstrip(":")
         except Exception as e:
-            print(f"RapidOCR Error: {e}")
+            logger.error(f"RapidOCR Error: {e}")
             return ""

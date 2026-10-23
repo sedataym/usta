@@ -1,7 +1,10 @@
+import logging
 import os
 import deepl
 from usta.config import get_translation_language_code
 from usta.core.translation.base_translator import BaseTranslator
+
+logger = logging.getLogger(__name__)
 
 
 class DeepLTranslatorEngine(BaseTranslator):
@@ -20,7 +23,7 @@ class DeepLTranslatorEngine(BaseTranslator):
             try:
                 self._translator = deepl.Translator(self.api_key)
             except Exception as e:
-                print(f"DeepL Initialization Error: {e}")
+                logger.error(f"DeepL Initialization Error: {e}")
         return self._translator
 
     def set_api_key(self, api_key: str):
@@ -47,5 +50,5 @@ class DeepLTranslatorEngine(BaseTranslator):
                 return result.text
             return "Error: DeepL could not be initialized."
         except Exception as e:
-            print(f"DeepL Translation Error: {e}")
+            logger.error(f"DeepL Translation Error: {e}")
             return f"Error: {e}"

@@ -1,3 +1,4 @@
+import logging
 import time
 from pathlib import Path
 from usta.application.settings import AppSettings, Preset
@@ -21,6 +22,8 @@ from usta.ui.tabs import (
     build_status_tab,
     build_translation_tab,
 )
+
+logger = logging.getLogger(__name__)
 
 class ControlPanel(QWidget):
     temporary_region_hotkey_pressed = Signal()
@@ -224,9 +227,9 @@ class ControlPanel(QWidget):
         }
         try:
             self.settings_store.save(AppSettings.from_dict(settings))
-            print("Settings saved.")
+            logger.info("Settings saved.")
         except Exception as e:
-            print(f"Settings save error: {e}")
+            logger.error(f"Settings save error: {e}")
 
     def load_settings(self):
         self._loading_settings = True
@@ -291,7 +294,7 @@ class ControlPanel(QWidget):
             self.worker.set_translator(self.combo_translator.currentText())
             self.update_languages()
         except (OSError, ValueError) as exc:
-            print(f"Settings load error: {exc}")
+            logger.error(f"Settings load error: {exc}")
             self._apply_saved_hotkeys(SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY)
             self.update_languages()
         finally:
@@ -577,14 +580,14 @@ class ControlPanel(QWidget):
         try:
             return {name: preset.to_dict() for name, preset in self.settings_store.load_presets().items()}
         except (OSError, ValueError) as exc:
-            print(f"Presets load error: {exc}")
+            logger.error(f"Presets load error: {exc}")
             return {}
 
     def _save_presets_dict(self, presets):
         try:
             self.settings_store.save_presets({name: Preset.from_dict(value) for name, value in presets.items()})
         except (OSError, ValueError) as exc:
-            print(f"Presets save error: {exc}")
+            logger.error(f"Presets save error: {exc}")
 
     def refresh_preset_list(self):
         """Refresh the combo box with preset names."""
@@ -623,7 +626,7 @@ class ControlPanel(QWidget):
         self._save_presets_dict(presets)
         self.refresh_preset_list()
         self.preset_name_input.clear()
-        print(f"Preset '{name}' saved.")
+        logger.info(f"Preset '{name}' saved.")
 
     def load_preset(self):
         """Load the selected preset from the combo box and apply it."""
@@ -683,7 +686,7 @@ class ControlPanel(QWidget):
             self.overlay.set_bg_opacity(bgo)
             self.bg_opacity_spin.setValue(bgo)
         
-        print(f"Preset '{name}' loaded.")
+        logger.info(f"Preset '{name}' loaded.")
 
     def delete_preset(self):
         """Delete the selected preset."""
@@ -696,6 +699,6 @@ class ControlPanel(QWidget):
             del presets[name]
             self._save_presets_dict(presets)
             self.refresh_preset_list()
-            print(f"Preset '{name}' deleted.")
+            logger.info(f"Preset '{name}' deleted.")
         else:
             QMessageBox.warning(self, "Not Found", f"Preset '{name}' not found.")

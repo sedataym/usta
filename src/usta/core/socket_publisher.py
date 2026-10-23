@@ -1,9 +1,12 @@
+import logging
 import os
 import json
 import socket
 import threading
 import time
 from usta.config import SOCKET_PATH
+
+logger = logging.getLogger(__name__)
 
 
 class TranslationPublisher:
@@ -39,7 +42,7 @@ class TranslationPublisher:
         self._running = True
         self._thread = threading.Thread(target=self._accept_loop, daemon=True)
         self._thread.start()
-        print(f"TranslationPublisher: Listening on {SOCKET_PATH}")
+        logger.info(f"TranslationPublisher: Listening on {SOCKET_PATH}")
 
     def stop(self) -> None:
         """Stop the server, close all client connections, and clean up the socket file."""
@@ -70,7 +73,7 @@ class TranslationPublisher:
             except OSError:
                 pass
 
-        print("TranslationPublisher: Stopped.")
+        logger.info("TranslationPublisher: Stopped.")
 
     def broadcast(self, original: str, translated: str,
                   source_lang: str = "en", target_lang: str = "tr",
@@ -117,10 +120,10 @@ class TranslationPublisher:
                 conn, _ = self._server_socket.accept()
                 with self._lock:
                     self._clients.append(conn)
-                print(f"TranslationPublisher: Client connected ({len(self._clients)} total)")
+                logger.info(f"TranslationPublisher: Client connected ({len(self._clients)} total)")
             except socket.timeout:
                 continue
             except OSError:
                 if self._running:
-                    print("TranslationPublisher: Accept error, retrying…")
+                    logger.error("TranslationPublisher: Accept error, retrying…")
                 break

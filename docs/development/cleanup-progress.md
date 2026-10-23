@@ -22,3 +22,5 @@ Task 3: package layout tests failed before move and pass after; 36 portable test
 
 Task 3 artifact follow-up: wheel and sdist built; all resources present in both.
 Task 4: six storage regression tests passed; full portable suite 42 tests green (21 skips). Primitive-only legacy migration preserves originals, future/corrupt JSON cannot be overwritten, atomic replace failure preserves last settings. UI load signals blocked and does not save.
+
+Task 5: import side-effect test reproduced stdout output before removal and passes after. 43 portable tests green (21 skips); config no longer creates directories; bootstrap owns path preparation and logging. Diagnostic print calls replaced with module loggers; OCR content/key diagnostics are debug-only.

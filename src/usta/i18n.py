@@ -1,3 +1,4 @@
+import logging
 from usta.resource_paths import resource_path
 
 import gettext
@@ -5,6 +6,8 @@ import os
 import locale
 import unicodedata
 import warnings
+
+logger = logging.getLogger(__name__)
 
 # Global translator object
 _translator = None
@@ -93,7 +96,7 @@ def init_i18n(locale_dir=None, domain="messages"):
         _translator = gettext.translation(domain, locale_dir, languages=languages, fallback=True)
         _translator.install() # This installs _() into builtins
     except Exception as e:
-        print(f"Warning: Could not load translation for {locale_candidates}: {e}")
+        logger.info(f"Warning: Could not load translation for {locale_candidates}: {e}")
         # Fallback to null translation
         _translator = gettext.NullTranslations()
         _translator.install()

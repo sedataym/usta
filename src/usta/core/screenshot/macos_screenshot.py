@@ -1,9 +1,12 @@
+import logging
 import sys
 
 from PIL import ImageGrab
 from PySide6.QtCore import QRect
 
 from usta.core.screenshot.base_screenshot import BaseScreenshot
+
+logger = logging.getLogger(__name__)
 
 
 class MacOSScreenshot(BaseScreenshot):
@@ -30,5 +33,5 @@ class MacOSScreenshot(BaseScreenshot):
             crop.save(output_path)
             return True
         except Exception as e:
-            print(f"macOS ekran görüntüsü alınamadı: {e}")
+            logger.info(f"macOS ekran görüntüsü alınamadı: {e}")
             return False

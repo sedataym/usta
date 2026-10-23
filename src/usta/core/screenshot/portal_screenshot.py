@@ -1,3 +1,4 @@
+import logging
 import asyncio
 import os
 import secrets
@@ -11,6 +12,8 @@ from PySide6.QtCore import QRect
 from usta.config import FULL_SCREEN_TEMP_PATH, PORTAL_ORIENTATION
 from usta.core.exceptions import PortalCanceledError
 from usta.core.screenshot.base_screenshot import BaseScreenshot
+
+logger = logging.getLogger(__name__)
 
 try:
     from dbus_next import BusType, Variant
@@ -90,12 +93,12 @@ class PortalScreenshot(BaseScreenshot):
 
                 return self._capture_current_frame(rect, output_path, dpi_scale)
             except PortalCanceledError:
-                print("Portal selection was canceled by user.")
+                logger.info("Portal selection was canceled by user.")
                 self.close()
                 raise
             except Exception as exc:
                 self._last_error = exc
-                print(f"Portal Capture Error ({type(exc).__name__}): {exc!r}")
+                logger.error(f"Portal Capture Error ({type(exc).__name__}): {exc!r}")
                 traceback.print_exc()
                 self._print_gstreamer_bus_errors()
                 self.close()
@@ -121,7 +124,7 @@ class PortalScreenshot(BaseScreenshot):
                 try:
                     self._loop.run_until_complete(self._close_portal_session())
                 except Exception as exc:
-                    print(f"Portal Close Error: {exc}")
+                    logger.error(f"Portal Close Error: {exc}")
 
             if self._bus is not None:
                 try:
@@ -243,9 +246,9 @@ class PortalScreenshot(BaseScreenshot):
             raise RuntimeError("Portal stream started but did not return a `streams` result.")
 
         self._node_id, stream_properties = streams.value[0]
-        print(f"Portal PipeWire node_id={self._node_id}")
+        logger.info(f"Portal PipeWire node_id={self._node_id}")
         for key, value in stream_properties.items():
-            print(f"  {key}={value.value!r}")
+            logger.debug(f"  {key}={value.value!r}")
 
         self._pipewire_fd = await self._open_pipewire_remote()
 
@@ -305,11 +308,11 @@ class PortalScreenshot(BaseScreenshot):
                     raise RuntimeError(f"GStreamer pipeline could not switch to PLAYING state: {pipeline_description}")
 
                 self._wait_for_pipeline_ready()
-                print(f"Portal GStreamer pipeline is ready: {pipeline_description}")
+                logger.info(f"Portal GStreamer pipeline is ready: {pipeline_description}")
                 return
             except Exception as exc:
                 last_error = exc
-                print(f"Portal GStreamer pipeline attempt failed ({type(exc).__name__}): {exc!r}")
+                logger.error(f"Portal GStreamer pipeline attempt failed ({type(exc).__name__}): {exc!r}")
                 self._print_gstreamer_bus_errors()
                 if self._pipeline is not None:
                     self._pipeline.set_state(Gst.State.NULL)
@@ -346,10 +349,10 @@ class PortalScreenshot(BaseScreenshot):
                 break
             if message.type == Gst.MessageType.ERROR:
                 err, debug = message.parse_error()
-                print(f"Portal GStreamer ERROR: {err}; debug={debug}")
+                logger.error(f"Portal GStreamer ERROR: {err}; debug={debug}")
             elif message.type == Gst.MessageType.WARNING:
                 err, debug = message.parse_warning()
-                print(f"Portal GStreamer WARNING: {err}; debug={debug}")
+                logger.info(f"Portal GStreamer WARNING: {err}; debug={debug}")
 
     def _build_frame_image(self, sample: Any) -> Image.Image:
         buffer = sample.get_buffer()
@@ -407,7 +410,7 @@ class PortalScreenshot(BaseScreenshot):
     def _capture_current_frame(self, rect: QRect, output_path: str, dpi_scale: float) -> bool:
         sample = self._appsink.emit("try-pull-sample", int(CAPTURE_TIMEOUT_SECONDS * Gst.SECOND))
         if sample is None:
-            print("Waiting for Portal GStreamer sample...")
+            logger.info("Waiting for Portal GStreamer sample...")
             return False
 
         return self._save_sample_region(sample, rect, output_path, dpi_scale)

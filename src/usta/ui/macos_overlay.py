@@ -1,7 +1,10 @@
 """Keep a Qt overlay's Cocoa rules in sync with macOS window transitions."""
+import logging
 import weakref
 
 from PySide6.QtCore import QEvent, QObject, QTimer
+
+logger = logging.getLogger(__name__)
 
 
 def _remove_observers(observers):
@@ -57,7 +60,7 @@ class MacOSOverlayRules(QObject):
             self._schedule()
         except Exception as ex:
             _remove_observers(self._observers)
-            print(f"macOS overlay bildirimleri başlatılamadı: {ex}")
+            logger.info(f"macOS overlay bildirimleri başlatılamadı: {ex}")
 
     def stop(self):
         self._running = False
@@ -88,7 +91,7 @@ class MacOSOverlayRules(QObject):
                 # Qt.raise_ also activates NSApp, stealing fullscreen focus.
                 window.orderFrontRegardless()
         except Exception as ex:
-            print(f"macOS overlay öne getirilemedi: {ex}")
+            logger.info(f"macOS overlay öne getirilemedi: {ex}")
 
     def prepare(self):
         """Configure a panel before ordering it into an existing fullscreen Space."""
@@ -123,4 +126,4 @@ class MacOSOverlayRules(QObject):
             window.setLevel_(AppKit.NSStatusWindowLevel)
             window.setHidesOnDeactivate_(False)
         except Exception as ex:
-            print(f"macOS pencere kuralları uygulanamadı: {ex}")
+            logger.info(f"macOS pencere kuralları uygulanamadı: {ex}")

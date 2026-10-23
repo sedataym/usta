@@ -1,3 +1,4 @@
+import logging
 import time
 import threading
 from threading import Lock
@@ -8,6 +9,8 @@ from usta.core.exceptions import PortalCanceledError
 from usta.core.screenshot import ScreenshotFactory, ImageProcessor
 from usta.core.socket_publisher import TranslationPublisher
 from usta.config import IMG_PATH, DPI_SCALE_DEFAULT
+
+logger = logging.getLogger(__name__)
 
 class OCRWorker(QThread):
     LOOP_SLEEP_SECONDS = 0.2
@@ -37,25 +40,25 @@ class OCRWorker(QThread):
             if dpi_scale is not None:
                 self.dpi_scale = dpi_scale
             self.last_text = ""
-            print(f"OCRWorker: New region: {qrect.x()},{qrect.y()} {qrect.width()}x{qrect.height()} DPI: {self.dpi_scale}")
+            logger.info(f"OCRWorker: New region: {qrect.x()},{qrect.y()} {qrect.width()}x{qrect.height()} DPI: {self.dpi_scale}")
 
     def set_engine(self, engine_name):
         with self.lock:
             self.ocr_manager.set_engine(engine_name)
             self.last_text = ""
-            print(f"OCRWorker: Engine: {engine_name}")
+            logger.info(f"OCRWorker: Engine: {engine_name}")
 
     def set_translator(self, translator_name):
         with self.lock:
             self.translator_manager.set_translator(translator_name)
             self.last_text = ""
-            print(f"OCRWorker: Translator: {translator_name}")
+            logger.info(f"OCRWorker: Translator: {translator_name}")
 
     def set_api_key(self, engine: str, api_key: str):
         with self.lock:
             self.translator_manager.set_api_key(engine, api_key)
             self.last_text = ""
-            print(f"OCRWorker: API key set for: {engine}")
+            logger.debug(f"OCRWorker: API key set for: {engine}")
 
     def set_screenshot_engine(self, engine_name):
         with self.lock:
@@ -63,14 +66,14 @@ class OCRWorker(QThread):
                 self.screenshot_engine.close()
             self.screenshot_engine = ScreenshotFactory.get_engine(engine_name)
             self.last_text = ""
-            print(f"OCRWorker: Screenshot engine: {engine_name}")
+            logger.info(f"OCRWorker: Screenshot engine: {engine_name}")
 
     def set_languages(self, source, target):
         with self.lock:
             self.translator_manager.set_languages(source, target)
             self.ocr_manager.set_language(source)
             self.last_text = ""
-            print(f"OCRWorker: Languages: {source} -> {target}")
+            logger.info(f"OCRWorker: Languages: {source} -> {target}")
 
     def stop(self):
         self.running = False
@@ -97,7 +100,7 @@ class OCRWorker(QThread):
                 engine=self.translator_manager.current_translator_name,
             )
         except Exception as e:
-            print(f"Translation Error: {e}")
+            logger.error(f"Translation Error: {e}")
         finally:
             with self._translation_lock:
                 self._is_translating = False
@@ -107,7 +110,7 @@ class OCRWorker(QThread):
         self.publisher.start()
         self.running = True
         self.running_status.emit(True)
-        print(f"OCRWorker: LOOP STARTED.")
+        logger.info(f"OCRWorker: LOOP STARTED.")
         while self.running:
             try:
                 start_total = time.perf_counter()
@@ -136,18 +139,18 @@ class OCRWorker(QThread):
                 if len(clean) > 2 and clean != self.last_text and not translating:
                     self.last_text = clean
                     threading.Thread(target=self._async_translate, args=(clean,), daemon=True).start()
-                    print(f"[{current_engine}] Text: {clean} | Duration: {time.perf_counter()-start_total:.2f}s")
+                    logger.debug(f"[{current_engine}] Text: {clean} | Duration: {time.perf_counter()-start_total:.2f}s")
 
                 # Emit performance data
                 self.performance_update.emit(time.perf_counter() - start_total)
 
             except PortalCanceledError:
-                print("OCRWorker: Portal selection canceled, stopping.")
+                logger.info("OCRWorker: Portal selection canceled, stopping.")
                 self.running = False
                 if hasattr(self.screenshot_engine, "close"):
                     self.screenshot_engine.close()
                 self.publisher.stop()
                 self.running_status.emit(False)
             except Exception as e:
-                print(f"Loop Error: {e}")
+                logger.error(f"Loop Error: {e}")
             time.sleep(self.LOOP_SLEEP_SECONDS)

@@ -1,7 +1,10 @@
+import logging
 import subprocess
 import re
 from usta.core.ocr.base_ocr import BaseOCREngine
 from usta.config import OCR_LANG_MAPPING
+
+logger = logging.getLogger(__name__)
 
 class TesseractEngine(BaseOCREngine):
     def __init__(self):
@@ -10,7 +13,7 @@ class TesseractEngine(BaseOCREngine):
     def set_language(self, lang_code: str):
         mapping = OCR_LANG_MAPPING.get(lang_code, OCR_LANG_MAPPING["en"])
         self.lang = mapping["tess"]
-        print(f"TesseractEngine: Language set to {self.lang}")
+        logger.info(f"TesseractEngine: Language set to {self.lang}")
 
     def read_text(self, image_path: str) -> str:
         cfg = [
@@ -31,5 +34,5 @@ class TesseractEngine(BaseOCREngine):
             clean = re.sub(r'[^\w\s.,!?\'\"\-\(\)]', '', text, flags=re.UNICODE)
             return " ".join(clean.split()).strip()
         except Exception as e:
-            print(f"Tesseract Error: {e}")
+            logger.error(f"Tesseract Error: {e}")
             return ""

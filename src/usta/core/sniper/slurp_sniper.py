@@ -1,9 +1,12 @@
+import logging
 import os
 import time
 from PySide6.QtCore import QRect
 from PySide6.QtWidgets import QApplication
 from usta.core.sniper.base_sniper import BaseSniper
 from usta.config import SLURP_TEMP_PATH
+
+logger = logging.getLogger(__name__)
 
 class SlurpSniper(BaseSniper):
     def get_region(self) -> QRect | None:
@@ -32,7 +35,7 @@ class SlurpSniper(BaseSniper):
                     w, h = map(int, p[1].split(","))
                     return QRect(x, y, w, h)
         except Exception as e:
-            print(f"Region Selection Error (slurp): {e}")
+            logger.error(f"Region Selection Error (slurp): {e}")
         finally:
             if os.path.exists(SLURP_TEMP_PATH):
                 os.remove(SLURP_TEMP_PATH)

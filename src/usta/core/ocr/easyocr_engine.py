@@ -1,7 +1,10 @@
+import logging
 import warnings
 
 from usta.core.ocr.base_ocr import BaseOCREngine
 from usta.config import OCR_LANG_MAPPING
+
+logger = logging.getLogger(__name__)
 
 class EasyOCREngine(BaseOCREngine):
     def __init__(self):
@@ -18,12 +21,12 @@ class EasyOCREngine(BaseOCREngine):
         if target_langs != self.current_langs:
             self.current_langs = target_langs
             self.reader = None # Trigger re-initialization on next read
-            print(f"EasyOCREngine: Languages scheduled for update: {self.current_langs}")
+            logger.info(f"EasyOCREngine: Languages scheduled for update: {self.current_langs}")
 
     def read_text(self, image_path: str) -> str:
         if self.reader is None:
             import easyocr
-            print(f"EasyOCREngine: Initializing reader with {self.current_langs}")
+            logger.info(f"EasyOCREngine: Initializing reader with {self.current_langs}")
             self.reader = easyocr.Reader(self.current_langs, gpu=True)
         
         try:
@@ -41,5 +44,5 @@ class EasyOCREngine(BaseOCREngine):
             clean = " ".join([r[1] for r in res])
             return " ".join(clean.split()).strip().strip("_").rstrip(":")
         except Exception as e:
-            print(f"EasyOCR Error: {e}")
+            logger.error(f"EasyOCR Error: {e}")
             return ""

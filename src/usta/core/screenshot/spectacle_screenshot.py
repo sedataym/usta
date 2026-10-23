@@ -1,9 +1,12 @@
+import logging
 import os
 import subprocess
 from PIL import Image
 from PySide6.QtCore import QRect
 from usta.core.screenshot.base_screenshot import BaseScreenshot
 from usta.config import FULL_SCREEN_TEMP_PATH
+
+logger = logging.getLogger(__name__)
 
 class SpectacleScreenshot(BaseScreenshot):
     def capture(self, rect: QRect, output_path: str, dpi_scale: float = 1.0) -> bool:
@@ -30,5 +33,5 @@ class SpectacleScreenshot(BaseScreenshot):
                 crop.save(output_path)
             return True
         except Exception as e:
-            print(f"Spectacle Capture Error: {e}")
+            logger.error(f"Spectacle Capture Error: {e}")
             return False

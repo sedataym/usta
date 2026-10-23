@@ -1,7 +1,10 @@
+import logging
 import platform
 
 from usta.core.screenshot.base_screenshot import BaseScreenshot
 from usta.core.screenshot.spectacle_screenshot import SpectacleScreenshot
+
+logger = logging.getLogger(__name__)
 
 try:
     from usta.core.screenshot.macos_screenshot import MacOSScreenshot
@@ -27,15 +30,15 @@ class ScreenshotFactory:
                 return MacOSScreenshot()
 
             if _MACOS_IMPORT_ERROR is not None:
-                print(f"macOS ekran görüntüsü motoru kullanılamıyor: {_MACOS_IMPORT_ERROR}")
+                logger.error(f"macOS ekran görüntüsü motoru kullanılamıyor: {_MACOS_IMPORT_ERROR}")
 
         if engine_name == "Portal":
             if PortalScreenshot is not None and PortalScreenshot.is_available():
                 return PortalScreenshot()
 
             if _PORTAL_IMPORT_ERROR is not None:
-                print(f"Portal screenshot engine unavailable: {_PORTAL_IMPORT_ERROR}")
-            print("Falling back to Spectacle screenshot engine.")
+                logger.error(f"Portal screenshot engine unavailable: {_PORTAL_IMPORT_ERROR}")
+            logger.info("Falling back to Spectacle screenshot engine.")
             return SpectacleScreenshot()
 
         # Spectacle

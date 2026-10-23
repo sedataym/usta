@@ -1,5 +1,8 @@
+import logging
 from usta.core.ocr.base_ocr import BaseOCREngine
 from usta.config import OCR_LANG_MAPPING
+
+logger = logging.getLogger(__name__)
 
 
 class PaddleOCREngine(BaseOCREngine):
@@ -16,13 +19,13 @@ class PaddleOCREngine(BaseOCREngine):
             self.current_lang = new_lang
             self.ocr = None  # Trigger re-initialization on next read
             self._unavailable_reason = None
-            print(f"PaddleOCREngine: Language scheduled for update: {self.current_lang}")
+            logger.info(f"PaddleOCREngine: Language scheduled for update: {self.current_lang}")
 
     def read_text(self, image_path: str) -> str:
         if self.ocr is None and self._unavailable_reason is None:
             try:
                 from paddleocr import PaddleOCR
-                print(f"PaddleOCREngine: Initializing reader with lang={self.current_lang}")
+                logger.info(f"PaddleOCREngine: Initializing reader with lang={self.current_lang}")
                 self.ocr = PaddleOCR(
                     lang=self.current_lang,
                     use_textline_orientation=True,
@@ -34,7 +37,7 @@ class PaddleOCREngine(BaseOCREngine):
                     "Note: PaddleOCR also requires paddlepaddle, which may not be "
                     "available for all Python versions (requires Python ≤ 3.12)."
                 )
-                print(f"PaddleOCREngine: {self._unavailable_reason}")
+                logger.info(f"PaddleOCREngine: {self._unavailable_reason}")
                 return ""
             except RuntimeError as e:
                 self._unavailable_reason = (
@@ -43,11 +46,11 @@ class PaddleOCREngine(BaseOCREngine):
                     "See https://www.paddlepaddle.org.cn/en for installation instructions. "
                     "Note: paddlepaddle may not support your current Python version."
                 )
-                print(f"PaddleOCREngine: {self._unavailable_reason}")
+                logger.info(f"PaddleOCREngine: {self._unavailable_reason}")
                 return ""
             except Exception as e:
                 self._unavailable_reason = f"PaddleOCR initialization failed: {e}"
-                print(f"PaddleOCREngine: {self._unavailable_reason}")
+                logger.info(f"PaddleOCREngine: {self._unavailable_reason}")
                 return ""
 
         if self._unavailable_reason:
@@ -69,5 +72,5 @@ class PaddleOCREngine(BaseOCREngine):
             clean = " ".join(lines)
             return " ".join(clean.split()).strip()
         except Exception as e:
-            print(f"PaddleOCR Error: {e}")
+            logger.error(f"PaddleOCR Error: {e}")
             return ""

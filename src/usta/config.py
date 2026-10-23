@@ -45,15 +45,11 @@ def get_translation_language_code(language_code: str, provider: str, direction: 
             return language_code
     return language_code
 
-if not os.path.exists(CONFIG_DIR):
-    os.makedirs(CONFIG_DIR, exist_ok=True)
-
 SETTINGS_FILE = os.path.join(CONFIG_DIR, "settings.pkl")
 PRESETS_FILE = os.path.join(CONFIG_DIR, "presets.pkl")
 
 # Temp Files
 TEMP_DIR = tempfile.gettempdir()
-print(TEMP_DIR)
 DEV_SHM = "/dev/shm"
 SCREENSHOT_TEMP_DIR = DEV_SHM if os.path.isdir(DEV_SHM) else TEMP_DIR
 IMG_PATH = os.path.join(SCREENSHOT_TEMP_DIR, "usta_snapshot.jpeg")
