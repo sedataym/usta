@@ -53,6 +53,7 @@ PRESETS_FILE = os.path.join(CONFIG_DIR, "presets.pkl")
 
 # Temp Files
 TEMP_DIR = tempfile.gettempdir()
+print(TEMP_DIR)
 DEV_SHM = "/dev/shm"
 SCREENSHOT_TEMP_DIR = DEV_SHM if os.path.isdir(DEV_SHM) else TEMP_DIR
 IMG_PATH = os.path.join(SCREENSHOT_TEMP_DIR, "usta_snapshot.jpeg")

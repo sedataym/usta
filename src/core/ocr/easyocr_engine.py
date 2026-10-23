@@ -1,3 +1,5 @@
+import warnings
+
 from src.core.ocr.base_ocr import BaseOCREngine
 from src.config import OCR_LANG_MAPPING
 
@@ -25,7 +27,17 @@ class EasyOCREngine(BaseOCREngine):
             self.reader = easyocr.Reader(self.current_langs, gpu=True)
         
         try:
-            res = self.reader.readtext(image_path)
+            with warnings.catch_warnings():
+                if str(getattr(self.reader, "device", "")).split(":")[0] == "mps":
+                    # EasyOCR hardcodes pin_memory=True; PyTorch already disables
+                    # it on MPS. Keep GPU inference and silence only that warning.
+                    warnings.filterwarnings(
+                        "ignore",
+                        message=r"'pin_memory' argument is set as true but not supported on MPS",
+                        category=UserWarning,
+                        module=r"torch\.utils\.data\.dataloader",
+                    )
+                res = self.reader.readtext(image_path)
             clean = " ".join([r[1] for r in res])
             return " ".join(clean.split()).strip().strip("_").rstrip(":")
         except Exception as e:

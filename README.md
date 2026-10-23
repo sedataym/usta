@@ -207,6 +207,18 @@ instead.
 
 ---
 
+### Apple Vision OCR on macOS
+
+On macOS, select **Apple Vision** in the **OCR Engine** menu to recognize text
+locally using Apple's Vision framework. Select the source language in the
+translation settings, or choose **Auto** for automatic language detection.
+Language availability depends on your macOS version; unsupported selections use
+automatic detection with a warning in the console.
+
+The macOS dependency is included in `requirements.txt`. To add it to an existing
+installation, run `.venv/bin/python -m pip install 'pyobjc-framework-Vision>=10.0'`
+and restart USTA. Apple Vision does not appear in the engine list on Linux or Windows.
+
 ## 🛠️ Tech Stack
 * **GUI:** PySide6
 * **OCR:** pytesseract, easyocr

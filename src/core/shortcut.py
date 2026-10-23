@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 from typing import Callable
 
 try:
@@ -50,7 +51,11 @@ class GlobalHotkey:
             hotkey_keys = keyboard.HotKey.parse(self.hotkey)
             self._hotkey_keys = frozenset(hotkey_keys)
             self._hotkey = keyboard.HotKey(hotkey_keys, self._on_activate)
-            self._listener = keyboard.Listener(
+            listener_type = keyboard.Listener
+            if sys.platform == "darwin":
+                from src.core.platform.macos.hotkey_listener import MainThreadLayoutListener
+                listener_type = MainThreadLayoutListener
+            self._listener = listener_type(
                 on_press=self._on_press,
                 on_release=self._on_release,
             )

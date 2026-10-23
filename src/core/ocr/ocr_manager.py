@@ -1,7 +1,10 @@
+import sys
+
 from src.core.ocr.tesseract_engine import TesseractEngine
 from src.core.ocr.easyocr_engine import EasyOCREngine
 from src.core.ocr.paddleocr_engine import PaddleOCREngine
 from src.core.ocr.rapidocr_engine import RapidOCREngine
+from src.core.ocr.apple_vision_engine import AppleVisionEngine
 
 class OCRManager:
     def __init__(self):
@@ -11,6 +14,8 @@ class OCRManager:
             "PaddleOCR": PaddleOCREngine(),
             "RapidOCR": RapidOCREngine()
         }
+        if sys.platform == "darwin":
+            self.engines["Apple Vision"] = AppleVisionEngine()
         self.current_engine_name = "RapidOCR"
 
     def set_engine(self, name: str):

@@ -5,6 +5,10 @@ Only define values here when they differ from src.core.platform.capabilities.
 
 import os
 
+from src.core.platform.capabilities import OCR_ENGINES as BASE_OCR_ENGINES
+
+
+OCR_ENGINES = [*BASE_OCR_ENGINES, "Apple Vision"]
 
 SCREENSHOT_ENGINES = ["MacOS"]
 

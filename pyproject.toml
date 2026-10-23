@@ -31,6 +31,7 @@ dependencies = [
     "dbus-next>=0.2.3",
     "Babel>=2.12.0",
     "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
+    "pyobjc-framework-Vision>=10.0; sys_platform == 'darwin'",
 ]
 
 [project.urls]

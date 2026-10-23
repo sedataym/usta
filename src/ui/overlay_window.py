@@ -91,6 +91,11 @@ class TransparentOverlay(QWidget):
 
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WA_ShowWithoutActivating)
+        self._macos_rules = None
+        if OS == "Darwin":
+            from src.ui.macos_overlay import MacOSOverlayRules
+            self.setAttribute(Qt.WA_MacAlwaysShowToolWindow, True)
+            self._macos_rules = MacOSOverlayRules(self)
         self.setMouseTracking(True)
         self.resize(800, 200)
         
@@ -136,39 +141,8 @@ class TransparentOverlay(QWidget):
 
     def showEvent(self, event):
         super().showEvent(event)
-        if OS == "Darwin":
-            QTimer.singleShot(0, self._apply_macos_window_rules)
-
-    def _apply_macos_window_rules(self):
-        if OS != "Darwin":
-            return
-
-        try:
-            import AppKit
-        except ImportError as ex:
-            print(f"macOS pencere kuralları uygulanamadı: Cocoa bağımlılığı bulunamadı ({ex})")
-            return
-
-        try:
-            self.winId()
-            window = next(
-                (candidate for candidate in AppKit.NSApp.windows()
-                 if str(candidate.title()) == "USTA_TRANSLATION_OVERLAY"),
-                None,
-            )
-            if window is None:
-                print("macOS pencere kuralları uygulanamadı: overlay penceresi bulunamadı")
-                return
-
-            behavior = (AppKit.NSWindowCollectionBehaviorCanJoinAllSpaces |
-                        AppKit.NSWindowCollectionBehaviorFullScreenAuxiliary |
-                        AppKit.NSWindowCollectionBehaviorStationary)
-            window.setLevel_(AppKit.NSStatusWindowLevel)
-            window.setCollectionBehavior_(behavior)
-            window.setHidesOnDeactivate_(False)
-            window.setReleasedWhenClosed_(False)
-        except Exception as ex:
-            print(f"macOS pencere kuralları uygulanamadı: {ex}")
+        if self._macos_rules is not None:
+            self._macos_rules.start()
 
     def _emit_settings_topmost_hotkey_pressed(self):
         self.settings_topmost_hotkey_pressed.emit()
@@ -237,7 +211,10 @@ class TransparentOverlay(QWidget):
     @Slot(str)
     def update_text(self, text):
         self.label.setText(text)
-        self.raise_()
+        if self._macos_rules is not None:
+            self._macos_rules.order_front_without_activation()
+        else:
+            self.raise_()
         self.hide_timer.start(10000)
 
     def _toggle_main_window_topmost(self):
@@ -258,6 +235,8 @@ class TransparentOverlay(QWidget):
         return True
 
     def closeEvent(self, event):
+        if self._macos_rules is not None:
+            self._macos_rules.stop()
         self._settings_topmost_hotkey.stop()
         super().closeEvent(event)
 
