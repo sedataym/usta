@@ -22,7 +22,7 @@ class DeepLTranslatorEngine(BaseTranslator):
     def translator(self):
         if self._translator is None:
             try:
-                self._translator = deepl.Translator(self.api_key, timeout=10.0, max_network_retries=0)
+                self._translator = deepl.Translator(self.api_key)
             except Exception as e:
                 raise EngineError("initialization", "DeepL could not be initialized") from e
         return self._translator

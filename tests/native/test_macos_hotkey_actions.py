@@ -50,6 +50,7 @@ class MacOSHotkeyActionTests(unittest.TestCase):
         stack.enter_context(mock.patch.object(ControlPanel, 'refresh_preset_list'))
         quit_app = stack.enter_context(mock.patch.object(QApplication, 'quit'))
         worker = stack.enter_context(mock.patch('usta.ui.main_window.OCRWorker')).return_value
+        worker.isRunning.return_value = False
         worker.capture_rect = QRect(10, 20, 200, 50)
         worker.dpi_scale = 1.0
         worker.set_rect.side_effect = lambda rect: setattr(worker, 'capture_rect', QRect(rect))

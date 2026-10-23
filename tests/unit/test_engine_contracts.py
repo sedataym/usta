@@ -22,3 +22,8 @@ class EngineContracts(unittest.TestCase):
         from usta.core.screenshot.spectacle_screenshot import SpectacleScreenshot
         engine=SpectacleScreenshot()
         engine.close();engine.close()
+
+    def test_deepl_client_uses_supported_constructor(self):
+        engine = DeepLTranslatorEngine(api_key='test-key')
+        self.assertIsNotNone(engine.translator)
+        engine.translator.close()

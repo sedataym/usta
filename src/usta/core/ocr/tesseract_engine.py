@@ -26,7 +26,7 @@ class TesseractEngine(BaseOCREngine):
             cfg.extend(["-c", "tessedit_char_whitelist=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,!?'\"- "])
 
         try:
-            result = subprocess.run(cfg, capture_output=True, text=True, check=True)
+            result = subprocess.run(cfg, capture_output=True, text=True, check=True, timeout=15)
             text = result.stdout
             
             # Use a more inclusive regex that allows non-Latin characters

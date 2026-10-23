@@ -17,7 +17,7 @@ class SpectacleScreenshot(BaseScreenshot):
             # Use spectacle for KDE/Wayland
             subprocess.run(
                 ["spectacle", "-b", "-f", "-n", "-o", FULL_SCREEN_TEMP_PATH],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=15
             )
             
             if not os.path.exists(FULL_SCREEN_TEMP_PATH):

@@ -7,7 +7,7 @@ import os
 from PySide6.QtCore import Qt, QRect, QPoint, QTimer, Signal, Slot, QSignalBlocker
 from PySide6.QtGui import QIcon, QFont
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QApplication, QColorDialog, QProgressBar, QTabWidget, QMessageBox
-from usta.core.worker import OCRWorker
+from usta.application.worker import OCRWorker
 from usta.ui.overlay_window import TransparentOverlay
 from usta.core.sniper import SniperFactory
 from usta.config import OS, LANGUAGES, SETTINGS_FILE, PRESETS_FILE, DPI_SCALE_DEFAULT, SETTINGS_TOPMOST_HOTKEY, TEMPORARY_REGION_HOTKEY, get_language_code
@@ -111,6 +111,7 @@ class ControlPanel(QWidget):
         self.btn_stop.clicked.connect(self.stop)
         layout.addWidget(self.btn_stop)
         
+        self.worker.error_occurred.connect(self.overlay.update_text)
         self.worker.new_translation.connect(self.overlay.update_text)
         self.worker.performance_update.connect(self.update_performance_bar)
         self.worker.running_status.connect(self.update_system_status)
@@ -526,6 +527,12 @@ class ControlPanel(QWidget):
         self.perf_bar.setStyleSheet("")
 
     def closeEvent(self, event):
+        if self.worker.isRunning():
+            event.ignore()
+            self.worker.finished.connect(self.close)
+            self.worker.stop()
+            return
+        self.worker.close()
         if self._macos_hotkey_window is not None:
             self._macos_hotkey_window.stop()
         self._temporary_region_restore_timer.stop()

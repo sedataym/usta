@@ -87,7 +87,7 @@ class PortalScreenshot(BaseScreenshot):
             try:
                 self._ensure_dependencies()
                 if not self._started:
-                    self._loop.run_until_complete(self._start_portal_session())
+                    self._loop.run_until_complete(asyncio.wait_for(self._start_portal_session(), timeout=60.0))
                     self._start_gstreamer_pipeline()
                     self._started = True
 
@@ -122,7 +122,7 @@ class PortalScreenshot(BaseScreenshot):
 
             if self._session_handle and self._bus is not None:
                 try:
-                    self._loop.run_until_complete(self._close_portal_session())
+                    self._loop.run_until_complete(asyncio.wait_for(self._close_portal_session(), timeout=3.0))
                 except Exception as exc:
                     logger.error(f"Portal Close Error: {exc}")
 
