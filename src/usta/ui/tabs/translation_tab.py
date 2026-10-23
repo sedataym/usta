@@ -20,7 +20,7 @@ class TranslationTab(QWidget):
         self.combo_translator.setFocusPolicy(Qt.NoFocus)
         self.combo_translator.addItems(TRANSLATION_ENGINES)
         self.combo_translator.currentTextChanged.connect(self.translator_changed.emit)
-        self.combo_translator.currentTextChanged.connect(self.changed.emit)
+        self.combo_translator.currentTextChanged.connect(self.changed)
         self.combo_translator.currentTextChanged.connect(self.translator_selected.emit)
         tab_translation_layout.addWidget(self.combo_translator)
 
@@ -31,7 +31,7 @@ class TranslationTab(QWidget):
         self.combo_source.setFocusPolicy(Qt.NoFocus)
         self.combo_source.addItems(list(LANGUAGES.keys()))
         self.combo_source.setCurrentText("English")
-        self.combo_source.currentTextChanged.connect(self.language_changed.emit)
+        self.combo_source.currentTextChanged.connect(self.language_changed)
         v_source.addWidget(self.combo_source)
         h_lang.addLayout(v_source)
 
@@ -41,7 +41,7 @@ class TranslationTab(QWidget):
         self.combo_target.setFocusPolicy(Qt.NoFocus)
         self.combo_target.addItems(list(LANGUAGES.keys()))
         self.combo_target.setCurrentText("Turkish")
-        self.combo_target.currentTextChanged.connect(self.language_changed.emit)
+        self.combo_target.currentTextChanged.connect(self.language_changed)
         v_target.addWidget(self.combo_target)
         h_lang.addLayout(v_target)
         tab_translation_layout.addLayout(h_lang)

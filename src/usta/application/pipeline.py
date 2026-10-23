@@ -6,7 +6,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 
-from usta.application.results import TranslationRequest
+from usta.application.results import PerformanceTimings, TranslationRequest
 from usta.application.settings import AppSettings
 from usta.config import get_language_code
 from usta.core.exceptions import PortalCanceledError
@@ -32,6 +32,7 @@ class Pipeline:
         rect_factory=tuple,
         preprocess=None,
         on_performance=lambda value: None,
+        on_timings=lambda value: None,
         on_translating=lambda value: None,
     ):
         self.capture_factory = capture_factory
@@ -44,6 +45,7 @@ class Pipeline:
         self.rect_factory = rect_factory
         self.preprocess = preprocess
         self.on_performance = on_performance
+        self.on_timings = on_timings
         self.on_translating = on_translating
         self._settings = AppSettings()
         self._lock = threading.RLock()
@@ -54,6 +56,7 @@ class Pipeline:
         self._future = None
         self._job = None
         self._job_started = None
+        self._job_ocr_seconds = None
 
     @property
     def session_id(self):
@@ -94,24 +97,27 @@ class Pipeline:
 
     def _translate(self, request, keys):
         # This manager is used only by the translation owner thread, never by UI.
+        translation_started = time.perf_counter()
         translator = self.translator_factory()
         for name, key in keys.items():
             translator.set_api_key(name, key)
         result = translator.translate_request(request)
-        return result, time.perf_counter()
+        completed = time.perf_counter()
+        return result, completed, completed - translation_started
 
     def _collect(self):
         if self._future is None or not self._future.done():
             return
         future, job, started = self._future, self._job, self._job_started
-        self._future = self._job = self._job_started = None
+        ocr_seconds = self._job_ocr_seconds
+        self._future = self._job = self._job_started = self._job_ocr_seconds = None
         with self._lock:
             valid = not self._stopped.is_set() and job.session_id == self._session
             if not valid:
                 return
             self.on_translating(False)
             try:
-                result, completed = future.result()
+                result, completed, translation_seconds = future.result()
             except Exception as exc:
                 self.on_error(str(exc))
                 return
@@ -122,6 +128,9 @@ class Pipeline:
                 source_lang=job.source_lang,
                 target_lang=job.target_lang,
                 engine=job.engine_name,
+            )
+            self.on_timings(
+                PerformanceTimings(ocr_seconds, translation_seconds, completed - started)
             )
             self.on_performance(completed - started)
 
@@ -158,9 +167,11 @@ class Pipeline:
                         self.image_path,
                         settings.dpi_scale,
                     ):
+                        ocr_started = time.perf_counter()
                         if settings.ocr_engine == "Tesseract" and self.preprocess:
                             self.preprocess(self.image_path, self.image_path)
                         text = ocr.read_result(self.image_path).text
+                        ocr_seconds = time.perf_counter() - ocr_started
                         with self._lock:
                             if (
                                 session == self._session
@@ -178,6 +189,7 @@ class Pipeline:
                                 )
                                 self._job = request
                                 self._job_started = started
+                                self._job_ocr_seconds = ocr_seconds
                                 self._future = self._executor.submit(
                                     self._translate, request, settings.translator_api_keys
                                 )

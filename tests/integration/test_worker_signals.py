@@ -33,3 +33,16 @@ class WorkerSignalsTests(unittest.TestCase):
         with patch.object(worker, "isRunning", return_value=True):
             worker.start()
         self.assertFalse(worker._restart_requested)
+
+    def test_queued_timings_are_discarded_after_stop(self):
+        worker = OCRWorker()
+        self.addCleanup(worker.close)
+        received = []
+        worker.timings_update.connect(received.append)
+        worker.pipeline.start()
+        producer = threading.Thread(target=lambda: worker.pipeline.on_timings("old timings"))
+        producer.start()
+        producer.join()
+        worker.stop()
+        self.app.processEvents()
+        self.assertEqual(received, [])

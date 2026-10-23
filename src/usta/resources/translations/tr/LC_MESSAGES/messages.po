@@ -268,3 +268,13 @@ msgstr "Lütfen silinecek bir ön ayar seçin."
 msgid "Preset '{name}' not found."
 msgstr "'{name}' ön ayarı bulunamadı."
 
+#, python-brace-format
+msgid "OCR: {ocr} s | Translation: {translation} s | Total: {total} s"
+msgstr "OCR: {ocr} sn | Çeviri: {translation} sn | Toplam: {total} sn"
+
+msgid "Total includes screen capture and preprocessing."
+msgstr "Toplam süre ekran yakalama ve ön işlemeyi de içerir."
+
+msgid "Select Region"
+msgstr "Bölge Seç"
+

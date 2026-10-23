@@ -24,6 +24,30 @@ class StatusTab(QWidget):
 
         tab_status_layout.addStretch()
 
+        self.timings_label = QLabel()
+        self.timings_label.setWordWrap(False)
+        self.timings_label.setFont(QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont))
+        self.timings_label.setToolTip(_("Total includes screen capture and preprocessing."))
+        self.reset_timings()
+        tab_status_layout.addWidget(self.timings_label)
+
         self.rect_label_status = QLabel(_("Region: —"))
         self.rect_label_status.setFont(QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont))
         tab_status_layout.addWidget(self.rect_label_status)
+
+    def _set_timings_text(self, ocr, translation, total):
+        self.timings_label.setText(
+            _("OCR: {ocr} s | Translation: {translation} s | Total: {total} s").format(
+                ocr=ocr, translation=translation, total=total
+            )
+        )
+
+    def update_timings(self, timings):
+        self._set_timings_text(
+            f"{timings.ocr_seconds:.2f}",
+            f"{timings.translation_seconds:.2f}",
+            f"{timings.total_seconds:.2f}",
+        )
+
+    def reset_timings(self):
+        self._set_timings_text("—", "—", "—")

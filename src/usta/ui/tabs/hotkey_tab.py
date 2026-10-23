@@ -174,7 +174,7 @@ class HotkeyTab(QWidget):
             tab_settings_layout,
             _("Settings topmost key:"),
             self.settings_topmost_hotkey_button,
-            self.reset_settings_requested.emit,
+            self.reset_settings_requested,
             settings_topmost_tooltip,
         )
 
@@ -184,7 +184,7 @@ class HotkeyTab(QWidget):
             tab_settings_layout,
             _("Temporary region key:"),
             self.temporary_region_hotkey_button,
-            self.reset_region_requested.emit,
+            self.reset_region_requested,
             temporary_region_tooltip,
         )
 

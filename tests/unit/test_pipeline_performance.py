@@ -112,3 +112,25 @@ class PipelinePerformanceTests(unittest.TestCase):
         ):
             pipeline.run()
         performance.assert_called_once_with(2.0)
+
+    def test_stage_timings_match_the_same_completed_translation(self):
+        pipeline, executor, clock, performance = self.make_pipeline()
+        timings = Mock()
+        pipeline.on_timings = timings
+
+        def between_iterations(timeout):
+            executor.complete()
+            clock[0] = 20.0
+
+        performance.side_effect = lambda duration: pipeline.stop()
+        pipeline.start()
+        with (
+            patch("usta.application.pipeline.time.perf_counter", side_effect=lambda: clock[0]),
+            patch.object(pipeline._stopped, "wait", side_effect=between_iterations),
+        ):
+            pipeline.run()
+        timings.assert_called_once()
+        measured = timings.call_args.args[0]
+        self.assertAlmostEqual(measured.ocr_seconds, 0.3)
+        self.assertAlmostEqual(measured.translation_seconds, 1.5)
+        self.assertAlmostEqual(measured.total_seconds, 2.0)

@@ -4,4 +4,4 @@ recursive-include tests *.py
 recursive-include packaging *
 recursive-include scripts *.sh
 recursive-include src/usta/resources *.onnx *.po *.mo
-recursive-include src/usta/ui/assets *.png
+recursive-include src/usta/ui/assets *.png *.svg

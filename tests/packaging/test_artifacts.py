@@ -34,6 +34,14 @@ class PackageLayoutTests(unittest.TestCase):
                 self.fail("Build artifacts required; run python -m build first")
             self.skipTest("Run python -m build to inspect distribution artifacts")
         with zipfile.ZipFile(wheels[-1]) as wheel, tarfile.open(sdists[-1]) as sdist:
+            icon = ROOT / "src/usta/ui/assets/select-region.svg"
+            self.assertEqual(wheel.read("usta/ui/assets/select-region.svg"), icon.read_bytes())
+            icon_member = next(
+                m
+                for m in sdist.getmembers()
+                if m.name.endswith("/usta/ui/assets/select-region.svg")
+            )
+            self.assertEqual(sdist.extractfile(icon_member).read(), icon.read_bytes())
             for resource in (ROOT / "src/usta/resources").rglob("*"):
                 if not resource.is_file():
                     continue

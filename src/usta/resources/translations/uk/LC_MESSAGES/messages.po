@@ -284,3 +284,13 @@ msgstr "Виберіть набір налаштувань для видален
 msgid "Preset '{name}' not found."
 msgstr "Набір налаштувань '{name}' не знайдено."
 
+#, python-brace-format
+msgid "OCR: {ocr} s | Translation: {translation} s | Total: {total} s"
+msgstr "OCR: {ocr} с | Переклад: {translation} с | Разом: {total} с"
+
+msgid "Total includes screen capture and preprocessing."
+msgstr "Загальний час також включає захоплення екрана та попередню обробку."
+
+msgid "Select Region"
+msgstr "Вибрати область"
+

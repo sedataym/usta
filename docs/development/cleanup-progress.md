@@ -64,3 +64,13 @@ No review findings deferred. Linux desktop/AppImage and remote CI remain externa
 ## Follow-up: macOS startup warnings
 
 User reported repeated pynput Accessibility warnings and Qt monospace alias lookup. Root causes verified in installed pynput's AXIsProcessTrusted check and StatusTab stylesheet. Missing Accessibility trust is now explained once per denied period; only pynput's duplicate message is filtered, event-tap startup and Linux listener behavior are preserved. StatusTab uses Qt's available system FixedFont. Three regressions added (permission warning deduplication, permission recheck for a new listener, system font). Final native suite: 75 passed, zero skips; Ruff check/format and mypy passed. macOS permissions were not modified by the application.
+
+## Follow-up: tab signal argument mismatch
+
+Reproduced `changed() only accepts 0 argument(s), 1 given` and `language_changed()` TypeErrors via Qt selection events while capturing sys.excepthook (Qt slot exceptions do not normally fail unittest). No-argument notification/action signals now use Qt signal-to-signal connections so extra widget arguments are dropped; typed Python forwarding remains unchanged (notably QFont to object). Covers OCR/capture, source/target language, translation provider, color/preset/reset buttons. End-to-end tests assert worker values, saved values and one write per selection. Relevant integration group: 14 passed; Ruff check/format and mypy passed. Broader native run: 97 tests, 95 passed, two fullscreen helper transitions timed out. The same two tests also timed out when isolated; these checks are not marked passed.
+
+## Follow-up: macOS overlay hover cursors
+
+Qt's Cocoa mouse-move/cursor-update handlers skip inactive applications, so QWidget cursor changes alone did not handle the nonactivating overlay. Added a local, always-active NSTrackingArea and public NSCursor updates: edge/corner hover selects resize before pressing, center hover selects open hand, and moving selects closed hand. Tracking is removed on hide/close, obscured windows do not change the cursor, and older macOS versions get drawn diagonal cursor images. Linux retains the Qt interaction path. Native tests invoke the tracking owner with real NSEvent objects and verify NSCursor state; physical pointer event delivery remains a manual check. Independent read-only review found no actionable material findings.
+
+Latest complete native-enabled suite: 104 tests passed in 12.493 seconds, including the two fullscreen tests that previously timed out. Ruff check/format, mypy on the four boundary modules, and git diff whitespace checks passed.

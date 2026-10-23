@@ -14,11 +14,13 @@ class OCRWorker(QThread):
     LOOP_SLEEP_SECONDS = Pipeline.LOOP_SLEEP_SECONDS
     new_translation = Signal(str)
     performance_update = Signal(float)
+    timings_update = Signal(object)
     translation_status = Signal(bool)
     running_status = Signal(bool)
     error_occurred = Signal(str)
     _translation_ready = Signal(object)
     _error_ready = Signal(object)
+    _timings_ready = Signal(object)
 
     def __init__(self):
         super().__init__()
@@ -32,12 +34,14 @@ class OCRWorker(QThread):
             on_translation=self._queue_translation,
             on_error=self._queue_error,
             on_performance=self.performance_update.emit,
+            on_timings=self._queue_timings,
             on_translating=self.translation_status.emit,
             rect_factory=lambda values: QRect(*values),
             preprocess=ImageProcessor.preprocess_for_tesseract,
         )
         self._translation_ready.connect(self._deliver_translation)
         self._error_ready.connect(self._deliver_error)
+        self._timings_ready.connect(self._deliver_timings)
         self._restart_requested = False
         self.finished.connect(self._restart_if_requested)
 
@@ -46,6 +50,15 @@ class OCRWorker(QThread):
 
     def _queue_error(self, text):
         self._error_ready.emit((self.pipeline.session_id, text))
+
+    def _queue_timings(self, timings):
+        self._timings_ready.emit((self.pipeline.session_id, timings))
+
+    @Slot(object)
+    def _deliver_timings(self, payload):
+        session, timings = payload
+        if self.pipeline.is_current(session):
+            self.timings_update.emit(timings)
 
     @Slot(object)
     def _deliver_translation(self, payload):

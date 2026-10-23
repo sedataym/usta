@@ -48,7 +48,7 @@ include = ["usta*"]
 
 [tool.setuptools.package-data]
 "usta" = ["resources/translations/*/LC_MESSAGES/*.mo", "resources/translations/*/LC_MESSAGES/*.po", "resources/ocr_models/rapidocr/*.onnx"]
-"usta.ui" = ["assets/*.png"]
+"usta.ui" = ["assets/*.png", "assets/*.svg"]
 
 [project.optional-dependencies]
 paddle = ["paddleocr>=3.6.0", "paddlepaddle"]

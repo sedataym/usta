@@ -206,3 +206,10 @@ class MacOSOverlayTests(unittest.TestCase):
         self.rules.start()
         wait_for_events()
         self.assert_rules()
+
+    def test_mouse_tracking_overlay_accepts_native_hover_events(self):
+        self.widget.setMouseTracking(True)
+        window = self.native_window()
+        window.setAcceptsMouseMovedEvents_(False)
+        self.rules._apply()
+        self.assertTrue(window.acceptsMouseMovedEvents())

@@ -113,6 +113,9 @@ class MacOSOverlayRules(QObject):
             window = view.window()
             if window is None:
                 return
+            if self._widget.hasMouseTracking():
+                # Nonactivating overlays need hover events before any mouse press.
+                window.setAcceptsMouseMovedEvents_(True)
             # Qt.Tool creates an NSPanel, but WindowDoesNotAcceptFocus does not
             # give it Cocoa's nonactivating style. Without that style the panel
             # remains on the desktop when another app enters a fullscreen Space.

@@ -30,15 +30,15 @@ class SaveTab(QWidget):
 
         h_buttons = QHBoxLayout()
         self.btn_save_preset = QPushButton(_("💾 Save"))
-        self.btn_save_preset.clicked.connect(self.save_requested.emit)
+        self.btn_save_preset.clicked.connect(self.save_requested)
         h_buttons.addWidget(self.btn_save_preset)
 
         self.btn_load_preset = QPushButton(_("📂 Load"))
-        self.btn_load_preset.clicked.connect(self.load_requested.emit)
+        self.btn_load_preset.clicked.connect(self.load_requested)
         h_buttons.addWidget(self.btn_load_preset)
 
         self.btn_delete_preset = QPushButton(_("🗑 Delete"))
-        self.btn_delete_preset.clicked.connect(self.delete_requested.emit)
+        self.btn_delete_preset.clicked.connect(self.delete_requested)
         h_buttons.addWidget(self.btn_delete_preset)
         tab_save_layout.addLayout(h_buttons)
 

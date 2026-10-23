@@ -45,7 +45,7 @@ class AppearanceTab(QWidget):
 
         h_colors = QHBoxLayout()
         self.btn_color = QPushButton(_("🎨 Text Color"))
-        self.btn_color.clicked.connect(self.text_color_requested.emit)
+        self.btn_color.clicked.connect(self.text_color_requested)
         h_colors.addWidget(self.btn_color)
 
         self.color_sample = QLabel()
@@ -56,7 +56,7 @@ class AppearanceTab(QWidget):
         h_colors.addWidget(self.color_sample)
 
         self.btn_bg_color = QPushButton(_("🎨 Background"))
-        self.btn_bg_color.clicked.connect(self.background_color_requested.emit)
+        self.btn_bg_color.clicked.connect(self.background_color_requested)
         h_colors.addWidget(self.btn_bg_color)
 
         self.bg_color_sample = QLabel()

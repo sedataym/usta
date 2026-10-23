@@ -20,7 +20,7 @@ class OCRTab(QWidget):
         self.combo_ocr.setFocusPolicy(Qt.NoFocus)
         self.combo_ocr.addItems(OCR_ENGINES)
         self.combo_ocr.currentTextChanged.connect(self.engine_changed.emit)
-        self.combo_ocr.currentTextChanged.connect(self.changed.emit)
+        self.combo_ocr.currentTextChanged.connect(self.changed)
         tab_ocr_layout.addWidget(self.combo_ocr)
 
         tab_ocr_layout.addWidget(QLabel(_("Screen Engine:")))
@@ -30,7 +30,7 @@ class OCRTab(QWidget):
         if SCREENSHOT_ENGINES:
             self.combo_screenshot.setCurrentText(SCREENSHOT_ENGINES[0])
         self.combo_screenshot.currentTextChanged.connect(self.screen_engine_changed.emit)
-        self.combo_screenshot.currentTextChanged.connect(self.changed.emit)
+        self.combo_screenshot.currentTextChanged.connect(self.changed)
         tab_ocr_layout.addWidget(self.combo_screenshot)
 
         h_dpi = QHBoxLayout()

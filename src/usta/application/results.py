@@ -4,6 +4,13 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class PerformanceTimings:
+    ocr_seconds: float
+    translation_seconds: float
+    total_seconds: float
+
+
+@dataclass(frozen=True)
 class OCRResult:
     text: str
     confidence: float | None = None

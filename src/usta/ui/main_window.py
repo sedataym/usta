@@ -1,7 +1,7 @@
 import logging
 import os
 
-from PySide6.QtCore import QSignalBlocker, Qt, QTimer, Signal, Slot
+from PySide6.QtCore import QSignalBlocker, QSize, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QApplication,
@@ -26,6 +26,7 @@ from usta.config import (
     get_language_code,
 )
 from usta.i18n import _
+from usta.resource_paths import resource_path
 from usta.ui.overlay_window import TransparentOverlay
 from usta.ui.region_selection import SniperFactory
 from usta.ui.settings_presenter import SettingsPresenter
@@ -144,7 +145,9 @@ class ControlPanel(QWidget):
 
         # --- Controls (outside tabs) ---
         layout.addWidget(QLabel(_("<b>Controls</b>")))
-        self.btn_reg = QPushButton(_("🖼 Select Region"))
+        self.btn_reg = QPushButton(_("Select Region"))
+        self.btn_reg.setIcon(QIcon(str(resource_path("ui/assets/select-region.svg"))))
+        self.btn_reg.setIconSize(QSize(20, 20))
         self.btn_reg.setStyleSheet(
             "background-color: #1565C0; color: white; font-weight: bold; padding: 10px;"
         )
@@ -168,6 +171,7 @@ class ControlPanel(QWidget):
         self.worker.error_occurred.connect(self.overlay.update_text)
         self.worker.new_translation.connect(self.overlay.update_text)
         self.worker.performance_update.connect(self.update_performance_bar)
+        self.worker.timings_update.connect(self.status_tab.update_timings)
         self.worker.running_status.connect(self.update_system_status)
         self.overlay.main_window_topmost_requested.connect(self.set_settings_always_on_top)
         self._settings_always_on_top = False
@@ -332,6 +336,7 @@ class ControlPanel(QWidget):
                 "background-color: #C62828; border-radius: 8px;"
             )
             self.status_tab.system_status_label.setText(_("Stopped"))
+            self.status_tab.reset_timings()
             self.perf_bar.setValue(0)
             self.perf_bar.setStyleSheet("")
 

@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
+from PySide6.QtGui import QColor, QCursor, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from usta.config import OS, SETTINGS_TOPMOST_HOTKEY
@@ -79,6 +79,10 @@ class CornerLabel(QLabel):
 
 
 class TransparentOverlay(QWidget):
+    RESIZE_MARGIN = 20
+    MINIMUM_RESIZE_WIDTH = 200
+    MINIMUM_RESIZE_HEIGHT = 60
+
     main_window_topmost_requested = Signal(bool)
     settings_topmost_hotkey_pressed = Signal()
 
@@ -95,11 +99,14 @@ class TransparentOverlay(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WA_ShowWithoutActivating)
         self._macos_rules = None
+        self._macos_cursor = None
         if OS == "Darwin":
             from usta.ui.platform.macos.overlay import MacOSOverlayRules
+            from usta.ui.platform.macos.overlay_cursor import MacOSOverlayCursor
 
             self.setAttribute(Qt.WA_MacAlwaysShowToolWindow, True)
             self._macos_rules = MacOSOverlayRules(self)
+            self._macos_cursor = MacOSOverlayCursor(self)
         self.setMouseTracking(True)
         self.resize(800, 200)
 
@@ -136,17 +143,24 @@ class TransparentOverlay(QWidget):
         self.hide_timer.setSingleShot(True)
         self.hide_timer.timeout.connect(lambda: self.label.setText(""))
 
-        self.set_mode(False)
-
-        # Manual drag state (X11BypassWindowManagerHint bypasses WM)
-        self._drag_mode = None  # "move" or "resize"
+        # Manual drag state (X11BypassWindowManagerHint bypasses WM).
+        self._drag_mode = None
+        self._drag_edges = Qt.Edges()
         self._drag_start_pos = None
         self._drag_start_geometry = None
+        self.set_mode(False)
 
     def showEvent(self, event):
         super().showEvent(event)
         if self._macos_rules is not None:
             self._macos_rules.start()
+        if self._macos_cursor is not None:
+            self._macos_cursor.start()
+
+    def hideEvent(self, event):
+        if self._macos_cursor is not None:
+            self._macos_cursor.stop()
+        super().hideEvent(event)
 
     def _emit_settings_topmost_hotkey_pressed(self):
         self.settings_topmost_hotkey_pressed.emit()
@@ -177,14 +191,23 @@ class TransparentOverlay(QWidget):
         self.label.setStyleSheet(style)
         self.label.update()
 
+    def _set_hovered(self, hovered):
+        self._show_corner_lines = hovered
+        self.label.set_corner_lines_visible(hovered)
+
     def enterEvent(self, event):
-        self._show_corner_lines = True
-        self.label.set_corner_lines_visible(True)
+        self._set_hovered(True)
+        if self._drag_mode is None:
+            self._update_hover_cursor(self.mapFromGlobal(QCursor.pos()))
         super().enterEvent(event)
 
     def leaveEvent(self, event):
-        self._show_corner_lines = False
-        self.label.set_corner_lines_visible(False)
+        self._set_hovered(False)
+        if self._drag_mode is None:
+            if self._macos_cursor is not None:
+                self._macos_cursor.mouse_exited()
+            self.unsetCursor()
+            self.label.unsetCursor()
         super().leaveEvent(event)
 
     @Slot(str)
@@ -239,6 +262,8 @@ class TransparentOverlay(QWidget):
         return True
 
     def closeEvent(self, event):
+        if self._macos_cursor is not None:
+            self._macos_cursor.stop()
         if self._macos_rules is not None:
             self._macos_rules.stop()
         self._settings_topmost_hotkey.stop()
@@ -246,63 +271,101 @@ class TransparentOverlay(QWidget):
 
     def set_mode(self, scan):
         self.setAttribute(Qt.WA_TransparentForMouseEvents, False)
-        self.setCursor(Qt.ArrowCursor if scan else Qt.SizeAllCursor)
+        if self._drag_mode is None:
+            self._update_hover_cursor(self.mapFromGlobal(QCursor.pos()))
         if scan:
             self.hide_timer.start(10000)
         else:
             self.hide_timer.stop()
             self.label.setText(_("Translation will appear here."))
 
+    def _resize_edges_at(self, position):
+        edges = Qt.Edges()
+        if not self.rect().contains(position):
+            return edges
+        if position.x() < self.RESIZE_MARGIN:
+            edges |= Qt.LeftEdge
+        elif position.x() >= self.width() - self.RESIZE_MARGIN:
+            edges |= Qt.RightEdge
+        if position.y() < self.RESIZE_MARGIN:
+            edges |= Qt.TopEdge
+        elif position.y() >= self.height() - self.RESIZE_MARGIN:
+            edges |= Qt.BottomEdge
+        return edges
+
+    @staticmethod
+    def _cursor_for_edges(edges):
+        horizontal = bool(edges & (Qt.LeftEdge | Qt.RightEdge))
+        vertical = bool(edges & (Qt.TopEdge | Qt.BottomEdge))
+        if horizontal and vertical:
+            if bool(edges & Qt.LeftEdge) == bool(edges & Qt.TopEdge):
+                return Qt.SizeFDiagCursor
+            return Qt.SizeBDiagCursor
+        if horizontal:
+            return Qt.SizeHorCursor
+        if vertical:
+            return Qt.SizeVerCursor
+        return Qt.SizeAllCursor
+
+    def _set_interaction_cursor(self, cursor):
+        self.setCursor(cursor)
+        # Keep the full-size text child consistent with its interactive parent.
+        self.label.setCursor(cursor)
+        if self._macos_cursor is not None:
+            self._macos_cursor.apply_cursor(cursor)
+
+    def _update_hover_cursor(self, position):
+        cursor = (
+            self._cursor_for_edges(self._resize_edges_at(position))
+            if self.rect().contains(position)
+            else Qt.ArrowCursor
+        )
+        self._set_interaction_cursor(cursor)
+
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self._drag_start_pos = event.globalPosition().toPoint()
-            self._drag_start_geometry = self.geometry()
-            if (
-                event.position().x() > self.width() - 20
-                and event.position().y() > self.height() - 20
-            ):
-                self._drag_mode = "resize"
-                self.setCursor(Qt.SizeFDiagCursor)
-            else:
-                self._drag_mode = "move"
-                self.setCursor(Qt.SizeAllCursor)
-            event.accept()
+        if event.button() != Qt.LeftButton:
+            super().mousePressEvent(event)
+            return
+        self._drag_start_pos = event.globalPosition().toPoint()
+        self._drag_start_geometry = self.geometry()
+        self._drag_edges = self._resize_edges_at(event.position().toPoint())
+        self._drag_mode = "resize" if self._drag_edges else "move"
+        self._set_interaction_cursor(self._cursor_for_edges(self._drag_edges))
+        event.accept()
 
     def mouseMoveEvent(self, event):
         if self._drag_mode is None:
-            if (
-                event.position().x() > self.width() - 20
-                and event.position().y() > self.height() - 20
-            ):
-                self.setCursor(Qt.SizeFDiagCursor)
-            else:
-                self.setCursor(Qt.SizeAllCursor)
+            self._update_hover_cursor(event.position().toPoint())
             return
-
         if self._drag_start_pos is None:
             return
-
         delta = event.globalPosition().toPoint() - self._drag_start_pos
+        geometry = self._drag_start_geometry
         if self._drag_mode == "move":
-            self.move(
-                self._drag_start_geometry.x() + delta.x(), self._drag_start_geometry.y() + delta.y()
-            )
-        elif self._drag_mode == "resize":
-            new_w = max(200, self._drag_start_geometry.width() + delta.x())
-            new_h = max(60, self._drag_start_geometry.height() + delta.y())
-            self.resize(new_w, new_h)
+            self.move(geometry.topLeft() + delta)
+        else:
+            # Anchor the opposite edges while enforcing the existing size limits.
+            geometry = self._drag_start_geometry.adjusted(0, 0, 0, 0)
+            min_width = max(self.MINIMUM_RESIZE_WIDTH, self.minimumWidth())
+            min_height = max(self.MINIMUM_RESIZE_HEIGHT, self.minimumHeight())
+            if self._drag_edges & Qt.LeftEdge:
+                geometry.setLeft(min(geometry.left() + delta.x(), geometry.right() - min_width + 1))
+            elif self._drag_edges & Qt.RightEdge:
+                geometry.setWidth(max(min_width, geometry.width() + delta.x()))
+            if self._drag_edges & Qt.TopEdge:
+                geometry.setTop(min(geometry.top() + delta.y(), geometry.bottom() - min_height + 1))
+            elif self._drag_edges & Qt.BottomEdge:
+                geometry.setHeight(max(min_height, geometry.height() + delta.y()))
+            self.setGeometry(geometry)
         event.accept()
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self._drag_mode = None
-            self._drag_start_pos = None
-            self._drag_start_geometry = None
-            if (
-                event.position().x() > self.width() - 20
-                and event.position().y() > self.height() - 20
-            ):
-                self.setCursor(Qt.SizeFDiagCursor)
-            else:
-                self.setCursor(Qt.SizeAllCursor)
-            event.accept()
+        if event.button() != Qt.LeftButton:
+            super().mouseReleaseEvent(event)
+            return
+        self._drag_mode = None
+        self._drag_edges = Qt.Edges()
+        self._drag_start_pos = None
+        self._drag_start_geometry = None
+        self._update_hover_cursor(event.position().toPoint())
+        event.accept()
