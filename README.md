@@ -219,6 +219,12 @@ The macOS dependency is included in `requirements.txt`. To add it to an existing
 installation, run `.venv/bin/python -m pip install 'pyobjc-framework-Vision>=10.0'`
 and restart USTA. Apple Vision does not appear in the engine list on Linux or Windows.
 
+## macOS global shortcut permissions
+
+If startup reports missing Accessibility permission, open **System Settings → Privacy & Security → Accessibility** and allow the app/terminal running USTA (or the Python app shown by macOS). Restart USTA after granting access. The log includes the Python executable to help identify the launcher. USTA cannot grant this permission itself; screen capture/OCR and global keyboard access are separate capabilities.
+
+USTA reports missing Accessibility permission once per denied period and preserves event-tap startup, since macOS Input Monitoring permission can be separate. Linux shortcut behavior is unchanged. See [Apple's Accessibility permission guide](https://support.apple.com/guide/mac-help/mh43185/mac).
+
 ## Development and contributions
 
 See [CONTRIBUTING](CONTRIBUTING.md) for development setup, tests and code standards, [architecture](docs/architecture.md) for module boundaries, and [testing](docs/testing.md) for native desktop checks. Install optional Paddle support with `pip install '.[paddle]'` when its native runtime is available.

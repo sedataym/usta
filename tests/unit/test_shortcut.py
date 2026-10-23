@@ -63,6 +63,10 @@ class MacOSHotkeyThreadTests(unittest.TestCase):
             mock.patch("pynput.keyboard._darwin.keycode_context", keyboard_layout),
             mock.patch("pynput._util.darwin.keycode_context", keyboard_layout),
             mock.patch("pynput._util.darwin.ListenerMixin._run", listen),
+            mock.patch(
+                "usta.core.platform.macos.hotkey_listener.has_accessibility_permission",
+                return_value=True,
+            ),
         ):
             for combination in ("<shift>+<alt>+m", "<ctrl>+<alt>+x", "<cmd>+<shift>+k"):
                 hotkey = GlobalHotkey(combination, lambda: None)
@@ -85,3 +89,55 @@ class MacOSHotkeyThreadTests(unittest.TestCase):
             layout.assert_not_called()
         self.assertEqual(result, [False])
         self.assertIsNone(hotkey._listener)
+
+
+class MacOSPermissionTests(unittest.TestCase):
+    def test_missing_accessibility_warns_once_without_blocking_event_taps(self):
+        import types
+
+        import usta.core.shortcut as shortcut
+
+        module = types.ModuleType("usta.core.platform.macos.hotkey_listener")
+        module.MainThreadLayoutListener = mock.Mock()
+        module.has_accessibility_permission = mock.Mock(return_value=False)
+        with (
+            mock.patch.object(shortcut.sys, "platform", "darwin"),
+            mock.patch.object(
+                shortcut,
+                "keyboard",
+                mock.Mock(HotKey=mock.Mock(parse=mock.Mock(return_value={"ctrl", "x"}))),
+            ),
+            mock.patch.object(shortcut, "_permission_warning_emitted", False, create=True),
+            mock.patch.dict(sys.modules, {"usta.core.platform.macos.hotkey_listener": module}),
+        ):
+            with self.assertLogs("usta.core.shortcut", level="WARNING") as logs:
+                self.assertTrue(GlobalHotkey("<ctrl>+x", lambda: None).start())
+                self.assertTrue(GlobalHotkey("<ctrl>+y", lambda: None).start())
+            self.assertEqual(len(logs.output), 1)
+            self.assertIn("Accessibility", logs.output[0])
+            self.assertEqual(module.MainThreadLayoutListener.call_count, 2)
+
+    def test_new_listener_rechecks_permission_after_grant(self):
+        import types
+
+        import usta.core.shortcut as shortcut
+
+        module = types.ModuleType("usta.core.platform.macos.hotkey_listener")
+        module.MainThreadLayoutListener = mock.Mock()
+        module.has_accessibility_permission = mock.Mock(side_effect=[False, True])
+        with (
+            mock.patch.object(shortcut.sys, "platform", "darwin"),
+            mock.patch.object(
+                shortcut,
+                "keyboard",
+                mock.Mock(HotKey=mock.Mock(parse=mock.Mock(return_value={"ctrl", "x"}))),
+            ),
+            mock.patch.object(shortcut, "_permission_warning_emitted", True, create=True),
+            mock.patch.dict(sys.modules, {"usta.core.platform.macos.hotkey_listener": module}),
+        ):
+            hotkey = GlobalHotkey("<ctrl>+x", lambda: None)
+            self.assertTrue(hotkey.start())
+            hotkey.stop()
+            self.assertTrue(hotkey.start())
+            self.assertEqual(module.MainThreadLayoutListener.return_value.start.call_count, 2)
+            hotkey.stop()

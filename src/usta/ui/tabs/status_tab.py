@@ -1,3 +1,4 @@
+from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from usta.i18n import _
@@ -24,5 +25,5 @@ class StatusTab(QWidget):
         tab_status_layout.addStretch()
 
         self.rect_label_status = QLabel(_("Region: —"))
-        self.rect_label_status.setStyleSheet("font-family: monospace;")
+        self.rect_label_status.setFont(QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont))
         tab_status_layout.addWidget(self.rect_label_status)

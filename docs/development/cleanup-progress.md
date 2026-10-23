@@ -60,3 +60,7 @@ No review findings deferred. Linux desktop/AppImage and remote CI remain externa
 - `bash -n scripts/build-appimage.sh packaging/appimage/AppRun` and `git diff --check`: passed.
 - All eleven implementation stages have landed locally. Full Linux desktop/AppImage acceptance, remote CI version matrix, extra monitor/architecture combinations and exhaustive OCR memory/performance benchmarking remain unverified; they are not marked passed.
 - Changes retained on existing `feature/macos_support_1`; no merge, remote push, release or publication performed.
+
+## Follow-up: macOS startup warnings
+
+User reported repeated pynput Accessibility warnings and Qt monospace alias lookup. Root causes verified in installed pynput's AXIsProcessTrusted check and StatusTab stylesheet. Missing Accessibility trust is now explained once per denied period; only pynput's duplicate message is filtered, event-tap startup and Linux listener behavior are preserved. StatusTab uses Qt's available system FixedFont. Three regressions added (permission warning deduplication, permission recheck for a new listener, system font). Final native suite: 75 passed, zero skips; Ruff check/format and mypy passed. macOS permissions were not modified by the application.

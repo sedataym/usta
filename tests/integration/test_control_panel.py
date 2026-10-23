@@ -92,3 +92,11 @@ class ControlPanelTests(unittest.TestCase):
             self.panel.update_system_status(False)
             self.panel.update_system_status(True)
             self.assertEqual(mode.call_args_list, [mock.call(False), mock.call(True)])
+
+    def test_region_status_uses_available_system_fixed_font(self):
+        from PySide6.QtGui import QFontDatabase
+
+        label = self.panel.status_tab.rect_label_status
+        fixed = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
+        self.assertEqual(label.font().family(), fixed.family())
+        self.assertNotIn("monospace", label.styleSheet().lower())

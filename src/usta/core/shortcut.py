@@ -10,6 +10,7 @@ except ImportError:  # pragma: no cover - depends on optional runtime dependency
     keyboard = None
 
 logger = logging.getLogger(__name__)
+_permission_warning_emitted = False
 
 
 class GlobalHotkey:
@@ -40,6 +41,7 @@ class GlobalHotkey:
             self._is_pressed = False
 
     def start(self) -> bool:
+        global _permission_warning_emitted
         if keyboard is None:
             logger.warning("Global hotkey support is unavailable because pynput is not installed.")
             return False
@@ -53,8 +55,22 @@ class GlobalHotkey:
             self._hotkey = keyboard.HotKey(hotkey_keys, self._on_activate)
             listener_type = keyboard.Listener
             if sys.platform == "darwin":
-                from usta.core.platform.macos.hotkey_listener import MainThreadLayoutListener
+                from usta.core.platform.macos.hotkey_listener import (
+                    MainThreadLayoutListener,
+                    has_accessibility_permission,
+                )
 
+                if not has_accessibility_permission():
+                    if not _permission_warning_emitted:
+                        logger.warning(
+                            "macOS Accessibility permission is missing; global shortcuts may be "
+                            "unavailable. Open System Settings > Privacy & Security > Accessibility, "
+                            "allow the app/terminal running USTA, then restart USTA. Python: %s",
+                            sys.executable,
+                        )
+                        _permission_warning_emitted = True
+                else:
+                    _permission_warning_emitted = False
                 listener_type = MainThreadLayoutListener
             self._listener = listener_type(
                 on_press=self._on_press,
