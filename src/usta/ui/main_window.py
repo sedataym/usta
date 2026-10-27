@@ -535,7 +535,7 @@ class ControlPanel(QWidget):
         self.hotkey_controller.close()
         self.controller.stop()
         self.overlay.close()
-        self.tray.icon.hide()
+        self.tray.close()
         self._shutdown_complete = True
         super().closeEvent(event)
         if event.isAccepted():

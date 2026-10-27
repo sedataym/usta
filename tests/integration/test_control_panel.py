@@ -42,6 +42,61 @@ class ControlPanelTests(unittest.TestCase):
         self.panel = ControlPanel()
         self.addCleanup(lambda: self.panel.request_quit())
 
+    def test_startup_tray_hint_expires_without_hiding_windows_or_tray(self):
+        tray = self.panel.tray
+        self.panel.overlay.show()
+        with (
+            mock.patch.object(QSystemTrayIcon, "isSystemTrayAvailable", return_value=True),
+            mock.patch.object(QSystemTrayIcon, "geometry", return_value=QRect(770, 0, 22, 22)),
+        ):
+            tray._show_startup_hint()
+        self.assertTrue(tray.hint.isVisible())
+        self.assertTrue(tray.hint.windowFlags() & Qt.WindowDoesNotAcceptFocus)
+        self.assertGreater(tray.hint.dismiss_timer.remainingTime(), 9500)
+        self.assertLessEqual(tray.hint.dismiss_timer.remainingTime(), 10000)
+        tray.hint.dismiss_timer.start(1)
+        QTest.qWait(20)
+        self.assertFalse(tray.hint.isVisible())
+        self.assertTrue(tray.icon.isVisible())
+        self.assertTrue(self.panel.isVisible())
+        self.assertTrue(self.panel.overlay.isVisible())
+
+    def test_macos_hint_anchor_uses_own_status_window_when_qt_geometry_is_empty(self):
+        from types import SimpleNamespace
+
+        def frame(x, y, width, height):
+            return SimpleNamespace(
+                origin=SimpleNamespace(x=x, y=y), size=SimpleNamespace(width=width, height=height)
+            )
+
+        native = SimpleNamespace(
+            NSStatusWindowLevel=25,
+            NSScreen=SimpleNamespace(
+                screens=lambda: [SimpleNamespace(frame=lambda: frame(0, 0, 800, 800))]
+            ),
+            NSApp=SimpleNamespace(
+                windows=lambda: [
+                    SimpleNamespace(level=lambda: 0, frame=lambda: frame(0, 0, 400, 400)),
+                    SimpleNamespace(level=lambda: 25, frame=lambda: frame(100, 770, 25, 30)),
+                ]
+            ),
+        )
+        with (
+            mock.patch.object(QSystemTrayIcon, "geometry", return_value=QRect()),
+            mock.patch("usta.ui.system_tray.OS", "Darwin"),
+            mock.patch("usta.ui.system_tray.QGuiApplication.platformName", return_value="cocoa"),
+            mock.patch.dict("sys.modules", {"AppKit": native}),
+        ):
+            self.assertEqual(self.panel.tray._icon_geometry(), QRect(100, 0, 25, 30))
+
+    def test_shutdown_cancels_pending_startup_hint(self):
+        tray = self.panel.tray
+        self.panel.request_quit()
+        self.assertFalse(tray.startup_timer.isActive())
+        with mock.patch.object(QSystemTrayIcon, "isSystemTrayAvailable", return_value=True):
+            tray._show_startup_hint()
+        self.assertFalse(tray.hint.isVisible())
+
     def test_tray_shortcut_and_x_share_real_visibility(self):
         panel = self.panel
         with mock.patch.object(QSystemTrayIcon, "isSystemTrayAvailable", return_value=True):

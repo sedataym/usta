@@ -1,17 +1,23 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
 import runpy
+import subprocess
+import sys
 from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs, collect_submodules
 
 root = Path(SPECPATH).resolve().parents[1]
+identity = subprocess.check_output(
+    [sys.executable, str(root / "packaging/macos/signing_policy.py")], text=True
+).strip()
+identity = None if identity == "-" or os.environ.get("USTA_SIGNING_MODE") == "self-signed" else identity
 version = runpy.run_path(str(root / "src/usta/_version.py"))["__version__"]
 icon = root / "build/macos/USTA.icns"
 datas = collect_data_files("usta")
 datas += collect_data_files("easyocr")
 hidden = collect_submodules("usta") + [
-    "check_bundle",
+    "check_bundle", "check_permissions",
     # Loaded by name; pkgutil collection skips this namespace-package directory.
     "usta.core.platform.macos.capabilities",
     "pynput.keyboard._darwin",
@@ -44,8 +50,8 @@ exe = EXE(
     console=False,
     argv_emulation=False,
     target_arch="arm64",
-    codesign_identity=os.environ.get("USTA_CODESIGN_IDENTITY") or None,
-    entitlements_file=None,
+    codesign_identity=identity,
+    entitlements_file=str(root / "packaging/macos/entitlements.plist") if identity else None,
 )
 collection = COLLECT(exe, analysis.binaries, analysis.datas, strip=False, upx=False, name="USTA")
 app = BUNDLE(
@@ -59,6 +65,7 @@ app = BUNDLE(
         "CFBundleShortVersionString": version,
         "CFBundleVersion": version,
         "NSHighResolutionCapable": True,
+        "NSScreenCaptureUsageDescription": "USTA captures selected screen regions to recognize and translate text.",
         "LSMinimumSystemVersion": "26.0",
         "NSPrincipalClass": "NSApplication",
         "LSApplicationCategoryType": "public.app-category.utilities",

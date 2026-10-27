@@ -308,3 +308,6 @@ msgstr "Toplam"
 
 msgid "Region"
 msgstr "Bölge"
+
+msgid "You can access the USTA menu here."
+msgstr "USTA menüsüne buradan ulaşabilirsiniz."

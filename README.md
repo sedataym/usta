@@ -251,6 +251,8 @@ If you do not accept full responsibility for the risks described above, you shou
 
 ## System tray and window shortcuts
 
+At startup, a balloon points to the tray icon for ten seconds to show where the USTA menu is. It does not require notification permission or take keyboard focus.
+
 The USTA tray menu lets you show/hide the main window and translation overlay
 independently, start or stop OCR, select a capture region, select a temporary
 region, and quit. Start is disabled while OCR is running; Stop is disabled while
@@ -271,3 +273,5 @@ exits normally so the application cannot become inaccessible in the background.
 ## macOS application package
 
 See [Building and installing the macOS DMG](docs/macos-dmg.md) for the Apple Silicon build recipe, bundled engines, permissions and signing details.
+
+Apple-trusted distribution DMGs require a Developer ID Application identity and notarization. Free persistent self-signed builds use `USTA_SIGNING_MODE=self-signed` with the pinned Keychain certificate and produce `-selfsigned.dmg`; they are not Apple-notarized. The build refuses silent ad-hoc fallback; explicit local builds use `USTA_ALLOW_ADHOC=1` and a `-dev.dmg` filename. See [macOS signing setup](docs/macos-dmg.md).

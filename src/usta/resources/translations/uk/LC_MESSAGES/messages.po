@@ -324,3 +324,6 @@ msgstr "Загалом"
 
 msgid "Region"
 msgstr "Область"
+
+msgid "You can access the USTA menu here."
+msgstr "Меню USTA доступне тут."

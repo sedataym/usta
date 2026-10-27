@@ -27,8 +27,10 @@ class PackageLayoutTests(unittest.TestCase):
         import tarfile
         import zipfile
 
-        wheels = list((ROOT / "dist").glob("*.whl"))
-        sdists = list((ROOT / "dist").glob("*.tar.gz"))
+        from usta._version import __version__
+
+        wheels = list((ROOT / "dist").glob(f"usta-{__version__}-*.whl"))
+        sdists = list((ROOT / "dist").glob(f"usta-{__version__}.tar.gz"))
         if not wheels or not sdists:
             if os.environ.get("USTA_REQUIRE_ARTIFACTS") == "1":
                 self.fail("Build artifacts required; run python -m build first")

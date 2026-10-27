@@ -3,9 +3,9 @@ USTA for macOS — Apple Silicon (arm64), macOS 26 or newer
 Drag USTA.app to Applications, then open USTA from Applications.
 The disk image includes Python and the application dependencies.
 
-This build is ad-hoc signed, not Apple-notarized. macOS may ask you to
-approve the app in System Settings > Privacy & Security > Open Anyway.
-Only approve the build if you trust its source.
+See SIGNING.txt in this disk image for its signing and notarization status.
+For the signed distribution build, grant permissions once to the copy in Applications.
+The first upgrade from an old ad-hoc build can require the grants to be renewed.
 
 Permissions (System Settings > Privacy & Security):
 - Screen & System Audio Recording: required to capture text on screen.

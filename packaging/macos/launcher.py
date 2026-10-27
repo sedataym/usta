@@ -13,6 +13,11 @@ def main():
 
         return check_bundle(Path(sys.argv[2]))
 
+    if len(sys.argv) == 3 and sys.argv[1] == "--check-permissions":
+        from check_permissions import check_permissions
+
+        return check_permissions(Path(sys.argv[2]))
+
     log_dir = Path.home() / "Library" / "Logs" / "USTA"
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
