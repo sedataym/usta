@@ -83,7 +83,7 @@ class TransparentOverlay(QWidget):
     MINIMUM_RESIZE_WIDTH = 200
     MINIMUM_RESIZE_HEIGHT = 60
 
-    main_window_topmost_requested = Signal(bool)
+    main_window_visibility_toggle_requested = Signal()
     settings_topmost_hotkey_pressed = Signal()
 
     def __init__(self):
@@ -129,7 +129,6 @@ class TransparentOverlay(QWidget):
         self.update_style()
         self.layout.addWidget(self.label)
 
-        self._main_window_topmost_requested = False
         self._settings_topmost_hotkey_armed = True
         self.settings_topmost_hotkey = SETTINGS_TOPMOST_HOTKEY
         self._settings_topmost_hotkey = GlobalHotkey(
@@ -158,6 +157,8 @@ class TransparentOverlay(QWidget):
             self._macos_cursor.start()
 
     def hideEvent(self, event):
+        if self._macos_rules is not None:
+            self._macos_rules.stop()
         if self._macos_cursor is not None:
             self._macos_cursor.stop()
         super().hideEvent(event)
@@ -171,7 +172,7 @@ class TransparentOverlay(QWidget):
             return
 
         self._settings_topmost_hotkey_armed = False
-        self._toggle_main_window_topmost()
+        self._toggle_main_window_visibility()
         QTimer.singleShot(200, self._rearm_settings_topmost_hotkey)
 
     def _rearm_settings_topmost_hotkey(self):
@@ -238,15 +239,15 @@ class TransparentOverlay(QWidget):
     @Slot(str)
     def update_text(self, text):
         self.label.setText(text)
-        if self._macos_rules is not None:
-            self._macos_rules.order_front_without_activation()
-        else:
-            self.raise_()
+        if self.isVisible():
+            if self._macos_rules is not None:
+                self._macos_rules.order_front_without_activation()
+            else:
+                self.raise_()
         self.hide_timer.start(10000)
 
-    def _toggle_main_window_topmost(self):
-        self._main_window_topmost_requested = not self._main_window_topmost_requested
-        self.main_window_topmost_requested.emit(self._main_window_topmost_requested)
+    def _toggle_main_window_visibility(self):
+        self.main_window_visibility_toggle_requested.emit()
 
     def set_settings_topmost_hotkey(self, hotkey):
         if hotkey == self.settings_topmost_hotkey:

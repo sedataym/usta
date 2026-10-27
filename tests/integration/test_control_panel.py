@@ -5,8 +5,8 @@ from unittest import mock
 
 from PySide6.QtCore import QRect, Qt, QTimer
 from PySide6.QtGui import QColor
-from PySide6.QtTest import QSignalSpy
-from PySide6.QtWidgets import QApplication, QColorDialog
+from PySide6.QtTest import QSignalSpy, QTest
+from PySide6.QtWidgets import QApplication, QColorDialog, QSystemTrayIcon
 
 from usta.application.settings import AppSettings, Preset
 from usta.infrastructure.settings_store import SettingsStore
@@ -40,7 +40,131 @@ class ControlPanelTests(unittest.TestCase):
             mock.patch.object(self.store, "save", wraps=self.store.save)
         )
         self.panel = ControlPanel()
-        self.addCleanup(self.panel.close)
+        self.addCleanup(lambda: self.panel.request_quit())
+
+    def test_tray_shortcut_and_x_share_real_visibility(self):
+        panel = self.panel
+        with mock.patch.object(QSystemTrayIcon, "isSystemTrayAvailable", return_value=True):
+            panel.overlay.show()
+            panel.overlay.settings_topmost_hotkey_pressed.emit()
+            self.assertFalse(panel.isVisible())
+            self.assertTrue(panel.overlay.isVisible())
+            panel.tray.main_action.trigger()
+            self.assertTrue(panel.isVisible())
+            self.assertTrue(panel.windowFlags() & Qt.WindowStaysOnTopHint)
+            panel.close()
+            self.assertFalse(panel.isVisible())
+            self.assertTrue(panel.overlay.isVisible())
+            self.assertFalse(panel._closing)
+            panel.overlay._rearm_settings_topmost_hotkey()
+            panel.overlay.settings_topmost_hotkey_pressed.emit()
+            self.assertTrue(panel.isVisible())
+            panel.tray.refresh()
+            self.assertEqual(panel.tray.main_action.text(), "Hide Main Window")
+
+    def test_delayed_startup_alignment_does_not_reveal_hidden_overlay(self):
+        self.panel.overlay.hide()
+        self.panel.align_overlay()
+        self.assertFalse(self.panel.overlay.isVisible())
+
+    def test_minimized_main_window_is_restored_by_toggle(self):
+        self.panel.showMinimized()
+        self.panel.toggle_main_window()
+        self.assertTrue(self.panel.isVisible())
+        self.assertFalse(self.panel.isMinimized())
+        self.assertTrue(self.panel.windowFlags() & Qt.WindowStaysOnTopHint)
+
+    def test_overlay_stays_hidden_when_new_translation_arrives(self):
+        panel = self.panel
+        panel.overlay.show()
+        panel.tray.overlay_action.trigger()
+        panel.overlay.update_text("still translating")
+        self.assertFalse(panel.overlay.isVisible())
+        self.assertTrue(panel.isVisible())
+        self.assertEqual(panel.overlay.label.text(), "still translating")
+        panel.tray.refresh()
+        self.assertEqual(panel.tray.overlay_action.text(), "Show Overlay")
+        panel.tray.overlay_action.trigger()
+        self.assertTrue(panel.overlay.isVisible())
+        self.assertTrue(panel.overlay.windowFlags() & Qt.WindowStaysOnTopHint)
+
+    def test_tray_start_stop_follow_worker_state_and_disable_during_quit(self):
+        panel = self.panel
+        panel.tray.refresh()
+        self.assertTrue(panel.tray.start_action.isEnabled())
+        self.assertFalse(panel.tray.stop_action.isEnabled())
+        with mock.patch.object(panel.worker, "isRunning", return_value=True):
+            panel.tray.refresh()
+            self.assertFalse(panel.tray.start_action.isEnabled())
+            self.assertTrue(panel.tray.stop_action.isEnabled())
+            panel._closing = True
+            panel.tray.refresh()
+            self.assertFalse(panel.tray.start_action.isEnabled())
+            self.assertFalse(panel.tray.stop_action.isEnabled())
+
+    def test_tray_temporary_region_requires_running_worker(self):
+        panel = self.panel
+        panel.tray.refresh()
+        self.assertFalse(panel.tray.temporary_region_action.isEnabled())
+        with mock.patch.object(panel.worker, "isRunning", return_value=True):
+            panel.tray.refresh()
+            self.assertTrue(panel.tray.temporary_region_action.isEnabled())
+            panel._temporary_region_selecting = True
+            panel.tray.refresh()
+            self.assertFalse(panel.tray.temporary_region_action.isEnabled())
+
+    def test_stopping_before_delayed_temporary_selection_does_not_open_selector(self):
+        panel = self.panel
+        with (
+            mock.patch.object(panel.worker, "isRunning", return_value=True) as running,
+            mock.patch.object(
+                panel, "_get_selected_region_and_dpi", return_value=(QRect(1, 2, 100, 50), None)
+            ) as select,
+        ):
+            panel.tray.refresh()
+            panel.tray.temporary_region_action.trigger()
+            running.return_value = False
+            QTest.qWait(250)
+            select.assert_not_called()
+            self.assertFalse(panel.region_controller.temporary_active)
+
+    def test_quit_waits_for_worker_then_cleans_up_hidden_windows(self):
+        panel = self.panel
+        panel.overlay.show()
+        panel.hide()
+        with (
+            mock.patch.object(panel.worker, "isRunning", return_value=True),
+            mock.patch.object(panel.controller, "stop") as stop,
+            mock.patch.object(panel.worker, "close") as close_worker,
+            mock.patch.object(QApplication, "quit") as quit_app,
+        ):
+            panel.tray.quit_action.trigger()
+            self.assertTrue(panel._closing)
+            stop.assert_called_once()
+            close_worker.assert_not_called()
+            quit_app.assert_not_called()
+            # A second quit request must not register another finished handler.
+            panel.request_quit()
+            stop.assert_called_once()
+        with (
+            mock.patch.object(panel.worker, "isRunning", return_value=False),
+            mock.patch.object(QApplication, "quit") as quit_app,
+        ):
+            panel.worker.finished.emit()
+            self.assertFalse(panel.overlay.isVisible())
+            self.assertFalse(panel.tray.icon.isVisible())
+            quit_app.assert_called_once()
+
+    def test_x_exits_when_system_tray_is_unavailable(self):
+        panel = self.panel
+        panel.overlay.show()
+        with (
+            mock.patch.object(QSystemTrayIcon, "isSystemTrayAvailable", return_value=False),
+            mock.patch.object(QApplication, "quit") as quit_app,
+        ):
+            panel.close()
+            self.assertFalse(panel.overlay.isVisible())
+            quit_app.assert_called_once()
 
     def test_load_does_not_write_and_user_change_writes_once(self):
         self.save_spy.assert_not_called()

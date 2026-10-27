@@ -248,3 +248,22 @@ USTA may process visible screen content, interact with local desktop capture mec
 The developers, maintainers, contributors, and distributors of USTA shall not be held liable for any direct, indirect, incidental, consequential, special, exemplary, or punitive damages resulting from the application, including damages caused by user configuration, third-party services, external integrations, dependency behavior, system incompatibilities, or any other circumstance connected to the use of the software.
 
 If you do not accept full responsibility for the risks described above, you should not install, run, or use USTA.
+
+## System tray and window shortcuts
+
+The USTA tray menu lets you show/hide the main window and translation overlay
+independently, start or stop OCR, select a capture region, select a temporary
+region, and quit. Start is disabled while OCR is running; Stop is disabled while
+OCR is stopped.
+Temporary region selection is available while OCR is running and restores the
+original region after ten seconds. Hiding either window keeps OCR and translation
+running. Shown windows stay above other applications, retaining the existing
+macOS fullscreen overlay behavior and Linux window-manager support.
+
+The **Show/hide main window** shortcut (default **Shift+Alt+M**) uses the same action
+as the tray menu. Existing saved shortcut combinations are retained. Closing the
+main window with **X** hides it; use **Quit Application** in the tray menu to exit.
+
+On Linux, a desktop with system tray support is required to display the icon
+(some GNOME configurations need a tray extension). If no tray is available, **X**
+exits normally so the application cannot become inaccessible in the background.

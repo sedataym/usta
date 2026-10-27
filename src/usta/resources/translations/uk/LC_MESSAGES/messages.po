@@ -185,8 +185,8 @@ msgid "Settings topmost key:"
 msgstr "Закріплення екрана:"
 
 #: src/ui/tabs/hotkey_tab.py:175
-msgid "Temporary region key:"
-msgstr "Клавіша тимч. області:"
+msgid "Temporary region:"
+msgstr "Тимчасова область:"
 
 #: src/ui/tabs/hotkey_tab.py:181
 msgid "Click a shortcut field, then press the key combination you want to use."
@@ -294,3 +294,27 @@ msgstr "Загальний час також включає захоплення
 msgid "Select Region"
 msgstr "Вибрати область"
 
+
+msgid "Hide Main Window"
+msgstr "Приховати головне вікно"
+
+msgid "Show Main Window"
+msgstr "Показати головне вікно"
+
+msgid "Hide Overlay"
+msgstr "Приховати накладення"
+
+msgid "Show Overlay"
+msgstr "Показати накладення"
+
+msgid "Select Temporary Region"
+msgstr "Вибрати тимчасову область"
+
+msgid "Quit Application"
+msgstr "Вийти з програми"
+
+msgid "Main window:"
+msgstr "Головне вікно:"
+
+msgid "Show or hide the main window. When shown, it stays above other windows."
+msgstr "Показати або приховати головне вікно. Коли воно показане, воно залишається поверх інших вікон."

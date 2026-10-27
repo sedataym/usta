@@ -30,6 +30,7 @@ from usta.resource_paths import resource_path
 from usta.ui.overlay_window import TransparentOverlay
 from usta.ui.region_selection import SniperFactory
 from usta.ui.settings_presenter import SettingsPresenter
+from usta.ui.system_tray import SystemTray
 from usta.ui.tabs import (
     AboutTab,
     AppearanceTab,
@@ -49,6 +50,9 @@ class ControlPanel(QWidget):
     def __init__(self):
         super().__init__()
         self._closing = False
+        self._waiting_for_worker = False
+        self._shutdown_complete = False
+        self._region_selecting = False
         self._loading_settings = True
         self.settings_presenter = SettingsPresenter(self)
         self.worker = OCRWorker()
@@ -173,8 +177,7 @@ class ControlPanel(QWidget):
         self.worker.performance_update.connect(self.update_performance_bar)
         self.worker.timings_update.connect(self.status_tab.update_timings)
         self.worker.running_status.connect(self.update_system_status)
-        self.overlay.main_window_topmost_requested.connect(self.set_settings_always_on_top)
-        self._settings_always_on_top = False
+        self.overlay.main_window_visibility_toggle_requested.connect(self.toggle_main_window)
 
         # Load settings or set defaults
         self.load_settings()
@@ -182,7 +185,9 @@ class ControlPanel(QWidget):
         # Initialize status tab with current rect
         self.update_rect_label()
         self.refresh_preset_list()
-        self.show()
+        self.tray = SystemTray(self)
+        self.show_main_window()
+        self.overlay.show()
 
         # Align overlay to the right of the control panel with a slight delay
         # to ensure the window manager has placed the main window.
@@ -190,49 +195,57 @@ class ControlPanel(QWidget):
 
     def align_overlay(self):
         """Positions the overlay window next to the main window."""
-        # Force a refresh of the window's geometry information
-        QApplication.processEvents()
+        if self._closing:
+            return
 
         # Get the global position of the main window's frame
         rect = self.frameGeometry()
         target_x = rect.right() + 10
         target_y = rect.top()
 
-        # Move and then show the overlay
-        self.overlay.move(target_x, target_y)
-        self.overlay.show()
-
-        # For windows bypassing the WM, move after show is often more reliable
         self.overlay.move(target_x, target_y)
 
-    @Slot(bool)
-    def set_settings_always_on_top(self, enabled):
-        """Toggle the control panel's game-friendly topmost state from the overlay."""
-        self._settings_always_on_top = enabled
-
-        if self._macos_hotkey_window is not None:
-            if enabled:
-                self._macos_hotkey_window.show()
-            else:
-                self._macos_hotkey_window.lower()
+    @Slot()
+    def toggle_main_window(self):
+        if self._closing:
             return
-
-        if enabled:
-            # Keep the control panel decorated by the window manager.
-            # Qt.Tool / Qt.X11BypassWindowManagerHint can remove borders on some WMs,
-            # so the settings window uses normal flags plus always-on-top here.
-            self.setWindowFlags(self._normal_window_flags | Qt.WindowStaysOnTopHint)
-            self.setWindowFlag(Qt.WindowMaximizeButtonHint, False)
-            self.setAttribute(Qt.WA_ShowWithoutActivating, True)
-            self.show()
-            self.raise_()
-            self.activateWindow()
+        if self.isVisible() and not self.isMinimized():
+            self.hide_main_window()
         else:
-            self.setAttribute(Qt.WA_ShowWithoutActivating, False)
-            self.setWindowFlags(self._normal_window_flags)
-            self.setWindowFlag(Qt.WindowMaximizeButtonHint, False)
-            self.show()
-            self.lower()
+            self.show_main_window()
+
+    def show_main_window(self):
+        if self._closing:
+            return
+        self.setWindowState(self.windowState() & ~Qt.WindowMinimized)
+        if self._macos_hotkey_window is not None:
+            self._macos_hotkey_window.show()
+            return
+        # Retain normal window-manager decorations on Linux.
+        flags = self._normal_window_flags | Qt.WindowStaysOnTopHint
+        if self.windowFlags() != flags:
+            self.setWindowFlags(flags)
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
+    def hide_main_window(self):
+        self.hide()
+        if self._macos_hotkey_window is not None:
+            self._macos_hotkey_window.stop()
+
+    @Slot()
+    def toggle_overlay(self):
+        if self._closing:
+            return
+        if self.overlay.isVisible():
+            self.overlay.hide()
+        else:
+            self.overlay.show()
+            if self.overlay._macos_rules is not None:
+                self.overlay._macos_rules.order_front_without_activation()
+            else:
+                self.overlay.raise_()
 
     def on_font_changed(self, font):
         self.overlay.set_font_family(font.family())
@@ -408,7 +421,9 @@ class ControlPanel(QWidget):
     @Slot()
     def _handle_temporary_region_hotkey_pressed(self):
         if (
-            not self.worker.isRunning()
+            self._closing
+            or self._region_selecting
+            or not self.worker.isRunning()
             or self._temporary_region_selecting
             or not self._temporary_region_hotkey_armed
         ):
@@ -453,6 +468,13 @@ class ControlPanel(QWidget):
         self.region_controller.restore_main_region()
 
     def select_temporary_region(self):
+        if (
+            self._closing
+            or not self.worker.isRunning()
+            or self._temporary_region_selecting
+            or self._region_selecting
+        ):
+            return
         self._temporary_region_selecting = True
         try:
             rect, detected_dpi = self._get_selected_region_and_dpi()
@@ -463,12 +485,20 @@ class ControlPanel(QWidget):
             self._apply_temporary_region(rect, detected_dpi)
 
     def select_region(self):
+        if self._closing or self._region_selecting or self._temporary_region_selecting:
+            return
+        self._region_selecting = True
         QTimer.singleShot(200, self._select_region_now)
 
     def _select_region_now(self):
-        rect, detected_dpi = self._get_selected_region_and_dpi()
-        if rect:
-            self._apply_main_region(rect, detected_dpi)
+        try:
+            if self._closing:
+                return
+            rect, detected_dpi = self._get_selected_region_and_dpi()
+            if rect:
+                self._apply_main_region(rect, detected_dpi)
+        finally:
+            self._region_selecting = False
 
     def start(self):
         self.overlay.set_mode(True)
@@ -480,11 +510,24 @@ class ControlPanel(QWidget):
         self.perf_bar.setValue(0)
         self.perf_bar.setStyleSheet("")
 
+    @Slot()
+    def request_quit(self):
+        self._closing = True
+        self.close()
+
     def closeEvent(self, event):
+        if self._shutdown_complete:
+            event.accept()
+            return
+        if not self._closing and self.tray.available:
+            event.ignore()
+            self.hide_main_window()
+            return
+        self._closing = True
         if self.worker.isRunning():
             event.ignore()
-            if not self._closing:
-                self._closing = True
+            if not self._waiting_for_worker:
+                self._waiting_for_worker = True
                 self.worker.finished.connect(self.close)
                 self.controller.stop()
             return
@@ -495,9 +538,10 @@ class ControlPanel(QWidget):
         self.hotkey_controller.close()
         self.controller.stop()
         self.overlay.close()
+        self.tray.icon.hide()
+        self._shutdown_complete = True
         super().closeEvent(event)
-        if self._macos_hotkey_window is not None and event.isAccepted():
-            # Qt.Tool panels do not trigger quitOnLastWindowClosed.
+        if event.isAccepted():
             QApplication.instance().quit()
 
     # ---------- API Key Helpers ----------

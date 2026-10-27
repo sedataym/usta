@@ -22,6 +22,7 @@ def main():
 
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
+    app.setQuitOnLastWindowClosed(False)
 
     # Set application icon
     icon_path = os.path.join(os.path.dirname(__file__), "ui", "assets", "usta.png")

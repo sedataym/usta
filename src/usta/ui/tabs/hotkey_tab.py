@@ -161,7 +161,7 @@ class HotkeyTab(QWidget):
         tab_settings_layout.addWidget(QLabel(_("<b>Hotkeys</b>")))
 
         settings_topmost_tooltip = _(
-            "Use this shortcut to bring the main window to the front while playing a game or watching a video."
+            "Show or hide the main window. When shown, it stays above other windows."
         )
         temporary_region_tooltip = _(
             "Use this shortcut when you want to select an area outside your current selection. "
@@ -172,7 +172,7 @@ class HotkeyTab(QWidget):
         self.settings_topmost_hotkey_button.hotkeyChanged.connect(self.settings_hotkey_changed.emit)
         _add_hotkey_row(
             tab_settings_layout,
-            _("Settings topmost key:"),
+            _("Main window:"),
             self.settings_topmost_hotkey_button,
             self.reset_settings_requested,
             settings_topmost_tooltip,
@@ -182,7 +182,7 @@ class HotkeyTab(QWidget):
         self.temporary_region_hotkey_button.hotkeyChanged.connect(self.region_hotkey_changed.emit)
         _add_hotkey_row(
             tab_settings_layout,
-            _("Temporary region key:"),
+            _("Temporary region:"),
             self.temporary_region_hotkey_button,
             self.reset_region_requested,
             temporary_region_tooltip,

@@ -163,8 +163,8 @@ msgstr "<b>Kısayol Tuşları</b>"
 msgid "Settings topmost key:"
 msgstr "Ayarları üstte tutma tuşu:"
 
-msgid "Temporary region key:"
-msgstr "Geçici bölge tuşu:"
+msgid "Temporary region:"
+msgstr "Geçici bölge:"
 
 msgid ""
 "Use this shortcut to bring the main window to the front while playing a "
@@ -278,3 +278,27 @@ msgstr "Toplam süre ekran yakalama ve ön işlemeyi de içerir."
 msgid "Select Region"
 msgstr "Bölge Seç"
 
+
+msgid "Hide Main Window"
+msgstr "Ana ekranı gizle"
+
+msgid "Show Main Window"
+msgstr "Ana ekranı göster"
+
+msgid "Hide Overlay"
+msgstr "Overlay ekranını gizle"
+
+msgid "Show Overlay"
+msgstr "Overlay ekranını göster"
+
+msgid "Select Temporary Region"
+msgstr "Geçici bölge seç"
+
+msgid "Quit Application"
+msgstr "Uygulamayı kapat"
+
+msgid "Main window:"
+msgstr "Ana ekranı göster/gizle:"
+
+msgid "Show or hide the main window. When shown, it stays above other windows."
+msgstr "Ana ekranı gösterir veya gizler. Gösterildiğinde diğer pencerelerin üzerinde kalır."

@@ -38,8 +38,7 @@ class LinuxWindowContracts(unittest.TestCase):
         pump(150)  # Finish the normal startup overlay-position timer.
 
         def close():
-            if panel.isVisible():
-                panel.close()
+            panel.request_quit()
             panel.overlay.deleteLater()
             panel.deleteLater()
             pump()
@@ -47,7 +46,7 @@ class LinuxWindowContracts(unittest.TestCase):
         self.addCleanup(close)
         return panel, quit_app
 
-    def test_linux_settings_action_keeps_original_window_behavior(self):
+    def test_linux_visibility_action_preserves_topmost_and_decorations(self):
         panel, quit_app = self.make_control_panel("Linux")
         self.assertIsNone(panel._macos_hotkey_window)
         self.assertIsNone(panel.overlay._macos_rules)
@@ -55,13 +54,15 @@ class LinuxWindowContracts(unittest.TestCase):
             mock.patch.object(panel, "raise_") as raise_window,
             mock.patch.object(panel, "activateWindow") as activate,
         ):
-            panel.set_settings_always_on_top(True)
+            panel.hide_main_window()
+            panel.show_main_window()
             self.assertTrue(panel.windowFlags() & Qt.WindowStaysOnTopHint)
             raise_window.assert_called_once()
             activate.assert_called_once()
-        panel.set_settings_always_on_top(False)
-        self.assertFalse(panel.windowFlags() & Qt.WindowStaysOnTopHint)
-        panel.close()
+        panel.hide_main_window()
+        self.assertFalse(panel.isVisible())
+        self.assertTrue(panel.windowFlags() & Qt.WindowStaysOnTopHint)
+        self.assertFalse(panel.windowFlags() & Qt.FramelessWindowHint)
         quit_app.assert_not_called()
 
     def test_linux_region_selector_keeps_x11_flags_without_native_imports(self):
