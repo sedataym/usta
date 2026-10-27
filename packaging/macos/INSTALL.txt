@@ -1,0 +1,23 @@
+USTA for macOS — Apple Silicon (arm64), macOS 26 or newer
+
+Drag USTA.app to Applications, then open USTA from Applications.
+The disk image includes Python and the application dependencies.
+
+This build is ad-hoc signed, not Apple-notarized. macOS may ask you to
+approve the app in System Settings > Privacy & Security > Open Anyway.
+Only approve the build if you trust its source.
+
+Permissions (System Settings > Privacy & Security):
+- Screen & System Audio Recording: required to capture text on screen.
+- Accessibility: used by global shortcuts.
+- Input Monitoring: may also be required by the keyboard listener.
+Quit USTA from its tray menu and reopen it after changing permissions.
+
+RapidOCR and Apple Vision work locally. EasyOCR downloads its recognition
+models on first use and needs an internet connection for that download.
+Google/DeepL translation requires an internet connection; DeepL needs an API key.
+Tesseract requires a separate installation and its language data; it is not
+included in this image. PaddleOCR is an optional engine and is not bundled.
+
+Logs: ~/Library/Logs/USTA/usta.log
+Settings: ~/Library/Application Support/usta/

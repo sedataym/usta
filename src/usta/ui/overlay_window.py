@@ -121,6 +121,7 @@ class TransparentOverlay(QWidget):
         self.bg_opacity = 180
         self._show_corner_lines = False
 
+        self._showing_error = False
         self.label = CornerLabel(self)
         self.label.setText(_("Translation will appear here."))
         self.label.setAttribute(Qt.WA_TransparentForMouseEvents)
@@ -238,6 +239,7 @@ class TransparentOverlay(QWidget):
 
     @Slot(str)
     def update_text(self, text):
+        self._showing_error = False
         self.label.setText(text)
         if self.isVisible():
             if self._macos_rules is not None:
@@ -245,6 +247,11 @@ class TransparentOverlay(QWidget):
             else:
                 self.raise_()
         self.hide_timer.start(10000)
+
+    @Slot(str)
+    def show_error(self, text):
+        self.update_text(text)
+        self._showing_error = True
 
     def _toggle_main_window_visibility(self):
         self.main_window_visibility_toggle_requested.emit()
@@ -275,10 +282,14 @@ class TransparentOverlay(QWidget):
         if self._drag_mode is None:
             self._update_hover_cursor(self.mapFromGlobal(QCursor.pos()))
         if scan:
+            if self._showing_error:
+                self._showing_error = False
+                self.label.setText(_("Translation will appear here."))
             self.hide_timer.start(10000)
         else:
             self.hide_timer.stop()
-            self.label.setText(_("Translation will appear here."))
+            if not self._showing_error:
+                self.label.setText(_("Translation will appear here."))
 
     def _resize_edges_at(self, position):
         edges = Qt.Edges()

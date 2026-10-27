@@ -267,6 +267,15 @@ class ControlPanelTests(unittest.TestCase):
         self.panel.settings_presenter.save_preset()
         self.assertEqual(path.read_text(), raw)
 
+    def test_capture_error_remains_visible_after_worker_stops_and_clears_on_restart(self):
+        panel = self.panel
+        panel.worker.error_occurred.emit("Screen Recording unavailable")
+        panel.update_system_status(False)
+        self.assertEqual(panel.overlay.label.text(), "Screen Recording unavailable")
+        with mock.patch.object(panel.controller, "start"):
+            panel.start()
+        self.assertNotEqual(panel.overlay.label.text(), "Screen Recording unavailable")
+
     def test_running_status_restores_overlay_mode_after_queued_restart(self):
         with mock.patch.object(self.panel.overlay, "set_mode") as mode:
             self.panel.update_system_status(False)

@@ -69,7 +69,8 @@ class OCRWorker(QThread):
     @Slot(object)
     def _deliver_error(self, payload):
         session, text = payload
-        if self.pipeline.is_current(session):
+        # Fatal capture errors belong to the just-stopped session as well.
+        if session == self.pipeline.session_id:
             self.error_occurred.emit(text)
 
     @property

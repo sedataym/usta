@@ -172,7 +172,7 @@ class ControlPanel(QWidget):
         self.btn_stop.clicked.connect(self.stop)
         layout.addWidget(self.btn_stop)
 
-        self.worker.error_occurred.connect(self.overlay.update_text)
+        self.worker.error_occurred.connect(self.overlay.show_error)
         self.worker.new_translation.connect(self.overlay.update_text)
         self.worker.performance_update.connect(self.update_performance_bar)
         self.worker.timings_update.connect(self.status_tab.update_timings)

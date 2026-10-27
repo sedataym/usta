@@ -33,6 +33,7 @@ dependencies = [
     "Babel>=2.12.0",
     "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
     "pyobjc-framework-Vision>=10.0; sys_platform == 'darwin'",
+    "pyobjc-framework-ScreenCaptureKit>=12.0; sys_platform == 'darwin'",
 ]
 
 [project.urls]

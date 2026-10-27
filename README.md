@@ -267,3 +267,7 @@ main window with **X** hides it; use **Quit Application** in the tray menu to ex
 On Linux, a desktop with system tray support is required to display the icon
 (some GNOME configurations need a tray extension). If no tray is available, **X**
 exits normally so the application cannot become inaccessible in the background.
+
+## macOS application package
+
+See [Building and installing the macOS DMG](docs/macos-dmg.md) for the Apple Silicon build recipe, bundled engines, permissions and signing details.

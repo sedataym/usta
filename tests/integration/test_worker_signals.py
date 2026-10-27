@@ -46,3 +46,39 @@ class WorkerSignalsTests(unittest.TestCase):
         worker.stop()
         self.app.processEvents()
         self.assertEqual(received, [])
+
+    def test_fatal_capture_error_reaches_gui_after_pipeline_stops(self):
+        from unittest.mock import Mock
+
+        from usta.core.exceptions import ScreenCapturePermissionError
+
+        worker = OCRWorker()
+        self.addCleanup(worker.close)
+        received = []
+        worker.error_occurred.connect(received.append)
+        capture = Mock()
+        capture.capture.side_effect = ScreenCapturePermissionError("Screen Recording unavailable")
+        worker.pipeline.capture_factory = lambda name: capture
+        worker.pipeline.ocr_factory = Mock
+        worker.pipeline.publisher = Mock()
+        worker.pipeline.start()
+        producer = threading.Thread(target=worker.pipeline.run)
+        producer.start()
+        producer.join(timeout=2)
+        self.assertFalse(producer.is_alive())
+        self.app.processEvents()
+        self.assertEqual(received, ["Screen Recording unavailable"])
+
+    def test_queued_error_is_discarded_after_a_new_session_starts(self):
+        worker = OCRWorker()
+        self.addCleanup(worker.close)
+        received = []
+        worker.error_occurred.connect(received.append)
+        worker.pipeline.start()
+        producer = threading.Thread(target=lambda: worker.pipeline.on_error("old error"))
+        producer.start()
+        producer.join()
+        worker.stop()
+        worker.pipeline.start()
+        self.app.processEvents()
+        self.assertEqual(received, [])

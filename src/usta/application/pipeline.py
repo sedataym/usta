@@ -9,7 +9,7 @@ from copy import deepcopy
 from usta.application.results import PerformanceTimings, TranslationRequest
 from usta.application.settings import AppSettings
 from usta.config import get_language_code
-from usta.core.exceptions import PortalCanceledError
+from usta.core.exceptions import PortalCanceledError, ScreenCaptureError
 from usta.core.ocr.ocr_manager import OCRManager
 from usta.core.translation.translator_manager import TranslatorManager
 
@@ -195,6 +195,9 @@ class Pipeline:
                                 )
                                 last_text = text
                                 self.on_translating(True)
+                except ScreenCaptureError as exc:
+                    self.stop()
+                    self.on_error(str(exc))
                 except PortalCanceledError:
                     self.stop()
                 except Exception as exc:

@@ -72,3 +72,6 @@ target/
 
 # Local native/runtime scratch
 /:memory:.ses
+
+# Reusable macOS build recipe
+!packaging/macos/usta.spec
