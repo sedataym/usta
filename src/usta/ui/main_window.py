@@ -2,7 +2,7 @@ import logging
 import os
 
 from PySide6.QtCore import QSignalBlocker, QSize, Qt, QTimer, Signal, Slot
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QColor, QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QColorDialog,
@@ -382,7 +382,8 @@ class ControlPanel(QWidget):
         self.save_settings()
 
     def choose_color(self):
-        color = QColorDialog.getColor()
+        # Parent dialogs to the Tool panel so closing them cannot quit the app.
+        color = QColorDialog.getColor(QColor(self.overlay.font_color), self)
         if color.isValid():
             color_name = color.name()
             self.overlay.set_font_color(color_name)
@@ -392,7 +393,7 @@ class ControlPanel(QWidget):
             self.save_settings()
 
     def choose_bg_color(self):
-        color = QColorDialog.getColor()
+        color = QColorDialog.getColor(QColor(self.overlay.bg_color), self)
         if color.isValid():
             color_name = color.name()
             self.overlay.set_bg_color(color_name)

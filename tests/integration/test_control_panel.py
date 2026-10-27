@@ -3,8 +3,10 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from PySide6.QtCore import QRect
-from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QRect, Qt, QTimer
+from PySide6.QtGui import QColor
+from PySide6.QtTest import QSignalSpy
+from PySide6.QtWidgets import QApplication, QColorDialog
 
 from usta.application.settings import AppSettings, Preset
 from usta.infrastructure.settings_store import SettingsStore
@@ -47,6 +49,60 @@ class ControlPanelTests(unittest.TestCase):
         self.panel.appearance_tab.font_size_spin.setValue(28)
         self.save_spy.assert_called_once()
         self.assertEqual(self.store.load().translator_api_keys, {"DeepL": "secret"})
+
+    def test_color_dialog_accept_and_cancel_keep_tool_panel_alive(self):
+        # macOS uses a Tool panel, which does not count towards Qt's last window.
+        self.panel.setWindowFlag(Qt.Tool, True)
+        self.panel.show()
+        self.app.processEvents()
+        for button, field, sample in (
+            (
+                self.panel.appearance_tab.btn_color,
+                "font_color",
+                self.panel.appearance_tab.color_sample,
+            ),
+            (
+                self.panel.appearance_tab.btn_bg_color,
+                "bg_color",
+                self.panel.appearance_tab.bg_color_sample,
+            ),
+        ):
+            for accept in (True, False):
+                with self.subTest(field=field, accept=accept):
+                    before = getattr(self.store.load(), field)
+                    last_closed = QSignalSpy(self.app.lastWindowClosed)
+                    self.save_spy.reset_mock()
+
+                    def finish_dialog():
+                        dialog = next(
+                            w
+                            for w in self.app.topLevelWidgets()
+                            if isinstance(w, QColorDialog) and w.isVisible()
+                        )
+                        dialog.setCurrentColor(QColor("#123456" if accept else "#abcdef"))
+                        if accept:
+                            dialog.accept()
+                        else:
+                            dialog.reject()
+
+                    def choose():
+                        QTimer.singleShot(0, finish_dialog)
+                        button.click()
+
+                    QTimer.singleShot(0, choose)
+                    exit_timer = QTimer()
+                    exit_timer.setSingleShot(True)
+                    exit_timer.timeout.connect(lambda: self.app.exit(0))
+                    exit_timer.start(50)
+                    self.app.exec()
+                    exit_timer.stop()
+                    self.assertEqual(last_closed.count(), 0)
+                    self.assertTrue(self.panel.isVisible())
+                    expected = "#123456" if accept else before
+                    self.assertEqual(getattr(self.panel.overlay, field), expected)
+                    self.assertEqual(getattr(self.store.load(), field), expected)
+                    self.assertIn(expected, sample.styleSheet())
+                    self.assertEqual(self.save_spy.call_count, 1 if accept else 0)
 
     def test_preset_cancels_temporary_restore(self):
         panel = self.panel
