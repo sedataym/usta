@@ -273,31 +273,37 @@ class ControlPanelTests(unittest.TestCase):
             self.panel.update_system_status(True)
             self.assertEqual(mode.call_args_list, [mock.call(False), mock.call(True)])
 
-    def test_region_status_uses_available_system_fixed_font(self):
-        from PySide6.QtGui import QFontDatabase
+    def test_status_does_not_increase_main_window_height(self):
+        panel = self.panel
+        other_tab_height = max(
+            panel.tabs.widget(index).minimumSizeHint().height()
+            for index in range(panel.tabs.count())
+            if panel.tabs.widget(index) is not panel.status_tab
+        )
+        self.assertLessEqual(panel.status_tab.minimumSizeHint().height(), other_tab_height)
 
-        label = self.panel.status_tab.rect_label_status
-        fixed = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
-        self.assertEqual(label.font().family(), fixed.family())
-        self.assertNotIn("monospace", label.styleSheet().lower())
-
-    def test_stage_timings_are_single_line_above_region(self):
-        from types import SimpleNamespace
+    def test_region_status_displays_coordinates_and_dimensions_separately(self):
+        from PySide6.QtGui import QFontInfo
 
         tab = self.panel.status_tab
-        self.panel.worker.timings_update.emit(
-            SimpleNamespace(ocr_seconds=0.32, translation_seconds=1.28, total_seconds=1.82)
-        )
-        text = tab.timings_label.text()
-        for value in ("0.32", "1.28", "1.82"):
-            self.assertIn(value, text)
-        self.assertNotIn("\n", text)
-        self.assertFalse(tab.timings_label.wordWrap())
-        self.assertLess(
-            tab.layout().indexOf(tab.timings_label), tab.layout().indexOf(tab.rect_label_status)
-        )
+        self.panel._apply_main_region(QRect(-1920, 120, 1280, 720))
+        self.assertEqual(tab.region_position.text(), "X -1920   Y 120")
+        self.assertEqual(tab.region_size.text(), "1280 × 720 px")
+        for label in (tab.region_position, tab.region_size):
+            self.assertTrue(QFontInfo(label.font()).fixedPitch())
+
+    def test_stage_timings_update_individual_digital_displays_and_reset(self):
+        from usta.application.results import PerformanceTimings
+
+        tab = self.panel.status_tab
+        self.panel.worker.timings_update.emit(PerformanceTimings(0.32, 1.28, 1.82))
+        self.assertAlmostEqual(tab.ocr_value.value(), 0.32)
+        self.assertAlmostEqual(tab.translation_value.value(), 1.28)
+        self.assertAlmostEqual(tab.total_value.value(), 1.82)
         self.panel.update_system_status(False)
-        self.assertNotIn("1.82", tab.timings_label.text())
+        for display in (tab.ocr_value, tab.translation_value, tab.total_value):
+            self.assertEqual(display.value(), 0)
+            self.assertIn("—", display.accessibleDescription())
 
     def test_region_button_uses_selection_icon_instead_of_emoji(self):
         self.assertNotIn("🖼", self.panel.btn_reg.text())

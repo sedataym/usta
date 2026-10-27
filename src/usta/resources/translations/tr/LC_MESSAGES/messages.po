@@ -302,3 +302,9 @@ msgstr "Ana ekranı göster/gizle:"
 
 msgid "Show or hide the main window. When shown, it stays above other windows."
 msgstr "Ana ekranı gösterir veya gizler. Gösterildiğinde diğer pencerelerin üzerinde kalır."
+
+msgid "Total"
+msgstr "Toplam"
+
+msgid "Region"
+msgstr "Bölge"

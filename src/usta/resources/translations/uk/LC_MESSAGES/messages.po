@@ -318,3 +318,9 @@ msgstr "Головне вікно:"
 
 msgid "Show or hide the main window. When shown, it stays above other windows."
 msgstr "Показати або приховати головне вікно. Коли воно показане, воно залишається поверх інших вікон."
+
+msgid "Total"
+msgstr "Загалом"
+
+msgid "Region"
+msgstr "Область"

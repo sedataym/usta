@@ -341,12 +341,12 @@ class ControlPanel(QWidget):
         self.overlay.set_mode(is_running)
         if is_running:
             self.status_tab.system_indicator.setStyleSheet(
-                "background-color: #2E7D32; border-radius: 8px;"
+                "background-color: #2E7D32; border-radius: 4px;"
             )
             self.status_tab.system_status_label.setText(_("Running"))
         else:
             self.status_tab.system_indicator.setStyleSheet(
-                "background-color: #C62828; border-radius: 8px;"
+                "background-color: #C62828; border-radius: 4px;"
             )
             self.status_tab.system_status_label.setText(_("Stopped"))
             self.status_tab.reset_timings()
@@ -354,10 +354,7 @@ class ControlPanel(QWidget):
             self.perf_bar.setStyleSheet("")
 
     def update_rect_label(self):
-        r = self.controller.capture_rect
-        self.status_tab.rect_label_status.setText(
-            _("Region: X:{x} Y:{y}  {w}×{h}").format(x=r.x(), y=r.y(), w=r.width(), h=r.height())
-        )
+        self.status_tab.update_region(self.controller.capture_rect)
 
     def update_performance_bar(self, duration):
         # Capture + preprocessing + OCR + translation: 0.5s -> 100%, 3.0s -> 0%.
