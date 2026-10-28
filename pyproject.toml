@@ -8,13 +8,14 @@ dynamic = ["version"]
 authors = [
   { name="Sedat Ayma" },
 ]
-description = "High-performance, PySide6-based instant translation HUD for Linux."
+description = "High-performance, PySide6-based instant translation HUD for Linux and macOS."
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GPL-3.0 License",
     "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
     "Topic :: Multimedia :: Video",
     "Topic :: Utilities",
 ]
@@ -29,7 +30,7 @@ dependencies = [
     "googletrans==4.0.2",
     "python-dotenv>=1.0.0",
     "Pillow>=10.0.0",
-    "dbus-next>=0.2.3",
+    "dbus-next>=0.2.3; sys_platform == 'linux'",
     "Babel>=2.12.0",
     "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
     "pyobjc-framework-Vision>=10.0; sys_platform == 'darwin'",
