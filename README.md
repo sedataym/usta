@@ -54,6 +54,7 @@ While currently focused on KDE/Linux, support for the following is planned:
 - [ ] **Native Linux Packaging:** Distribution via `.deb` (Debian/Ubuntu), AUR (Arch Linux), and **Flatpak**.
 - [ ] **Other Linux DEs:** Full native Wayland support without xcb.
 - [ ] **Windows Support:** Integration with Windows-native capture and OCR APIs.
+- [ ] **Plugin Support:** Extend USTA with plugins.
 - [x] **macOS Support:** Native capture, Apple Vision OCR, fullscreen overlays and global shortcuts.
 
 ---
@@ -235,20 +236,6 @@ See [CONTRIBUTING](CONTRIBUTING.md) for development setup, tests and code standa
 * **Translation:** googletrans, DeepL API
 * **Desktop Environments:** KDE Plasma (optimized) / GNOME
 
----
-
-## ⚠️ Legal Disclaimer and User Responsibility
-
-USTA is provided as-is, without any express or implied warranties, guarantees, or assurances of fitness for a particular purpose. By installing, running, modifying, or distributing this application, you acknowledge that you do so entirely at your own risk.
-
-The user is solely responsible for any and all consequences, damages, losses, liabilities, or legal issues that may arise from the use or misuse of USTA. This includes, but is not limited to, damage to the computer or operating system on which the application is run, loss or corruption of data, performance degradation, privacy or security incidents, unintended screen capture, incorrect OCR output, inaccurate translations, interruption of other applications, or conflicts with system components, drivers, desktop environments, capture portals, OCR engines, translation services, and third-party dependencies.
-
-USTA may process visible screen content, interact with local desktop capture mechanisms, use OCR engines, communicate with translation providers, and expose translation data through local IPC features. Users are responsible for ensuring that their use of the application complies with all applicable laws, regulations, software licenses, platform terms of service, privacy obligations, copyright rules, workplace policies, game or media service terms, and any restrictions related to capturing, processing, translating, storing, broadcasting, or sharing on-screen content.
-
-The developers, maintainers, contributors, and distributors of USTA shall not be held liable for any direct, indirect, incidental, consequential, special, exemplary, or punitive damages resulting from the application, including damages caused by user configuration, third-party services, external integrations, dependency behavior, system incompatibilities, or any other circumstance connected to the use of the software.
-
-If you do not accept full responsibility for the risks described above, you should not install, run, or use USTA.
-
 ## System tray and window shortcuts
 
 At startup, a balloon points to the tray icon for ten seconds to show where the USTA menu is. It does not require notification permission or take keyboard focus.
@@ -270,8 +257,20 @@ On Linux, a desktop with system tray support is required to display the icon
 (some GNOME configurations need a tray extension). If no tray is available, **X**
 exits normally so the application cannot become inaccessible in the background.
 
-## macOS application package
+## macOS installation
 
-See [Building and installing the macOS DMG](docs/macos-dmg.md) for the Apple Silicon build recipe, bundled engines, permissions and signing details.
+Download the `.dmg` file from the [latest release](https://github.com/sedataym/usta/releases/latest), open it, and drag USTA into the Applications folder to install.
 
-Apple-trusted distribution DMGs require a Developer ID Application identity and notarization. Free persistent self-signed builds use `USTA_SIGNING_MODE=self-signed` with the pinned Keychain certificate and produce `-selfsigned.dmg`; they are not Apple-notarized. The build refuses silent ad-hoc fallback; explicit local builds use `USTA_ALLOW_ADHOC=1` and a `-dev.dmg` filename. See [macOS signing setup](docs/macos-dmg.md).
+---
+
+## ⚠️ Legal Disclaimer and User Responsibility
+
+USTA is provided as-is, without any express or implied warranties, guarantees, or assurances of fitness for a particular purpose. By installing, running, modifying, or distributing this application, you acknowledge that you do so entirely at your own risk.
+
+The user is solely responsible for any and all consequences, damages, losses, liabilities, or legal issues that may arise from the use or misuse of USTA. This includes, but is not limited to, damage to the computer or operating system on which the application is run, loss or corruption of data, performance degradation, privacy or security incidents, unintended screen capture, incorrect OCR output, inaccurate translations, interruption of other applications, or conflicts with system components, drivers, desktop environments, capture portals, OCR engines, translation services, and third-party dependencies.
+
+USTA may process visible screen content, interact with local desktop capture mechanisms, use OCR engines, communicate with translation providers, and expose translation data through local IPC features. Users are responsible for ensuring that their use of the application complies with all applicable laws, regulations, software licenses, platform terms of service, privacy obligations, copyright rules, workplace policies, game or media service terms, and any restrictions related to capturing, processing, translating, storing, broadcasting, or sharing on-screen content.
+
+The developers, maintainers, contributors, and distributors of USTA shall not be held liable for any direct, indirect, incidental, consequential, special, exemplary, or punitive damages resulting from the application, including damages caused by user configuration, third-party services, external integrations, dependency behavior, system incompatibilities, or any other circumstance connected to the use of the software.
+
+If you do not accept full responsibility for the risks described above, you should not install, run, or use USTA.
