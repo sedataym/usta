@@ -1,0 +1,27 @@
+name: Package
+on:
+  push:
+  pull_request:
+jobs:
+  artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y libegl1 libopengl0 libxkbcommon0
+      - run: python -m pip install '.[dev]'
+      - run: python -m build
+      - run: USTA_REQUIRE_ARTIFACTS=1 python -m unittest tests.packaging.test_artifacts -v
+      - name: Install wheel into a clean environment
+        run: |
+          python -m venv /tmp/usta-wheel-test
+          /tmp/usta-wheel-test/bin/python -m pip install dist/*.whl
+          cd /tmp
+          /tmp/usta-wheel-test/bin/python -c "from importlib.metadata import distribution; from usta.resource_paths import resource_path; import usta.main; assert resource_path('resources/translations/tr/LC_MESSAGES/messages.mo').is_file(); assert any(e.name == 'usta' for e in distribution('usta').entry_points)"
+          /tmp/usta-wheel-test/bin/python -m pip check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-distributions
+          path: dist/*

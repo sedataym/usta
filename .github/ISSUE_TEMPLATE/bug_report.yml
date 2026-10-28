@@ -1,0 +1,17 @@
+name: Bug report
+description: Report a reproducible application problem
+body:
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS/version, CPU architecture, desktop/session, Python, Qt and selected OCR/translation/capture engines.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps and expected/actual behavior
+      description: Include relevant diagnostics, but remove API keys and private screen content.
+    validations:
+      required: true

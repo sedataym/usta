@@ -1,0 +1,329 @@
+# Ukrainian translations for USTA.
+# Copyright (C) 2026 Sedat Ayma
+# This file is distributed under the same license as the USTA project.
+# Sedat Ayma <sedataym@example.com>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: USTA 0.1.5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-12 13:28+0300\n"
+"PO-Revision-Date: 2026-08-12 13:28+0300\n"
+"Last-Translator: Sedat Ayma\n"
+"Language: uk\n"
+"Language-Team: Ukrainian\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: src/ui/main_window.py:62
+msgid "Status"
+msgstr "Стан"
+
+#: src/ui/main_window.py:63
+msgid "OCR"
+msgstr "OCR"
+
+#: src/ui/main_window.py:64
+msgid "Translation"
+msgstr "Переклад"
+
+#: src/ui/main_window.py:65
+msgid "Appearance"
+msgstr "Вигляд"
+
+#: src/ui/main_window.py:66
+msgid "Save"
+msgstr "Зберегти"
+
+#: src/ui/main_window.py:67
+msgid "Hotkeys"
+msgstr "Гарячі клавіші"
+
+#: src/ui/main_window.py:68
+msgid "About"
+msgstr "Про програму"
+
+#: src/ui/main_window.py:74
+msgid "<br><b>Performance</b>"
+msgstr "<br><b>Продуктивність</b>"
+
+#: src/ui/main_window.py:83
+msgid "<b>Controls</b>"
+msgstr "<b>Керування</b>"
+
+#: src/ui/main_window.py:84
+msgid "🖼 Select Region"
+msgstr "🖼 Вибрати область"
+
+#: src/ui/main_window.py:89
+msgid "▶ Start"
+msgstr "▶ Запустити"
+
+#: src/ui/main_window.py:94
+msgid "■ Stop"
+msgstr "■ Зупинити"
+
+#: src/ui/main_window.py:168 src/ui/main_window.py:175
+msgid "DPI locked (click to unlock)"
+msgstr "DPI заблоковано (натисніть, щоб розблокувати)"
+
+#: src/ui/main_window.py:178 src/ui/tabs/ocr_tab.py:32
+msgid "DPI unlocked (click to lock)"
+msgstr "DPI розблоковано (натисніть, щоб заблокувати)"
+
+#: src/ui/main_window.py:301 src/ui/main_window.py:321
+msgid "Invalid shortcut"
+msgstr "Недійсне сполучення клавіш"
+
+#: src/ui/main_window.py:301 src/ui/main_window.py:321
+msgid "Could not register this shortcut. The previous shortcut is still active."
+msgstr ""
+"Не вдалося зареєструвати це сполучення клавіш. Попереднє сполучення все "
+"ще активне."
+
+#: src/ui/main_window.py:355
+#, python-brace-format
+msgid "Region: X:{x} Y:{y}  {w}×{h}"
+msgstr "Область: X:{x} Y:{y}  {w}×{h}"
+
+#: src/ui/main_window.py:537
+msgid "This engine does not require an API key"
+msgstr "Цей рушій не потребує API-ключа"
+
+#: src/ui/main_window.py:612
+msgid "No Selection"
+msgstr "Нічого не вибрано"
+
+#: src/ui/main_window.py:612
+msgid "Please select a preset to load."
+msgstr "Виберіть пресет для завантаження."
+
+#: src/ui/overlay_window.py:236
+msgid "Translation will appear here."
+msgstr "Переклад з’явиться тут."
+
+#: src/ui/tabs/about_tab.py:10
+msgid "<b>Universal Screen Translator Application</b>"
+msgstr "<b>Universal Screen Translator Application</b>"
+
+#: src/ui/tabs/about_tab.py:13
+#, python-brace-format
+msgid "Version: {version}"
+msgstr "Версія: {version}"
+
+#: src/ui/tabs/about_tab.py:15
+msgid "A real-time OCR-based translation tool."
+msgstr "OCR-перекладач у реальному часі."
+
+#: src/ui/tabs/about_tab.py:16
+msgid "Select a screen region, capture text via OCR,"
+msgstr "Виберіть ділянку та захопіть текст,"
+
+#: src/ui/tabs/about_tab.py:17
+msgid "and translate instantly with Google or DeepL."
+msgstr "Google чи DeepL з миттєвим перекладом."
+
+#: src/ui/tabs/appearance_tab.py:12
+msgid "Font Family:"
+msgstr "Сімейство шрифтів:"
+
+#: src/ui/tabs/appearance_tab.py:19
+msgid "Size:"
+msgstr "Розмір:"
+
+#: src/ui/tabs/appearance_tab.py:29
+msgid "🎨 Text Color"
+msgstr "🎨 Колір тексту"
+
+#: src/ui/tabs/appearance_tab.py:38
+msgid "🎨 Background"
+msgstr "🎨 Тло"
+
+#: src/ui/tabs/appearance_tab.py:49
+msgid "Background Opacity:"
+msgstr "Непрозорість тла:"
+
+#: src/ui/tabs/hotkey_tab.py:72
+msgid "Press shortcut..."
+msgstr "Натисніть сполучення клавіш..."
+
+#: src/ui/tabs/hotkey_tab.py:130
+msgid "Click to set shortcut"
+msgstr "Натисніть, щоб встановити сполучення"
+
+#: src/ui/tabs/hotkey_tab.py:140
+msgid "Reset"
+msgstr "Скинути"
+
+#: src/ui/tabs/hotkey_tab.py:151
+msgid "<b>Hotkeys</b>"
+msgstr "<b>Гарячі клавіші</b>"
+
+#: src/ui/tabs/hotkey_tab.py:154
+msgid ""
+"Use this shortcut to bring the main window to the front while playing a "
+"game or watching a video."
+msgstr ""
+"Використовуйте це сполучення клавіш, щоб вивести головне вікно на "
+"передній план під час гри або перегляду відео."
+
+#: src/ui/tabs/hotkey_tab.py:157
+msgid ""
+"Use this shortcut when you want to select an area outside your current "
+"selection. The temporary area you select will be active for 10 seconds."
+msgstr ""
+"Використовуйте це сполучення клавіш, коли потрібно вибрати область поза "
+"поточним виділенням. Вибрана тимчасова область буде активною протягом 10 "
+"секунд."
+
+#: src/ui/tabs/hotkey_tab.py:165
+msgid "Settings topmost key:"
+msgstr "Закріплення екрана:"
+
+#: src/ui/tabs/hotkey_tab.py:175
+msgid "Temporary region:"
+msgstr "Тимчасова область:"
+
+#: src/ui/tabs/hotkey_tab.py:181
+msgid "Click a shortcut field, then press the key combination you want to use."
+msgstr ""
+"Натисніть поле сполучення клавіш, а потім натисніть комбінацію клавіш, "
+"яку хочете використовувати."
+
+#: src/ui/tabs/ocr_tab.py:11
+msgid "OCR Engine:"
+msgstr "Рушій OCR:"
+
+#: src/ui/tabs/ocr_tab.py:19
+msgid "Screen Engine:"
+msgstr "Рушій екрана:"
+
+#: src/ui/tabs/ocr_tab.py:30
+msgid "DPI Scale:"
+msgstr "Масштаб DPI:"
+
+#: src/ui/tabs/ocr_tab.py:44
+msgid ""
+"Scale factor for high-DPI monitors.\n"
+"Auto-detected when selecting a region."
+msgstr ""
+"Коефіцієнт масштабування для моніторів із високим DPI.\n"
+"Автоматично визначається під час вибору області."
+
+#: src/ui/tabs/save_tab.py:12
+msgid "Preset Name:"
+msgstr "Назва пресета:"
+
+#: src/ui/tabs/save_tab.py:14
+msgid "Enter preset name..."
+msgstr "Введіть назву пресета..."
+
+#: src/ui/tabs/save_tab.py:19
+msgid "💾 Save"
+msgstr "💾 Зберегти"
+
+#: src/ui/tabs/save_tab.py:23
+msgid "📂 Load"
+msgstr "📂 Завантажити"
+
+#: src/ui/tabs/save_tab.py:27
+msgid "🗑 Delete"
+msgstr "🗑 Видалити"
+
+#: src/ui/tabs/save_tab.py:32
+msgid "Saved Presets:"
+msgstr "Збережені пресети:"
+
+#: src/ui/tabs/status_tab.py:27
+msgid "Region: —"
+msgstr "Область: —"
+
+#: src/ui/tabs/translation_tab.py:11
+msgid "Translation Engine:"
+msgstr "Рушій перекладу:"
+
+#: src/ui/tabs/translation_tab.py:22
+msgid "Source Language:"
+msgstr "Мова джерела:"
+
+#: src/ui/tabs/translation_tab.py:32
+msgid "Target Language:"
+msgstr "Цільова мова:"
+
+#: src/ui/tabs/translation_tab.py:42
+msgid "API Key"
+msgstr "API-ключ"
+
+#: src/ui/tabs/translation_tab.py:46
+msgid "Enter API key..."
+msgstr "Введіть API-ключ..."
+
+msgid "Running"
+msgstr "Працює"
+
+msgid "Stopped"
+msgstr "Зупинено"
+
+msgid "No Name"
+msgstr "Немає назви"
+
+msgid "Please enter a preset name."
+msgstr "Введіть назву набору налаштувань."
+
+msgid "Not Found"
+msgstr "Не знайдено"
+
+msgid "Please select a preset to delete."
+msgstr "Виберіть набір налаштувань для видалення."
+
+#, python-brace-format
+msgid "Preset '{name}' not found."
+msgstr "Набір налаштувань '{name}' не знайдено."
+
+#, python-brace-format
+msgid "OCR: {ocr} s | Translation: {translation} s | Total: {total} s"
+msgstr "OCR: {ocr} с | Переклад: {translation} с | Разом: {total} с"
+
+msgid "Total includes screen capture and preprocessing."
+msgstr "Загальний час також включає захоплення екрана та попередню обробку."
+
+msgid "Select Region"
+msgstr "Вибрати область"
+
+
+msgid "Hide Main Window"
+msgstr "Приховати головне вікно"
+
+msgid "Show Main Window"
+msgstr "Показати головне вікно"
+
+msgid "Hide Overlay"
+msgstr "Приховати накладення"
+
+msgid "Show Overlay"
+msgstr "Показати накладення"
+
+msgid "Select Temporary Region"
+msgstr "Вибрати тимчасову область"
+
+msgid "Quit Application"
+msgstr "Вийти з програми"
+
+msgid "Main window:"
+msgstr "Головне вікно:"
+
+msgid "Show or hide the main window. When shown, it stays above other windows."
+msgstr "Показати або приховати головне вікно. Коли воно показане, воно залишається поверх інших вікон."
+
+msgid "Total"
+msgstr "Загалом"
+
+msgid "Region"
+msgstr "Область"
+
+msgid "You can access the USTA menu here."
+msgstr "Меню USTA доступне тут."

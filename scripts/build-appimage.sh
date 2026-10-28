@@ -35,15 +35,7 @@ EOF
   exit 1
 fi
 
-APP_VERSION="${APP_VERSION:-$(${PYTHON_BIN} - <<'PY'
-import re
-from pathlib import Path
-
-config = Path("src/config.py").read_text(encoding="utf-8")
-match = re.search(r'^APP_VERSION\s*=\s*["\']([^"\']+)["\']', config, re.M)
-print(match.group(1) if match else "0.0.0")
-PY
-)}"
+APP_VERSION="${APP_VERSION:-$(${PYTHON_BIN} -c 'import runpy; print(runpy.run_path("src/usta/_version.py")["__version__"])')}"
 
 if ! command -v "${APPIMAGETOOL}" >/dev/null 2>&1; then
   LOCAL_APPIMAGETOOL="${BUILD_DIR}/appimagetool-${APPIMAGE_ARCH}.AppImage"
@@ -86,7 +78,6 @@ mkdir -p \
 
 echo "Installing Python package payload from ${PYTHON_BIN} into ${APPDIR}/usr/app/site-packages"
 "${PYTHON_BIN}" -m pip install --upgrade pip setuptools wheel
-"${PYTHON_BIN}" -m pip install --upgrade --target "${APPDIR}/usr/app/site-packages" -r requirements.txt
 "${PYTHON_BIN}" -m pip install --upgrade --target "${APPDIR}/usr/app/site-packages" .
 
 PYTHON_REAL="$(${PYTHON_BIN} -c 'import sys; print(sys.executable)')"
@@ -104,8 +95,8 @@ chmod +x "${APPDIR}/AppRun" "${APPDIR}/usr/bin/python3"
 
 cp "${ROOT_DIR}/packaging/appimage/usta.desktop" "${APPDIR}/usta.desktop"
 cp "${ROOT_DIR}/packaging/appimage/usta.desktop" "${APPDIR}/usr/share/applications/usta.desktop"
-cp "${ROOT_DIR}/src/ui/assets/usta.png" "${APPDIR}/usta.png"
-cp "${ROOT_DIR}/src/ui/assets/usta.png" "${APPDIR}/usr/share/icons/hicolor/256x256/apps/usta.png"
+cp "${ROOT_DIR}/src/usta/ui/assets/usta.png" "${APPDIR}/usta.png"
+cp "${ROOT_DIR}/src/usta/ui/assets/usta.png" "${APPDIR}/usr/share/icons/hicolor/256x256/apps/usta.png"
 
 OUTPUT="${DIST_DIR}/USTA-${APP_VERSION}-${APPIMAGE_ARCH}.AppImage"
 rm -f "${OUTPUT}"

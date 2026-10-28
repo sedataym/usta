@@ -1,11 +1,11 @@
 # USTA (Universal Screen Translator Application)
 Real-time OCR translation for games, videos and desktop.
 
-[![USTA demo cover](src/ui/assets/usta_cover.png)](https://www.youtube.com/watch?v=jGHMmDznum8)
+[![USTA demo cover](src/usta/ui/assets/usta_cover.png)](https://www.youtube.com/watch?v=jGHMmDznum8)
 
 By "sniping" a specific area of your screen, USTA continuously monitors that region, extracts text using OCR (Optical Character Recognition), and overlays the translated text instantly, making it perfect for playing untranslated games or watching foreign media.
 
-> **Note:** Current version is optimized for **KDE Plasma and GNOME (Wayland)** using **xcb** mode. Future versions will expand compatibility.
+> **Platforms:** Linux KDE Plasma/GNOME (Wayland with xcb) and macOS. See [compatibility and validation status](docs/compatibility.md).
 
 ## 🚀 Key Features
 
@@ -54,7 +54,7 @@ While currently focused on KDE/Linux, support for the following is planned:
 - [ ] **Native Linux Packaging:** Distribution via `.deb` (Debian/Ubuntu), AUR (Arch Linux), and **Flatpak**.
 - [ ] **Other Linux DEs:** Full native Wayland support without xcb.
 - [ ] **Windows Support:** Integration with Windows-native capture and OCR APIs.
-- [ ] **macOS Support:** Support for macOS native APIs and capture systems.
+- [x] **macOS Support:** Native capture, Apple Vision OCR, fullscreen overlays and global shortcuts.
 
 ---
 
@@ -207,6 +207,28 @@ instead.
 
 ---
 
+### Apple Vision OCR on macOS
+
+On macOS, select **Apple Vision** in the **OCR Engine** menu to recognize text
+locally using Apple's Vision framework. Select the source language in the
+translation settings, or choose **Auto** for automatic language detection.
+Language availability depends on your macOS version; unsupported selections use
+automatic detection with a warning in the console.
+
+The macOS dependency is included in `requirements.txt`. To add it to an existing
+installation, run `.venv/bin/python -m pip install 'pyobjc-framework-Vision>=10.0'`
+and restart USTA. Apple Vision does not appear in the engine list on Linux or Windows.
+
+## macOS global shortcut permissions
+
+If startup reports missing Accessibility permission, open **System Settings → Privacy & Security → Accessibility** and allow the app/terminal running USTA (or the Python app shown by macOS). Restart USTA after granting access. The log includes the Python executable to help identify the launcher. USTA cannot grant this permission itself; screen capture/OCR and global keyboard access are separate capabilities.
+
+USTA reports missing Accessibility permission once per denied period and preserves event-tap startup, since macOS Input Monitoring permission can be separate. Linux shortcut behavior is unchanged. See [Apple's Accessibility permission guide](https://support.apple.com/guide/mac-help/mh43185/mac).
+
+## Development and contributions
+
+See [CONTRIBUTING](CONTRIBUTING.md) for development setup, tests and code standards, [architecture](docs/architecture.md) for module boundaries, and [testing](docs/testing.md) for native desktop checks. Install optional Paddle support with `pip install '.[paddle]'` when its native runtime is available.
+
 ## 🛠️ Tech Stack
 * **GUI:** PySide6
 * **OCR:** pytesseract, easyocr
@@ -226,3 +248,30 @@ USTA may process visible screen content, interact with local desktop capture mec
 The developers, maintainers, contributors, and distributors of USTA shall not be held liable for any direct, indirect, incidental, consequential, special, exemplary, or punitive damages resulting from the application, including damages caused by user configuration, third-party services, external integrations, dependency behavior, system incompatibilities, or any other circumstance connected to the use of the software.
 
 If you do not accept full responsibility for the risks described above, you should not install, run, or use USTA.
+
+## System tray and window shortcuts
+
+At startup, a balloon points to the tray icon for ten seconds to show where the USTA menu is. It does not require notification permission or take keyboard focus.
+
+The USTA tray menu lets you show/hide the main window and translation overlay
+independently, start or stop OCR, select a capture region, select a temporary
+region, and quit. Start is disabled while OCR is running; Stop is disabled while
+OCR is stopped.
+Temporary region selection is available while OCR is running and restores the
+original region after ten seconds. Hiding either window keeps OCR and translation
+running. Shown windows stay above other applications, retaining the existing
+macOS fullscreen overlay behavior and Linux window-manager support.
+
+The **Show/hide main window** shortcut (default **Shift+Alt+M**) uses the same action
+as the tray menu. Existing saved shortcut combinations are retained. Closing the
+main window with **X** hides it; use **Quit Application** in the tray menu to exit.
+
+On Linux, a desktop with system tray support is required to display the icon
+(some GNOME configurations need a tray extension). If no tray is available, **X**
+exits normally so the application cannot become inaccessible in the background.
+
+## macOS application package
+
+See [Building and installing the macOS DMG](docs/macos-dmg.md) for the Apple Silicon build recipe, bundled engines, permissions and signing details.
+
+Apple-trusted distribution DMGs require a Developer ID Application identity and notarization. Free persistent self-signed builds use `USTA_SIGNING_MODE=self-signed` with the pinned Keychain certificate and produce `-selfsigned.dmg`; they are not Apple-notarized. The build refuses silent ad-hoc fallback; explicit local builds use `USTA_ALLOW_ADHOC=1` and a `-dev.dmg` filename. See [macOS signing setup](docs/macos-dmg.md).

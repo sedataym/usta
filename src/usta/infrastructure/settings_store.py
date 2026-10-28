@@ -1,0 +1,100 @@
+"""Versioned, atomic settings storage with non-destructive legacy migration."""
+
+import json
+import logging
+import os
+import tempfile
+from pathlib import Path
+
+from usta.application.settings import AppSettings, Preset
+from usta.infrastructure.legacy_settings import load_legacy
+
+logger = logging.getLogger(__name__)
+
+
+class SettingsStore:
+    def __init__(self, directory: Path):
+        self.directory = Path(directory)
+        self._blocked: set[str] = set()
+
+    def _read(self, name: str) -> dict:
+        path = self.directory / f"{name}.json"
+        try:
+            if path.exists():
+                content = json.loads(path.read_text(encoding="utf-8"))
+                if (
+                    not isinstance(content, dict)
+                    or content.get("schema_version") != 1
+                    or not isinstance(content.get("data"), dict)
+                ):
+                    raise ValueError("Unsupported settings format; original file preserved")
+                self._blocked.discard(name)
+                return content["data"]
+            legacy = self.directory / f"{name}.pkl"
+            return load_legacy(legacy) if legacy.exists() else {}
+        except (ValueError, OSError):
+            self._blocked.add(name)
+            raise
+
+    def _write(self, name: str, data: dict) -> None:
+        if name in self._blocked:
+            raise ValueError("Cannot overwrite unreadable settings; original file preserved")
+        # Validate existing JSON even when save was called before load.
+        path = self.directory / f"{name}.json"
+        if path.exists():
+            if name == "presets":
+                self.load_presets()
+            else:
+                self._read(name)
+            if name in self._blocked:
+                raise ValueError("Cannot overwrite malformed presets; original file preserved")
+        self.directory.mkdir(parents=True, exist_ok=True)
+        descriptor, temporary = tempfile.mkstemp(suffix=".tmp", dir=self.directory)
+        try:
+            with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+                json.dump(
+                    {"schema_version": 1, "data": data}, stream, ensure_ascii=False, allow_nan=False
+                )
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, path)
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+
+    def load(self) -> AppSettings:
+        settings = AppSettings.from_dict(self._read("settings"))
+        if (
+            not (self.directory / "settings.json").exists()
+            and (self.directory / "settings.pkl").exists()
+        ):
+            self.save(settings)
+            return AppSettings.from_dict(self._read("settings"))
+        return settings
+
+    def save(self, settings: AppSettings) -> None:
+        self._write("settings", settings.to_dict())
+
+    def load_presets(self) -> dict[str, Preset]:
+        presets = {}
+        for name, value in self._read("presets").items():
+            try:
+                if not isinstance(name, str):
+                    raise ValueError("Preset names must be strings")
+                presets[name] = Preset.from_dict(value)
+            except ValueError:
+                self._blocked.add("presets")
+                logger.warning(
+                    "Malformed preset found; valid entries recovered, original file protected"
+                )
+        if (
+            "presets" not in self._blocked
+            and not (self.directory / "presets.json").exists()
+            and (self.directory / "presets.pkl").exists()
+        ):
+            self.save_presets(presets)
+            return {name: Preset.from_dict(value) for name, value in self._read("presets").items()}
+        return presets
+
+    def save_presets(self, presets: dict[str, Preset]) -> None:
+        self._write("presets", {name: value.to_dict() for name, value in presets.items()})

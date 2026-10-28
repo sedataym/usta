@@ -62,3 +62,16 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+# Local environments and tooling
+.venv/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.superpowers/
+
+# Local native/runtime scratch
+/:memory:.ses
+
+# Reusable macOS build recipe
+!packaging/macos/usta.spec

@@ -4,17 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "usta"
-version = "0.1.7"
+dynamic = ["version"]
 authors = [
   { name="Sedat Ayma" },
 ]
-description = "High-performance, PySide6-based instant translation HUD for Linux."
+description = "High-performance, PySide6-based instant translation HUD for Linux and macOS."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GPL-3.0 License",
     "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
     "Topic :: Multimedia :: Video",
     "Topic :: Utilities",
 ]
@@ -24,12 +25,16 @@ dependencies = [
     "easyocr>=1.7.0",
     "rapidocr-onnxruntime>=1.2.0,<1.3.0",
     "onnxruntime>=1.17.0",
-    "paddleocr>=3.6.0",
+    "deepl>=1.0.0",
+    "pynput>=1.7.6",
     "googletrans==4.0.2",
     "python-dotenv>=1.0.0",
     "Pillow>=10.0.0",
-    "dbus-next>=0.2.3",
+    "dbus-next>=0.2.3; sys_platform == 'linux'",
     "Babel>=2.12.0",
+    "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
+    "pyobjc-framework-Vision>=10.0; sys_platform == 'darwin'",
+    "pyobjc-framework-ScreenCaptureKit>=12.0; sys_platform == 'darwin'",
 ]
 
 [project.urls]
@@ -37,12 +42,35 @@ dependencies = [
 "Bug Tracker" = "https://github.com/sedataym/usta/issues"
 
 [project.scripts]
-usta = "src.main:main"
+usta = "usta.main:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["src*"]
+where = ["src"]
+include = ["usta*"]
 
 [tool.setuptools.package-data]
-"src" = ["translations/*/LC_MESSAGES/*.mo"]
-"src.ui" = ["assets/*.png"]
+"usta" = ["resources/translations/*/LC_MESSAGES/*.mo", "resources/translations/*/LC_MESSAGES/*.po", "resources/ocr_models/rapidocr/*.onnx"]
+"usta.ui" = ["assets/*.png", "assets/*.svg"]
+
+[project.optional-dependencies]
+paddle = ["paddleocr>=3.6.0", "paddlepaddle"]
+dev = ["ruff", "mypy", "build", "coverage", "tomli; python_version < '3.11'"]
+
+[tool.setuptools.dynamic]
+version = {attr = "usta._version.__version__"}
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/usta/config.py" = ["F401"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src/usta/application/settings.py", "src/usta/application/results.py", "src/usta/infrastructure/settings_store.py", "src/usta/infrastructure/legacy_settings.py"]
+check_untyped_defs = true
+follow_imports = "silent"

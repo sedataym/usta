@@ -1,0 +1,313 @@
+# Turkish translations for USTA.
+# Copyright (C) 2026 Sedat Ayma
+# This file is distributed under the same license as the USTA project.
+# Sedat Ayma <sedataym@example.com>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: USTA 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-05 15:41+0300\n"
+"PO-Revision-Date: 2026-06-08 21:52+0300\n"
+"Last-Translator: Sedat Ayma\n"
+"Language: tr\n"
+"Language-Team: Turkish\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: src/ui/main_window.py:57
+msgid "Region: —"
+msgstr "Bölge: —"
+
+#: src/ui/main_window.py:61
+msgid "Status"
+msgstr "Durum"
+
+#: src/ui/main_window.py:66
+msgid "OCR Engine:"
+msgstr "OCR Motoru:"
+
+#: src/ui/main_window.py:73
+msgid "Screen Engine:"
+msgstr "Ekran Motoru:"
+
+#: src/ui/main_window.py:73
+msgid "OCR"
+msgstr "OCR"
+
+#: src/ui/main_window.py:78
+msgid "Translation Engine:"
+msgstr "Çeviri Motoru:"
+
+#: src/ui/main_window.py:80
+msgid "DPI Scale:"
+msgstr "DPI Ölçeği:"
+
+#: src/ui/main_window.py:82
+msgid "DPI unlocked (click to lock)"
+msgstr "DPI kilidi açık (kilitlemek için tıkla)"
+
+#: src/ui/main_window.py:84
+msgid ""
+"Scale factor for high-DPI monitors.\n"
+"Auto-detected when selecting a region."
+msgstr ""
+"Yüksek DPI monitörler için ölçek faktörü.\n"
+"Bölge seçildiğinde otomatik algılanır."
+
+#: src/ui/main_window.py:87
+msgid "Source Language:"
+msgstr "Kaynak Dil:"
+
+#: src/ui/main_window.py:96
+msgid "Target Language:"
+msgstr "Hedef Dil:"
+
+#: src/ui/main_window.py:105
+msgid "Translation"
+msgstr "Çeviri"
+
+#: src/ui/main_window.py:107
+msgid "API Key"
+msgstr "API Anahtarı"
+
+#: src/ui/main_window.py:109
+msgid "Enter API key..."
+msgstr "API anahtarını girin..."
+
+#: src/ui/main_window.py:113
+msgid "Font Family:"
+msgstr "Yazı Tipi:"
+
+#: src/ui/main_window.py:120
+msgid "Size:"
+msgstr "Boyut:"
+
+#: src/ui/main_window.py:130
+msgid "🎨 Text Color"
+msgstr "🎨 Metin Rengi"
+
+#: src/ui/main_window.py:139
+msgid "🎨 Background"
+msgstr "🎨 Arkaplan"
+
+#: src/ui/main_window.py:150
+msgid "Background Opacity:"
+msgstr "Arkaplan Saydamlığı:"
+
+#: src/ui/main_window.py:161
+msgid "Appearance"
+msgstr "Görünüm"
+
+#: src/ui/main_window.py:165
+msgid "Preset Name:"
+msgstr "Hazır Ayar Adı:"
+
+#: src/ui/main_window.py:167
+msgid "Enter preset name..."
+msgstr "Ayar adını girin..."
+
+#: src/ui/main_window.py:172
+msgid "💾 Save"
+msgstr "💾 Kaydet"
+
+#: src/ui/main_window.py:176
+msgid "📂 Load"
+msgstr "📂 Yükle"
+
+#: src/ui/main_window.py:180
+msgid "🗑 Delete"
+msgstr "🗑 Sil"
+
+#: src/ui/main_window.py:185
+msgid "Saved Presets:"
+msgstr "Kayıtlı Ayarlar:"
+
+#: src/ui/main_window.py:190
+msgid "Save"
+msgstr "Kaydet"
+
+#: src/ui/main_window.py:195
+msgid "<b>Universal Screen Translator Application</b>"
+msgstr "<b>Universal Screen Translator Application</b>"
+
+#: src/ui/main_window.py:198
+msgid "Version: 0.1.0"
+msgstr "Versiyon: 0.1.0"
+
+#: src/ui/main_window.py:200
+msgid "A real-time OCR-based translation tool."
+msgstr "Gerçek zamanlı OCR tabanlı bir çeviri aracı."
+
+#: src/ui/main_window.py:201
+msgid "Select a screen region, capture text via OCR,"
+msgstr "Ekran bölgesi seçin, OCR ile metni yakalayın,"
+
+#: src/ui/main_window.py:202
+msgid "and translate instantly with Google or DeepL."
+msgstr "ve Google veya DeepL ile anında çevirin."
+
+#: src/ui/main_window.py:204
+msgid "About"
+msgstr "Hakkında"
+
+msgid "Hotkeys"
+msgstr "Kısayollar"
+
+msgid "<b>Hotkeys</b>"
+msgstr "<b>Kısayol Tuşları</b>"
+
+msgid "Settings topmost key:"
+msgstr "Ayarları üstte tutma tuşu:"
+
+msgid "Temporary region:"
+msgstr "Geçici bölge:"
+
+msgid ""
+"Use this shortcut to bring the main window to the front while playing a "
+"game or watching a video."
+msgstr ""
+"Oyun oynarken veya video izlerken ana pencereyi ön plana getirmek için bu"
+" kısayolu kullanın."
+
+msgid ""
+"Use this shortcut when you want to select an area outside your current "
+"selection. The temporary area you select will be active for 10 seconds."
+msgstr ""
+"Mevcut seçiminizin dışında başka bir alan seçmek istediğinizde bu "
+"kısayolu kullanın. Seçtiğiniz geçici alan 10 saniye boyunca aktif "
+"olacaktır."
+
+msgid "Reset"
+msgstr "Sıfırla"
+
+msgid "Press shortcut..."
+msgstr "Kısayola basın..."
+
+msgid "Click to set shortcut"
+msgstr "Kısayol atamak için tıkla"
+
+msgid "Click a shortcut field, then press the key combination you want to use."
+msgstr ""
+"Bir kısayol alanına tıklayın, ardından kullanmak istediğiniz tuş "
+"kombinasyonuna basın."
+
+msgid "Invalid shortcut"
+msgstr "Geçersiz kısayol"
+
+msgid "Could not register this shortcut. The previous shortcut is still active."
+msgstr "Bu kısayol kaydedilemedi. Önceki kısayol hâlâ etkin."
+
+#: src/ui/main_window.py:210
+msgid "<br><b>Performance</b>"
+msgstr "<br><b>Performans</b>"
+
+#: src/ui/main_window.py:219
+msgid "<b>Controls</b>"
+msgstr "<b>Kontroller</b>"
+
+#: src/ui/main_window.py:220
+msgid "🖼 Select Region"
+msgstr "🖼 Bölge Seç"
+
+#: src/ui/main_window.py:225
+msgid "▶ Start"
+msgstr "▶ Başlat"
+
+#: src/ui/main_window.py:230
+msgid "■ Stop"
+msgstr "■ Durdur"
+
+#: src/ui/main_window.py:362
+#, python-brace-format
+msgid "Region: X:{x} Y:{y}  {w}×{h}"
+msgstr "Bölge: X:{x} Y:{y}  {w}×{h}"
+
+#: src/ui/main_window.py:420
+msgid "This engine does not require an API key"
+msgstr "Bu motor API anahtarı gerektirmez"
+
+#: src/ui/main_window.py:436
+msgid "DPI locked (click to unlock)"
+msgstr "DPI kilitli (kilidi açmak için tıkla)"
+
+#: src/ui/main_window.py:501
+msgid "No Selection"
+msgstr "Seçim Yok"
+
+#: src/ui/main_window.py:501
+msgid "Please select a preset to load."
+msgstr "Lütfen yüklemek için bir hazır ayar seçin."
+
+#: src/ui/result_popup.py:101
+msgid "Translation will appear here."
+msgstr "Çeviri burada görünecek."
+
+msgid "Running"
+msgstr "Çalışıyor"
+
+msgid "Stopped"
+msgstr "Durduruldu"
+
+msgid "No Name"
+msgstr "İsim Yok"
+
+msgid "Please enter a preset name."
+msgstr "Lütfen bir ön ayar adı girin."
+
+msgid "Not Found"
+msgstr "Bulunamadı"
+
+msgid "Please select a preset to delete."
+msgstr "Lütfen silinecek bir ön ayar seçin."
+
+#, python-brace-format
+msgid "Preset '{name}' not found."
+msgstr "'{name}' ön ayarı bulunamadı."
+
+#, python-brace-format
+msgid "OCR: {ocr} s | Translation: {translation} s | Total: {total} s"
+msgstr "OCR: {ocr} sn | Çeviri: {translation} sn | Toplam: {total} sn"
+
+msgid "Total includes screen capture and preprocessing."
+msgstr "Toplam süre ekran yakalama ve ön işlemeyi de içerir."
+
+msgid "Select Region"
+msgstr "Bölge Seç"
+
+
+msgid "Hide Main Window"
+msgstr "Ana ekranı gizle"
+
+msgid "Show Main Window"
+msgstr "Ana ekranı göster"
+
+msgid "Hide Overlay"
+msgstr "Overlay ekranını gizle"
+
+msgid "Show Overlay"
+msgstr "Overlay ekranını göster"
+
+msgid "Select Temporary Region"
+msgstr "Geçici bölge seç"
+
+msgid "Quit Application"
+msgstr "Uygulamayı kapat"
+
+msgid "Main window:"
+msgstr "Ana ekranı göster/gizle:"
+
+msgid "Show or hide the main window. When shown, it stays above other windows."
+msgstr "Ana ekranı gösterir veya gizler. Gösterildiğinde diğer pencerelerin üzerinde kalır."
+
+msgid "Total"
+msgstr "Toplam"
+
+msgid "Region"
+msgstr "Bölge"
+
+msgid "You can access the USTA menu here."
+msgstr "USTA menüsüne buradan ulaşabilirsiniz."
